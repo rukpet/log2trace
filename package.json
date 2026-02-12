@@ -1,15 +1,32 @@
 {
   "name": "log2trace-viewer",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "An interactive visualization library for OpenTelemetry trace data",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "demo": "npm run build && node demo/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "opentelemetry",
+    "trace",
+    "visualization",
+    "observability",
+    "distributed-tracing",
+    "waterfall",
+    "timeline"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
   "devDependencies": {
     "typescript": "^5.9.3"
-  }
+  },
+  "files": [
+    "dist",
+    "src"
+  ]
 }

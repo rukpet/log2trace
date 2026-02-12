@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trace Visualizer Demo</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .description {
+      color: #666;
+      line-height: 1.6;
+    }
+
+    trace-visualizer {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: block;
+    }
+
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: none;
+    }
+
+    .info-panel.visible {
+      display: block;
+    }
+
+    .info-panel h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .info-content {
+      color: #666;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔍 OpenTelemetry Trace Visualizer</h1>
+      <p class="description">
+        An interactive Web Component for visualizing OpenTelemetry trace data. 
+        This demo displays a trace waterfall chart showing the relationships and timing of distributed spans.
+      </p>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: #4A90E2;"></div>
+          <span>Internal</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #7ED321;"></div>
+          <span>Server</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #F5A623;"></div>
+          <span>Client</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #BD10E0;"></div>
+          <span>Producer</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #50E3C2;"></div>
+          <span>Consumer</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Web Component Usage -->
+    <trace-visualizer 
+      data-url="./example.json"
+      width="1360"
+      height="800"
+      show-events="true"
+      show-attributes="true">
+    </trace-visualizer>
+
+    <div class="info-panel" id="info-panel">
+      <h3>Selected Span Details</h3>
+      <div class="info-content" id="info-content"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import '/dist/index.js';
+
+    // Listen for span selection events
+    const viewer = document.querySelector('trace-visualizer');
+    const infoPanel = document.getElementById('info-panel');
+    const infoContent = document.getElementById('info-content');
+
+    viewer.addEventListener('span-selected', (event) => {
+      const span = event.detail.span;
+      
+      infoContent.textContent = JSON.stringify(span, null, 2);
+      infoPanel.classList.add('visible');
+      infoPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    // Example: Loading data programmatically (alternative to data-url attribute)
+    // const traceData = await fetch('./example.json').then(r => r.json());
+    // viewer.traceData = traceData;
+  </script>
+</body>
+</html>
