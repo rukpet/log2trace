@@ -1,0 +1,862 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "frontend-web"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "2.1.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "web-server-03"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "javascript"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.17.0"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "frontend-instrumentation",
+            "version": "1.0.0"
+          },
+          "spans": [
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "eee19b7ec3c1b174",
+              "name": "POST /checkout",
+              "kind": 1,
+              "startTimeUnixNano": "1706889600000000000",
+              "endTimeUnixNano": "1706889602450000000",
+              "attributes": [
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "/checkout"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "https://shop.example.com/checkout"
+                  }
+                },
+                {
+                  "key": "user.id",
+                  "value": {
+                    "stringValue": "usr_7f8d9e6c"
+                  }
+                },
+                {
+                  "key": "cart.items_count",
+                  "value": {
+                    "intValue": "3"
+                  }
+                },
+                {
+                  "key": "cart.total_amount",
+                  "value": {
+                    "doubleValue": 247.98
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1706889600100000000",
+                  "name": "checkout.initiated",
+                  "attributes": [
+                    {
+                      "key": "session.id",
+                      "value": {
+                        "stringValue": "sess_abc123xyz"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "timeUnixNano": "1706889602400000000",
+                  "name": "checkout.completed",
+                  "attributes": [
+                    {
+                      "key": "order.id",
+                      "value": {
+                        "stringValue": "ord_2024020312345"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "order-service"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.8.2"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "order-pod-7a"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "order-service-7d8f9c-7a"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "production"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "order-service-tracer",
+            "version": "1.2.0"
+          },
+          "spans": [
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "00f067aa0ba902b7",
+              "parentSpanId": "eee19b7ec3c1b174",
+              "name": "OrderService.createOrder",
+              "kind": 2,
+              "startTimeUnixNano": "1706889600150000000",
+              "endTimeUnixNano": "1706889602350000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "rpc.service",
+                  "value": {
+                    "stringValue": "OrderService"
+                  }
+                },
+                {
+                  "key": "rpc.method",
+                  "value": {
+                    "stringValue": "createOrder"
+                  }
+                },
+                {
+                  "key": "order.user_id",
+                  "value": {
+                    "stringValue": "usr_7f8d9e6c"
+                  }
+                },
+                {
+                  "key": "order.id",
+                  "value": {
+                    "stringValue": "ord_2024020312345"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1706889600200000000",
+                  "name": "order.validation_started",
+                  "attributes": []
+                },
+                {
+                  "timeUnixNano": "1706889600450000000",
+                  "name": "order.validation_completed",
+                  "attributes": [
+                    {
+                      "key": "validation.result",
+                      "value": {
+                        "stringValue": "success"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "b7ad6b7169203331",
+              "parentSpanId": "00f067aa0ba902b7",
+              "name": "validate_inventory",
+              "kind": 3,
+              "startTimeUnixNano": "1706889600500000000",
+              "endTimeUnixNano": "1706889600850000000",
+              "attributes": [
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "inventory-service"
+                  }
+                },
+                {
+                  "key": "items.checked",
+                  "value": {
+                    "intValue": "3"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "inventory-service"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.2.1"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "inventory-pod-2c"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "inventory-tracer",
+            "version": "2.0.0"
+          },
+          "spans": [
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "3c3c4e5a6b7d8e9f",
+              "parentSpanId": "b7ad6b7169203331",
+              "name": "InventoryService.checkAvailability",
+              "kind": 2,
+              "startTimeUnixNano": "1706889600550000000",
+              "endTimeUnixNano": "1706889600820000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "rpc.service",
+                  "value": {
+                    "stringValue": "InventoryService"
+                  }
+                },
+                {
+                  "key": "rpc.method",
+                  "value": {
+                    "stringValue": "checkAvailability"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "9f8e7d6c5b4a3210",
+              "parentSpanId": "3c3c4e5a6b7d8e9f",
+              "name": "SELECT inventory",
+              "kind": 3,
+              "startTimeUnixNano": "1706889600580000000",
+              "endTimeUnixNano": "1706889600750000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "postgresql"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "inventory_db"
+                  }
+                },
+                {
+                  "key": "db.statement",
+                  "value": {
+                    "stringValue": "SELECT sku, quantity FROM inventory WHERE sku IN ($1, $2, $3)"
+                  }
+                },
+                {
+                  "key": "db.operation",
+                  "value": {
+                    "stringValue": "SELECT"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "payment-service"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "2.5.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "payment-pod-5f"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "payment-tracer",
+            "version": "1.5.0"
+          },
+          "spans": [
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "1a2b3c4d5e6f7890",
+              "parentSpanId": "00f067aa0ba902b7",
+              "name": "PaymentService.processPayment",
+              "kind": 2,
+              "startTimeUnixNano": "1706889600900000000",
+              "endTimeUnixNano": "1706889602100000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "rpc.service",
+                  "value": {
+                    "stringValue": "PaymentService"
+                  }
+                },
+                {
+                  "key": "rpc.method",
+                  "value": {
+                    "stringValue": "processPayment"
+                  }
+                },
+                {
+                  "key": "payment.amount",
+                  "value": {
+                    "doubleValue": 247.98
+                  }
+                },
+                {
+                  "key": "payment.currency",
+                  "value": {
+                    "stringValue": "USD"
+                  }
+                },
+                {
+                  "key": "payment.method",
+                  "value": {
+                    "stringValue": "credit_card"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1706889600950000000",
+                  "name": "payment.authorization_requested",
+                  "attributes": []
+                },
+                {
+                  "timeUnixNano": "1706889601800000000",
+                  "name": "payment.authorized",
+                  "attributes": [
+                    {
+                      "key": "authorization.code",
+                      "value": {
+                        "stringValue": "AUTH_7X9Y2K"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "timeUnixNano": "1706889602050000000",
+                  "name": "payment.captured",
+                  "attributes": [
+                    {
+                      "key": "transaction.id",
+                      "value": {
+                        "stringValue": "txn_5h8k9m2n"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "a1b2c3d4e5f60718",
+              "parentSpanId": "1a2b3c4d5e6f7890",
+              "name": "stripe_api_call",
+              "kind": 3,
+              "startTimeUnixNano": "1706889601000000000",
+              "endTimeUnixNano": "1706889601750000000",
+              "attributes": [
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "https://api.stripe.com/v1/charges"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "stripe"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "f1e2d3c4b5a69870",
+              "parentSpanId": "1a2b3c4d5e6f7890",
+              "name": "UPDATE payment_records",
+              "kind": 3,
+              "startTimeUnixNano": "1706889601850000000",
+              "endTimeUnixNano": "1706889602050000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "postgresql"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "payment_db"
+                  }
+                },
+                {
+                  "key": "db.statement",
+                  "value": {
+                    "stringValue": "INSERT INTO payment_records (order_id, amount, status) VALUES ($1, $2, $3)"
+                  }
+                },
+                {
+                  "key": "db.operation",
+                  "value": {
+                    "stringValue": "INSERT"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "notification-service"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.3.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "notification-pod-8h"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "notification-tracer",
+            "version": "1.0.0"
+          },
+          "spans": [
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "7e8f9a0b1c2d3e4f",
+              "parentSpanId": "00f067aa0ba902b7",
+              "name": "NotificationService.sendOrderConfirmation",
+              "kind": 2,
+              "startTimeUnixNano": "1706889602120000000",
+              "endTimeUnixNano": "1706889602300000000",
+              "attributes": [
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "kafka"
+                  }
+                },
+                {
+                  "key": "messaging.destination",
+                  "value": {
+                    "stringValue": "order-notifications"
+                  }
+                },
+                {
+                  "key": "messaging.operation",
+                  "value": {
+                    "stringValue": "send"
+                  }
+                },
+                {
+                  "key": "notification.type",
+                  "value": {
+                    "stringValue": "email"
+                  }
+                },
+                {
+                  "key": "notification.recipient",
+                  "value": {
+                    "stringValue": "user@example.com"
+                  }
+                }
+              ],
+              "links": [
+                {
+                  "traceId": "5b8efff798038103d269b633813fc60c",
+                  "spanId": "1a2b3c4d5e6f7890",
+                  "attributes": [
+                    {
+                      "key": "link.type",
+                      "value": {
+                        "stringValue": "follows_from"
+                      }
+                    },
+                    {
+                      "key": "link.reason",
+                      "value": {
+                        "stringValue": "notification triggered by payment completion"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "4f5e6d7c8b9a0123",
+              "parentSpanId": "7e8f9a0b1c2d3e4f",
+              "name": "sendgrid_api_call",
+              "kind": 3,
+              "startTimeUnixNano": "1706889602150000000",
+              "endTimeUnixNano": "1706889602280000000",
+              "attributes": [
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "https://api.sendgrid.com/v3/mail/send"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "202"
+                  }
+                },
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "sendgrid"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "shipping-service"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.9.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "shipping-pod-3k"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "shipping-tracer",
+            "version": "1.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "2b3c4d5e6f708192",
+              "parentSpanId": "00f067aa0ba902b7",
+              "name": "ShippingService.createShipment",
+              "kind": 2,
+              "startTimeUnixNano": "1706889601200000000",
+              "endTimeUnixNano": "1706889601950000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "rpc.service",
+                  "value": {
+                    "stringValue": "ShippingService"
+                  }
+                },
+                {
+                  "key": "rpc.method",
+                  "value": {
+                    "stringValue": "createShipment"
+                  }
+                },
+                {
+                  "key": "shipment.carrier",
+                  "value": {
+                    "stringValue": "USPS"
+                  }
+                },
+                {
+                  "key": "shipment.weight_kg",
+                  "value": {
+                    "doubleValue": 2.3
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1706889601250000000",
+                  "name": "address.validated",
+                  "attributes": []
+                },
+                {
+                  "timeUnixNano": "1706889601900000000",
+                  "name": "label.generated",
+                  "attributes": [
+                    {
+                      "key": "tracking.number",
+                      "value": {
+                        "stringValue": "9400111899562345678901"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "8c9d0e1f2a3b4c5d",
+              "parentSpanId": "2b3c4d5e6f708192",
+              "name": "calculate_shipping_cost",
+              "kind": 4,
+              "startTimeUnixNano": "1706889601300000000",
+              "endTimeUnixNano": "1706889601450000000",
+              "attributes": [
+                {
+                  "key": "shipping.zone",
+                  "value": {
+                    "stringValue": "zone_3"
+                  }
+                },
+                {
+                  "key": "shipping.cost",
+                  "value": {
+                    "doubleValue": 12.50
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
