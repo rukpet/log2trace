@@ -9,12 +9,9 @@ import {
 import { TraceTree } from './types/internal.js';
 
 /**
- * Parse and process OpenTelemetry trace data for visualization
+ * Parse OpenTelemetry trace data into a TraceTree
  */
 export class TraceParser {
-  /**
-   * Parse trace data into a TraceTree of raw Spans with relationship maps
-   */
   static parse(traceData: TraceData): TraceTree {
     const spanMap = new Map<string, Span>();
     const childrenOf = new Map<string, Span[]>();
@@ -54,65 +51,13 @@ export class TraceParser {
       parseInt(a.startTimeUnixNano) - parseInt(b.startTimeUnixNano)
     );
 
-    return { roots, childrenOf, serviceNameOf };
+    return new TraceTree(roots, childrenOf, serviceNameOf);
   }
 
-  /**
-   * Extract service name from resource attributes
-   */
   private static extractServiceName(resourceSpan: ResourceSpans): string {
     const serviceNameAttr = resourceSpan.resource.attributes.find(
       attr => attr.key === 'service.name'
     );
     return extractString(serviceNameAttr?.value) ?? 'unknown-service';
-  }
-
-  /**
-   * Convert nanosecond timestamp string to milliseconds
-   */
-  static nanoToMilli(nano: string): number {
-    return Math.floor(parseInt(nano) / 1000000);
-  }
-
-  /**
-   * Flatten the span tree into a list with computed levels, for rendering
-   */
-  static flattenSpans(tree: TraceTree): Array<{ span: Span; level: number }> {
-    const result: Array<{ span: Span; level: number }> = [];
-
-    const walk = (spans: Span[], level: number) => {
-      for (const span of spans) {
-        result.push({ span, level });
-        const children = tree.childrenOf.get(span.spanId);
-        if (children && children.length > 0) {
-          walk(children, level + 1);
-        }
-      }
-    };
-
-    walk(tree.roots, 0);
-    return result;
-  }
-
-  /**
-   * Get the time range of all spans in milliseconds
-   */
-  static getTimeRange(tree: TraceTree): { min: number; max: number } {
-    const flat = this.flattenSpans(tree);
-    if (flat.length === 0) {
-      return { min: 0, max: 0 };
-    }
-
-    let min = Infinity;
-    let max = -Infinity;
-
-    for (const { span } of flat) {
-      const start = this.nanoToMilli(span.startTimeUnixNano);
-      const end = this.nanoToMilli(span.endTimeUnixNano);
-      if (start < min) min = start;
-      if (end > max) max = end;
-    }
-
-    return { min, max };
   }
 }
