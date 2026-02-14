@@ -4,8 +4,7 @@ import {
   Span,
 } from './types/opentelemetry/trace.js';
 import {
-  KeyValue,
-  AnyValue
+  extractString,
 } from './types/opentelemetry/common.js';
 import { TraceTree } from './types/internal.js';
 
@@ -65,36 +64,7 @@ export class TraceParser {
     const serviceNameAttr = resourceSpan.resource.attributes.find(
       attr => attr.key === 'service.name'
     );
-    return this.extractAttributeValue(serviceNameAttr?.value) as string || 'unknown-service';
-  }
-
-  /**
-   * Extract the actual value from an AnyValue
-   */
-  static extractAttributeValue(value?: AnyValue): any {
-    if (!value) return undefined;
-    if (value.stringValue !== undefined) return value.stringValue;
-    if (value.intValue !== undefined) return typeof value.intValue === 'string' ? parseInt(value.intValue) : value.intValue;
-    if (value.doubleValue !== undefined) return value.doubleValue;
-    if (value.boolValue !== undefined) return value.boolValue;
-    if (value.arrayValue) {
-      return value.arrayValue.values.map((v: AnyValue) => this.extractAttributeValue(v));
-    }
-    if (value.kvlistValue) {
-      return this.convertAttributes(value.kvlistValue.values);
-    }
-    return undefined;
-  }
-
-  /**
-   * Convert attributes array to key-value object
-   */
-  static convertAttributes(attributes: KeyValue[]): Record<string, any> {
-    const result: Record<string, any> = {};
-    for (const attr of attributes) {
-      result[attr.key] = this.extractAttributeValue(attr.value);
-    }
-    return result;
+    return extractString(serviceNameAttr?.value) ?? 'unknown-service';
   }
 
   /**

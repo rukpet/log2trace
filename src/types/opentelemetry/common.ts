@@ -42,6 +42,49 @@ export interface KeyValue {
 }
 
 /**
+ * Represents the possible JS values extracted from an AnyValue.
+ */
+export interface ExtractedArray extends Array<ExtractedValue> {}
+export interface ExtractedRecord extends Record<string, ExtractedValue> {}
+export type ExtractedValue = string | number | boolean | ExtractedArray | ExtractedRecord | undefined;
+
+/**
+ * Extract the JS primitive/object from an AnyValue wrapper.
+ */
+export function extractValue(value?: AnyValue): ExtractedValue {
+  if (!value) return undefined;
+  if (value.stringValue !== undefined) return value.stringValue;
+  if (value.intValue !== undefined) return typeof value.intValue === 'string' ? parseInt(value.intValue) : value.intValue;
+  if (value.doubleValue !== undefined) return value.doubleValue;
+  if (value.boolValue !== undefined) return value.boolValue;
+  if (value.arrayValue) {
+    return value.arrayValue.values.map((v: AnyValue) => extractValue(v));
+  }
+  if (value.kvlistValue) {
+    return convertAttributes(value.kvlistValue.values);
+  }
+  return undefined;
+}
+
+/**
+ * Extract a string from an AnyValue, returning undefined if not a string.
+ */
+export function extractString(value?: AnyValue): string | undefined {
+  return value?.stringValue;
+}
+
+/**
+ * Convert a KeyValue[] array into a plain { key: value } object.
+ */
+export function convertAttributes(attributes: KeyValue[]): ExtractedRecord {
+  const result: ExtractedRecord = {};
+  for (const attr of attributes) {
+    result[attr.key] = extractValue(attr.value);
+  }
+  return result;
+}
+
+/**
  * InstrumentationScope represents the instrumentation scope information
  * such as the fully qualified name and version.
  */
