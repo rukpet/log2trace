@@ -201,3 +201,70 @@ code {
   min-width: 50px;
   text-align: center;
 }
+
+/* Trace body layout */
+.trace-body {
+  display: flex;
+  overflow: hidden;
+}
+
+.trace-body > .trace-chart {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Detail panel (right sidebar) */
+.detail-panel {
+  display: none;
+  width: 350px;
+  flex-shrink: 0;
+  border-left: 2px solid #ddd;
+  padding: 15px;
+  max-height: inherit;
+}
+
+.detail-panel.visible {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.detail-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.detail-panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.detail-panel-close {
+  padding: 4px 10px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.detail-panel-close:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.detail-content {
+  color: #666;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  background: #f5f5f5;
+  padding: 10px;
+  border-radius: 4px;
+  flex: 1;
+  overflow-y: auto;
+}
