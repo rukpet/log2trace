@@ -14,7 +14,6 @@ export { TraceVisualizerElement } from './component.js';
 
 // Export utility classes for advanced usage
 export { TraceParser } from './parser.js';
-export { TraceRenderer } from './renderer.js';
 
 // Export public types (OpenTelemetry standard types)
 export * from './types/opentelemetry/common.js';

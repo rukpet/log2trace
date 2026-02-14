@@ -6,8 +6,8 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --loader:.css=text",
+    "check": "tsc --noEmit",
     "demo": "npm run build && node demo/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,6 +23,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "esbuild": "^0.27.3",
     "typescript": "^5.9.3"
   },
   "files": [

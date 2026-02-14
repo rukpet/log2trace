@@ -1,7 +1,19 @@
-import { TraceData } from './types/opentelemetry/trace.js';
+import { TraceData, Span, SpanKind } from './types/opentelemetry/trace.js';
 import { TraceTree, VisualizationConfig } from './types/internal.js';
 import { TraceParser } from './parser.js';
-import { TraceRenderer } from './renderer.js';
+import css from './styles.css';
+
+const styleSheet = new CSSStyleSheet();
+styleSheet.replaceSync(css);
+
+const DEFAULT_COLOR_SCHEME: Record<string, string> = {
+  [SpanKind.Internal]: '#4A90E2',
+  [SpanKind.Server]: '#7ED321',
+  [SpanKind.Client]: '#F5A623',
+  [SpanKind.Producer]: '#BD10E0',
+  [SpanKind.Consumer]: '#50E3C2',
+  [SpanKind.Unspecified]: '#9013FE'
+};
 
 /**
  * Custom Web Component for trace visualization
@@ -20,6 +32,7 @@ export class TraceVisualizerElement extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
+    this.shadow.adoptedStyleSheets = [styleSheet];
   }
 
   static get observedAttributes() {
@@ -84,9 +97,10 @@ export class TraceVisualizerElement extends HTMLElement {
     }
   }
 
-  /**
-   * Update config from HTML attributes
-   */
+  // ---------------------------------------------------------------------------
+  // Config
+  // ---------------------------------------------------------------------------
+
   private updateConfigFromAttributes(): void {
     const width = this.getAttribute('width');
     const height = this.getAttribute('height');
@@ -102,9 +116,23 @@ export class TraceVisualizerElement extends HTMLElement {
     };
   }
 
-  /**
-   * Render the visualization
-   */
+  private resolveConfig(): Required<VisualizationConfig> {
+    return {
+      width: this._config.width || 1200,
+      height: this._config.height || 600,
+      backgroundColor: this._config.backgroundColor || '#ffffff',
+      spanHeight: this._config.spanHeight || 30,
+      spanPadding: this._config.spanPadding || 5,
+      showEvents: this._config.showEvents !== false,
+      showAttributes: this._config.showAttributes !== false,
+      colorScheme: this._config.colorScheme || DEFAULT_COLOR_SCHEME
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------------------------
+
   private render(): void {
     if (!this._traceData) {
       this.renderEmpty();
@@ -113,14 +141,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
     try {
       const tree = TraceParser.parse(this._traceData);
-      const renderer = new TraceRenderer(tree, this._config);
-
-      this.shadow.innerHTML = `
-        ${TraceRenderer.getStyles()}
-        ${this.getZoomPanStyles()}
-        ${renderer.render()}
-      `;
-
+      this.shadow.innerHTML = this.renderTrace(tree);
       this.attachEventListeners(tree);
       this.attachZoomPanListeners();
     } catch (error) {
@@ -128,12 +149,144 @@ export class TraceVisualizerElement extends HTMLElement {
     }
   }
 
-  /**
-   * Render loading state
-   */
+  private renderTrace(tree: TraceTree): string {
+    const config = this.resolveConfig();
+    const flatSpans = TraceParser.flattenSpans(tree);
+    const timeRange = TraceParser.getTimeRange(tree);
+    const chartHeight = flatSpans.length * (config.spanHeight + config.spanPadding);
+    const totalHeight = Math.max(chartHeight + 100, config.height);
+    const traceId = tree.roots[0]?.traceId || 'N/A';
+
+    return `
+      <div class="trace-viewer" style="width: ${config.width}px; background: ${config.backgroundColor};">
+        <div class="trace-header">
+          <h3>Trace: ${traceId}</h3>
+          <div class="trace-stats">
+            <span>Total Spans: ${flatSpans.length}</span>
+            <span>Duration: ${this.formatDuration(timeRange.max - timeRange.min)}</span>
+          </div>
+        </div>
+        <div class="trace-chart" style="position: relative; height: ${totalHeight}px; overflow: hidden;">
+          <div class="span-labels-container" style="position: absolute; left: 20px; width: 230px; top: 0; bottom: 0; pointer-events: none; z-index: 10;">
+            ${this.renderSpanLabels(tree, flatSpans, config)}
+          </div>
+          <div class="timeline-container" style="position: absolute; left: 250px; right: 20px; top: 0; bottom: 0;">
+            ${this.renderTimeline(timeRange)}
+            ${this.renderSpans(flatSpans, timeRange, config)}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderSpanLabels(
+    tree: TraceTree,
+    flatSpans: Array<{ span: Span; level: number }>,
+    config: Required<VisualizationConfig>
+  ): string {
+    return flatSpans.map(({ span, level }, index) => {
+      const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
+      const indent = level * 20;
+      const statusIcon = this.getStatusIcon(span.status?.code ?? 0);
+      const serviceName = tree.serviceNameOf.get(span.spanId) || 'unknown-service';
+
+      return `
+        <div class="span-label-fixed" style="position: absolute; top: ${yPosition}px; left: ${indent}px; width: ${230 - indent}px; height: ${config.spanHeight}px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: auto; font-size: 12px; line-height: 1.2; padding: 2px 5px; color: #333;" title="${span.name}">
+          <span class="status-icon" style="display: inline-block; width: 12px; font-size: 10px;">${statusIcon}</span>
+          <strong>${serviceName}</strong>
+          <br/>
+          <small>${span.name}</small>
+        </div>
+      `;
+    }).join('');
+  }
+
+  private renderTimeline(timeRange: { min: number; max: number }): string {
+    const duration = timeRange.max - timeRange.min;
+    const ticks = 10;
+    const tickElements: string[] = [];
+
+    for (let i = 0; i <= ticks; i++) {
+      const position = (i / ticks) * 100;
+      const relativeTime = (duration * i / ticks);
+
+      tickElements.push(`
+        <div class="timeline-tick" style="left: ${position}%;">
+          <div class="timeline-label">${this.formatDuration(relativeTime)}</div>
+        </div>
+      `);
+    }
+
+    return `
+      <div class="timeline" style="position: absolute; top: 0; left: 0; right: 0; height: 40px; border-bottom: 2px solid #ddd;">
+        ${tickElements.join('')}
+      </div>
+    `;
+  }
+
+  private renderSpans(
+    flatSpans: Array<{ span: Span; level: number }>,
+    timeRange: { min: number; max: number },
+    config: Required<VisualizationConfig>
+  ): string {
+    return flatSpans.map(({ span }, index) =>
+      this.renderSpan(span, index, timeRange, config)
+    ).join('');
+  }
+
+  private renderSpan(
+    span: Span,
+    index: number,
+    timeRange: { min: number; max: number },
+    config: Required<VisualizationConfig>
+  ): string {
+    const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
+    const color = config.colorScheme[span.kind] || '#999';
+
+    const totalDuration = timeRange.max - timeRange.min;
+    const startMs = TraceParser.nanoToMilli(span.startTimeUnixNano);
+    const endMs = TraceParser.nanoToMilli(span.endTimeUnixNano);
+    const spanDuration = endMs - startMs;
+    const startPercent = ((startMs - timeRange.min) / totalDuration) * 100;
+    const widthPercent = (spanDuration / totalDuration) * 100;
+
+    const kindLabel = SpanKind[span.kind];
+
+    return `
+      <div class="span-row" style="position: absolute; top: ${yPosition}px; left: 0; right: 0; height: ${config.spanHeight}px;">
+        <div class="span-bar"
+             style="position: absolute; left: ${startPercent}%; width: ${Math.max(widthPercent, 0.5)}%; height: 100%; background: ${color}; border-radius: 3px; cursor: pointer;"
+             data-span-id="${span.spanId}"
+             title="${span.name}\nDuration: ${this.formatDuration(spanDuration)}\nKind: ${kindLabel}">
+          <div class="span-duration" style="position: absolute; left: 100%; margin-left: 5px; white-space: nowrap; font-size: 11px; color: #666;">
+            ${this.formatDuration(spanDuration)}
+          </div>
+          ${config.showEvents ? this.renderEvents(span) : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderEvents(span: Span): string {
+    if (!span.events || span.events.length === 0) return '';
+
+    const startMs = TraceParser.nanoToMilli(span.startTimeUnixNano);
+    const spanDuration = TraceParser.nanoToMilli(span.endTimeUnixNano) - startMs;
+
+    return span.events.map(event => {
+      const eventMs = TraceParser.nanoToMilli(event.timeUnixNano);
+      const eventOffset = ((eventMs - startMs) / spanDuration) * 100;
+      return `
+        <div class="span-event"
+             style="position: absolute; left: ${eventOffset}%; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.8);"
+             title="${event.name}\nTime: ${this.formatDuration(eventMs - startMs)}">
+        </div>
+      `;
+    }).join('');
+  }
+
   private renderLoading(): void {
     this.shadow.innerHTML = `
-      ${this.getBaseStyles()}
       <div class="trace-viewer">
         <div class="message loading">
           <div class="spinner"></div>
@@ -143,12 +296,8 @@ export class TraceVisualizerElement extends HTMLElement {
     `;
   }
 
-  /**
-   * Render empty state
-   */
   private renderEmpty(): void {
     this.shadow.innerHTML = `
-      ${this.getBaseStyles()}
       <div class="trace-viewer">
         <div class="message empty">
           No trace data loaded. Set the <code>data-url</code> attribute or use <code>.traceData</code> property.
@@ -157,12 +306,8 @@ export class TraceVisualizerElement extends HTMLElement {
     `;
   }
 
-  /**
-   * Render error state
-   */
   private renderError(message: string): void {
     this.shadow.innerHTML = `
-      ${this.getBaseStyles()}
       <div class="trace-viewer">
         <div class="message error">
           <strong>Error:</strong> ${message}
@@ -171,62 +316,10 @@ export class TraceVisualizerElement extends HTMLElement {
     `;
   }
 
-  /**
-   * Get base styles for message states
-   */
-  private getBaseStyles(): string {
-    return `
-      <style>
-        :host {
-          display: block;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        .trace-viewer {
-          padding: 20px;
-        }
-        .message {
-          padding: 40px;
-          text-align: center;
-          border-radius: 8px;
-          background: #f5f5f5;
-        }
-        .message.loading {
-          color: #666;
-        }
-        .message.empty {
-          color: #999;
-        }
-        .message.error {
-          background: #ffebee;
-          color: #c62828;
-        }
-        .spinner {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          border: 3px solid #f3f3f3;
-          border-top: 3px solid #3498db;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin-bottom: 10px;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        code {
-          background: rgba(0,0,0,0.1);
-          padding: 2px 6px;
-          border-radius: 3px;
-          font-family: 'Courier New', monospace;
-        }
-      </style>
-    `;
-  }
+  // ---------------------------------------------------------------------------
+  // Interaction
+  // ---------------------------------------------------------------------------
 
-  /**
-   * Attach event listeners for interactivity
-   */
   private attachEventListeners(tree: TraceTree): void {
     const spanBars = this.shadow.querySelectorAll('.span-bar');
     const flatSpans = TraceParser.flattenSpans(tree);
@@ -247,14 +340,10 @@ export class TraceVisualizerElement extends HTMLElement {
     });
   }
 
-  /**
-   * Attach zoom and pan event listeners
-   */
   private attachZoomPanListeners(): void {
     const traceChart = this.shadow.querySelector('.trace-chart') as HTMLElement;
     if (!traceChart) return;
 
-    // Mouse wheel for zoom
     traceChart.addEventListener('wheel', (e: WheelEvent) => {
       e.preventDefault();
 
@@ -267,7 +356,6 @@ export class TraceVisualizerElement extends HTMLElement {
       }
     }, { passive: false });
 
-    // Mouse drag for pan
     traceChart.addEventListener('mousedown', (e: MouseEvent) => {
       if (e.button === 0 && !(e.target as HTMLElement).classList.contains('span-bar')) {
         this.isPanning = true;
@@ -300,20 +388,15 @@ export class TraceVisualizerElement extends HTMLElement {
       }
     });
 
-    // Double click to reset
     traceChart.addEventListener('dblclick', () => {
       this.zoomLevel = 1;
       this.panOffset = 0;
       this.updateZoomPan();
     });
 
-    // Add reset button
     this.addZoomControls();
   }
 
-  /**
-   * Update zoom and pan transformation
-   */
   private updateZoomPan(): void {
     const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
 
@@ -341,9 +424,6 @@ export class TraceVisualizerElement extends HTMLElement {
     }
   }
 
-  /**
-   * Add zoom control UI
-   */
   private addZoomControls(): void {
     const traceViewer = this.shadow.querySelector('.trace-viewer');
     if (!traceViewer) return;
@@ -376,96 +456,23 @@ export class TraceVisualizerElement extends HTMLElement {
     });
   }
 
-  /**
-   * Get zoom and pan styles
-   */
-  private getZoomPanStyles(): string {
-    return `
-      <style>
-        .trace-chart {
-          cursor: default;
-          user-select: none;
-          overflow: hidden;
-        }
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
-        .timeline-container {
-          will-change: transform;
-        }
-
-        .span-duration,
-        .timeline-label {
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          text-rendering: optimizeLegibility;
-        }
-
-        .zoom-controls {
-          position: sticky;
-          top: 0;
-          z-index: 100;
-          display: flex;
-          gap: 10px;
-          align-items: center;
-          padding: 10px;
-          background: rgba(255, 255, 255, 0.95);
-          border-bottom: 1px solid #ddd;
-          backdrop-filter: blur(5px);
-        }
-
-        .zoom-btn {
-          padding: 6px 12px;
-          border: 1px solid #ddd;
-          background: white;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: bold;
-          transition: all 0.2s;
-        }
-
-        .zoom-btn:hover {
-          background: #f5f5f5;
-          border-color: #999;
-        }
-
-        .zoom-btn:active {
-          transform: scale(0.95);
-        }
-
-        .zoom-display {
-          font-size: 14px;
-          font-weight: 500;
-          color: #666;
-          min-width: 50px;
-          text-align: center;
-        }
-      </style>
-    `;
+  private getStatusIcon(statusCode: number): string {
+    switch (statusCode) {
+      case 1: return '&#10003;'; // OK
+      case 2: return '&#10007;'; // Error
+      default: return '&#8226;'; // Unset
+    }
   }
 
-  /**
-   * Export visualization as HTML string
-   */
-  exportAsHTML(): string {
-    if (!this._traceData) {
-      throw new Error('No trace data available to export');
-    }
-
-    const tree = TraceParser.parse(this._traceData);
-    const renderer = new TraceRenderer(tree, this._config);
-
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trace Visualization</title>
-</head>
-<body style="margin: 0; padding: 0; background: #f5f5f5;">
-  ${TraceRenderer.getStyles()}
-  ${renderer.render()}
-</body>
-</html>`;
+  private formatDuration(ms: number): string {
+    if (ms < 1) return `${(ms * 1000).toFixed(0)}&micro;s`;
+    if (ms < 1000) return `${ms.toFixed(2)}ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
+    return `${(ms / 60000).toFixed(2)}min`;
   }
 }
 
