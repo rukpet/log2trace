@@ -6,7 +6,7 @@ import {
 import {
   extractString,
 } from './types/opentelemetry/common.js';
-import { TraceTree } from './types/internal.js';
+import { TraceTree } from './types/trace-tree.js';
 
 /**
  * Parse OpenTelemetry trace data into a TraceTree
