@@ -1,5 +1,5 @@
 import { TraceData } from './types/opentelemetry/trace.js';
-import { VisualizationConfig, ProcessedSpan } from './types/internal.js';
+import { TraceTree, VisualizationConfig } from './types/internal.js';
 import { TraceParser } from './parser.js';
 import { TraceRenderer } from './renderer.js';
 
@@ -28,7 +28,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   connectedCallback() {
     this.render();
-    
+
     // Load data from URL if specified
     const dataUrl = this.getAttribute('data-url');
     if (dataUrl) {
@@ -112,16 +112,16 @@ export class TraceVisualizerElement extends HTMLElement {
     }
 
     try {
-      const spans = TraceParser.parse(this._traceData);
-      const renderer = new TraceRenderer(spans, this._config);
-      
+      const tree = TraceParser.parse(this._traceData);
+      const renderer = new TraceRenderer(tree, this._config);
+
       this.shadow.innerHTML = `
         ${TraceRenderer.getStyles()}
         ${this.getZoomPanStyles()}
         ${renderer.render()}
       `;
 
-      this.attachEventListeners(spans);
+      this.attachEventListeners(tree);
       this.attachZoomPanListeners();
     } catch (error) {
       this.renderError(error instanceof Error ? error.message : 'Rendering failed');
@@ -227,19 +227,18 @@ export class TraceVisualizerElement extends HTMLElement {
   /**
    * Attach event listeners for interactivity
    */
-  private attachEventListeners(spans: ProcessedSpan[]): void {
+  private attachEventListeners(tree: TraceTree): void {
     const spanBars = this.shadow.querySelectorAll('.span-bar');
-    const flatSpans = TraceParser.flattenSpans(spans);
-    
+    const flatSpans = TraceParser.flattenSpans(tree);
+
     spanBars.forEach(bar => {
       bar.addEventListener('click', (event) => {
         const spanId = (event.currentTarget as HTMLElement).getAttribute('data-span-id');
-        const span = flatSpans.find(s => s.spanId === spanId);
-        
-        if (span) {
-          // Dispatch custom event
+        const entry = flatSpans.find(e => e.span.spanId === spanId);
+
+        if (entry) {
           this.dispatchEvent(new CustomEvent('span-selected', {
-            detail: { span },
+            detail: { span: entry.span },
             bubbles: true,
             composed: true
           }));
@@ -258,10 +257,10 @@ export class TraceVisualizerElement extends HTMLElement {
     // Mouse wheel for zoom
     traceChart.addEventListener('wheel', (e: WheelEvent) => {
       e.preventDefault();
-      
+
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       const newZoom = Math.max(0.5, Math.min(10, this.zoomLevel * delta));
-      
+
       if (newZoom !== this.zoomLevel) {
         this.zoomLevel = newZoom;
         this.updateZoomPan();
@@ -270,7 +269,6 @@ export class TraceVisualizerElement extends HTMLElement {
 
     // Mouse drag for pan
     traceChart.addEventListener('mousedown', (e: MouseEvent) => {
-      // Only pan with left mouse button and not on span bars
       if (e.button === 0 && !(e.target as HTMLElement).classList.contains('span-bar')) {
         this.isPanning = true;
         this.panStartX = e.clientX;
@@ -318,16 +316,15 @@ export class TraceVisualizerElement extends HTMLElement {
    */
   private updateZoomPan(): void {
     const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
-    
+
     if (timelineContainer) {
       timelineContainer.style.transform = `translateX(${this.panOffset}px) scaleX(${this.zoomLevel})`;
       timelineContainer.style.transformOrigin = 'left center';
     }
 
-    // Counter-scale text elements to keep them readable
     const durationLabels = this.shadow.querySelectorAll('.span-duration');
     const timelineLabels = this.shadow.querySelectorAll('.timeline-label');
-    
+
     durationLabels.forEach(label => {
       (label as HTMLElement).style.transform = `scaleX(${1 / this.zoomLevel})`;
       (label as HTMLElement).style.transformOrigin = 'left center';
@@ -338,7 +335,6 @@ export class TraceVisualizerElement extends HTMLElement {
       (label as HTMLElement).style.transformOrigin = 'left center';
     });
 
-    // Update zoom level display
     const zoomDisplay = this.shadow.querySelector('.zoom-display') as HTMLElement;
     if (zoomDisplay) {
       zoomDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
@@ -357,13 +353,12 @@ export class TraceVisualizerElement extends HTMLElement {
     controls.innerHTML = `
       <button class="zoom-btn zoom-in" title="Zoom In">+</button>
       <span class="zoom-display">100%</span>
-      <button class="zoom-btn zoom-out" title="Zoom Out">−</button>
+      <button class="zoom-btn zoom-out" title="Zoom Out">&minus;</button>
       <button class="zoom-btn zoom-reset" title="Reset (or double-click)">Reset</button>
     `;
 
     traceViewer.insertBefore(controls, traceViewer.firstChild);
 
-    // Attach button handlers
     controls.querySelector('.zoom-in')?.addEventListener('click', () => {
       this.zoomLevel = Math.min(10, this.zoomLevel * 1.2);
       this.updateZoomPan();
@@ -392,7 +387,7 @@ export class TraceVisualizerElement extends HTMLElement {
           user-select: none;
           overflow: hidden;
         }
-        
+
         .timeline-container {
           will-change: transform;
         }
@@ -403,7 +398,7 @@ export class TraceVisualizerElement extends HTMLElement {
           -moz-osx-font-smoothing: grayscale;
           text-rendering: optimizeLegibility;
         }
-        
+
         .zoom-controls {
           position: sticky;
           top: 0;
@@ -456,9 +451,9 @@ export class TraceVisualizerElement extends HTMLElement {
       throw new Error('No trace data available to export');
     }
 
-    const spans = TraceParser.parse(this._traceData);
-    const renderer = new TraceRenderer(spans, this._config);
-    
+    const tree = TraceParser.parse(this._traceData);
+    const renderer = new TraceRenderer(tree, this._config);
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -1,5 +1,5 @@
-import { ProcessedSpan, VisualizationConfig } from './types/internal.js';
-import { SpanKind } from './types/opentelemetry/trace.js';
+import { TraceTree, VisualizationConfig } from './types/internal.js';
+import { Span, SpanKind } from './types/opentelemetry/trace.js';
 import { TraceParser } from './parser.js';
 
 /**
@@ -7,11 +7,11 @@ import { TraceParser } from './parser.js';
  */
 export class TraceRenderer {
   private config: Required<VisualizationConfig>;
-  private flatSpans: ProcessedSpan[];
+  private flatSpans: Array<{ span: Span; level: number }>;
   private timeRange: { min: number; max: number };
 
   constructor(
-    private spans: ProcessedSpan[],
+    private tree: TraceTree,
     config: VisualizationConfig = {}
   ) {
     this.config = {
@@ -25,8 +25,8 @@ export class TraceRenderer {
       colorScheme: config.colorScheme || this.getDefaultColorScheme()
     };
 
-    this.flatSpans = TraceParser.flattenSpans(spans);
-    this.timeRange = TraceParser.getTimeRange(spans);
+    this.flatSpans = TraceParser.flattenSpans(tree);
+    this.timeRange = TraceParser.getTimeRange(tree);
   }
 
   /**
@@ -50,10 +50,12 @@ export class TraceRenderer {
     const chartHeight = this.flatSpans.length * (this.config.spanHeight + this.config.spanPadding);
     const totalHeight = Math.max(chartHeight + 100, this.config.height);
 
+    const traceId = this.tree.roots[0]?.traceId || 'N/A';
+
     return `
       <div class="trace-viewer" style="width: ${this.config.width}px; background: ${this.config.backgroundColor};">
         <div class="trace-header">
-          <h3>Trace: ${this.spans[0]?.traceId || 'N/A'}</h3>
+          <h3>Trace: ${traceId}</h3>
           <div class="trace-stats">
             <span>Total Spans: ${this.flatSpans.length}</span>
             <span>Duration: ${this.formatDuration(this.timeRange.max - this.timeRange.min)}</span>
@@ -76,15 +78,16 @@ export class TraceRenderer {
    * Render span labels (fixed, not zoomed)
    */
   private renderSpanLabels(): string {
-    return this.flatSpans.map((span, index) => {
+    return this.flatSpans.map(({ span, level }, index) => {
       const yPosition = 50 + index * (this.config.spanHeight + this.config.spanPadding);
-      const indent = span.level * 20;
-      const statusIcon = this.getStatusIcon(span.status.code);
+      const indent = level * 20;
+      const statusIcon = this.getStatusIcon(span.status?.code ?? 0);
+      const serviceName = this.tree.serviceNameOf.get(span.spanId) || 'unknown-service';
 
       return `
         <div class="span-label-fixed" style="position: absolute; top: ${yPosition}px; left: ${indent}px; width: ${230 - indent}px; height: ${this.config.spanHeight}px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: auto; font-size: 12px; line-height: 1.2; padding: 2px 5px; color: #333;" title="${span.name}">
           <span class="status-icon" style="display: inline-block; width: 12px; font-size: 10px;">${statusIcon}</span>
-          <strong>${span.serviceName}</strong>
+          <strong>${serviceName}</strong>
           <br/>
           <small>${span.name}</small>
         </div>
@@ -102,8 +105,7 @@ export class TraceRenderer {
 
     for (let i = 0; i <= ticks; i++) {
       const position = (i / ticks) * 100;
-      const time = this.timeRange.min + (duration * i / ticks);
-      const relativeTime = time - this.timeRange.min;
+      const relativeTime = (duration * i / ticks);
 
       tickElements.push(`
         <div class="timeline-tick" style="left: ${position}%;">
@@ -123,30 +125,33 @@ export class TraceRenderer {
    * Render all spans
    */
   private renderSpans(): string {
-    return this.flatSpans.map((span, index) => this.renderSpan(span, index)).join('');
+    return this.flatSpans.map(({ span }, index) => this.renderSpan(span, index)).join('');
   }
 
   /**
    * Render a single span
    */
-  private renderSpan(span: ProcessedSpan, index: number): string {
+  private renderSpan(span: Span, index: number): string {
     const yPosition = 50 + index * (this.config.spanHeight + this.config.spanPadding);
     const color = this.config.colorScheme[span.kind] || '#999';
 
-    const duration = this.timeRange.max - this.timeRange.min;
-    const startPercent = ((span.startTime - this.timeRange.min) / duration) * 100;
-    const widthPercent = (span.duration / duration) * 100;
+    const totalDuration = this.timeRange.max - this.timeRange.min;
+    const startMs = TraceParser.nanoToMilli(span.startTimeUnixNano);
+    const endMs = TraceParser.nanoToMilli(span.endTimeUnixNano);
+    const spanDuration = endMs - startMs;
+    const startPercent = ((startMs - this.timeRange.min) / totalDuration) * 100;
+    const widthPercent = (spanDuration / totalDuration) * 100;
 
     const kindLabel = SpanKind[span.kind];
 
     return `
       <div class="span-row" style="position: absolute; top: ${yPosition}px; left: 0; right: 0; height: ${this.config.spanHeight}px;">
-        <div class="span-bar" 
+        <div class="span-bar"
              style="position: absolute; left: ${startPercent}%; width: ${Math.max(widthPercent, 0.5)}%; height: 100%; background: ${color}; border-radius: 3px; cursor: pointer;"
              data-span-id="${span.spanId}"
-             title="${span.name}\nDuration: ${this.formatDuration(span.duration)}\nKind: ${kindLabel}">
+             title="${span.name}\nDuration: ${this.formatDuration(spanDuration)}\nKind: ${kindLabel}">
           <div class="span-duration" style="position: absolute; left: 100%; margin-left: 5px; white-space: nowrap; font-size: 11px; color: #666;">
-            ${this.formatDuration(span.duration)}
+            ${this.formatDuration(spanDuration)}
           </div>
           ${this.config.showEvents ? this.renderEvents(span) : ''}
         </div>
@@ -157,15 +162,19 @@ export class TraceRenderer {
   /**
    * Render events within a span
    */
-  private renderEvents(span: ProcessedSpan): string {
+  private renderEvents(span: Span): string {
     if (!span.events || span.events.length === 0) return '';
 
+    const startMs = TraceParser.nanoToMilli(span.startTimeUnixNano);
+    const spanDuration = TraceParser.nanoToMilli(span.endTimeUnixNano) - startMs;
+
     return span.events.map(event => {
-      const eventOffset = ((event.time - span.startTime) / span.duration) * 100;
+      const eventMs = TraceParser.nanoToMilli(event.timeUnixNano);
+      const eventOffset = ((eventMs - startMs) / spanDuration) * 100;
       return `
-        <div class="span-event" 
+        <div class="span-event"
              style="position: absolute; left: ${eventOffset}%; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.8);"
-             title="${event.name}\nTime: ${this.formatDuration(event.time - span.startTime)}">
+             title="${event.name}\nTime: ${this.formatDuration(eventMs - startMs)}">
         </div>
       `;
     }).join('');
@@ -176,9 +185,9 @@ export class TraceRenderer {
    */
   private getStatusIcon(statusCode: number): string {
     switch (statusCode) {
-      case 1: return '✓'; // OK
-      case 2: return '✗'; // Error
-      default: return '•'; // Unset
+      case 1: return '&#10003;'; // OK
+      case 2: return '&#10007;'; // Error
+      default: return '&#8226;'; // Unset
     }
   }
 
@@ -186,7 +195,7 @@ export class TraceRenderer {
    * Format duration in milliseconds
    */
   private formatDuration(ms: number): string {
-    if (ms < 1) return `${(ms * 1000).toFixed(0)}µs`;
+    if (ms < 1) return `${(ms * 1000).toFixed(0)}&micro;s`;
     if (ms < 1000) return `${ms.toFixed(2)}ms`;
     if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
     return `${(ms / 60000).toFixed(2)}min`;
