@@ -156,11 +156,11 @@ export class TraceVisualizerElement extends HTMLElement {
           </div>
         </div>
         <div class="trace-body" style="height: ${totalHeight}px;">
-          <div class="trace-chart" style="position: relative; height: 100%; overflow: hidden;">
-            <div class="span-labels-container" style="position: absolute; left: 20px; width: 230px; top: 0; bottom: 0; pointer-events: none; z-index: 10;">
+          <div class="trace-chart">
+            <div class="span-labels-container">
               ${this.renderSpanLabels(tree, flatSpans, config)}
             </div>
-            <div class="timeline-container" style="position: absolute; left: 250px; right: 20px; top: 0; bottom: 0;">
+            <div class="timeline-container">
               ${this.renderTimeline(timeRange)}
               ${this.renderSpans(flatSpans, timeRange, config)}
             </div>
@@ -205,10 +205,9 @@ export class TraceVisualizerElement extends HTMLElement {
       const statusIcon = this.getStatusIcon(span.status?.code ?? 0);
       const serviceName = tree.serviceNameOf.get(span.spanId) || 'unknown-service';
 
-      // TODO: optimmize html size by removing inline style where it possible
       return `
-        <div class="span-label-fixed" style="position: absolute; top: ${yPosition}px; left: ${indent}px; width: ${230 - indent}px; height: ${config.spanHeight}px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: auto; font-size: 12px; line-height: 1.2; padding: 2px 5px; color: #333;" title="${span.name}">
-          <span class="status-icon" style="display: inline-block; width: 12px; font-size: 10px;">${statusIcon}</span>
+        <div class="span-label-fixed" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${span.name}">
+          <span class="status-icon">${statusIcon}</span>
           <strong>${serviceName}</strong>
           <br/>
           <small>${span.name}</small>
@@ -234,7 +233,7 @@ export class TraceVisualizerElement extends HTMLElement {
     }
 
     return `
-      <div class="timeline" style="position: absolute; top: 0; left: 0; right: 0; height: 40px; border-bottom: 2px solid #ddd;">
+      <div class="timeline">
         ${tickElements.join('')}
       </div>
     `;
@@ -269,12 +268,12 @@ export class TraceVisualizerElement extends HTMLElement {
     const kindLabel = SpanKind[span.kind];
 
     return `
-      <div class="span-row" style="position: absolute; top: ${yPosition}px; left: 0; right: 0; height: ${config.spanHeight}px;">
+      <div class="span-row" style="top:${yPosition}px;height:${config.spanHeight}px">
         <div class="span-bar"
-             style="position: absolute; left: ${startPercent}%; width: ${Math.max(widthPercent, 0.5)}%; height: 100%; background: ${color}; border-radius: 3px; cursor: pointer;"
+             style="left:${startPercent}%;width:${Math.max(widthPercent, 0.5)}%;background:${color}"
              data-span-id="${span.spanId}"
              title="${span.name}\nDuration: ${this.formatDuration(spanDuration)}\nKind: ${kindLabel}">
-          <div class="span-duration" style="position: absolute; left: 100%; margin-left: 5px; white-space: nowrap; font-size: 11px; color: #666;">
+          <div class="span-duration">
             ${this.formatDuration(spanDuration)}
           </div>
           ${config.showEvents ? this.renderEvents(span) : ''}
@@ -294,7 +293,7 @@ export class TraceVisualizerElement extends HTMLElement {
       const eventOffset = ((eventMs - startMs) / spanDuration) * 100;
       return `
         <div class="span-event"
-             style="position: absolute; left: ${eventOffset}%; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.8);"
+             style="left:${eventOffset}%"
              title="${event.name}\nTime: ${this.formatDuration(eventMs - startMs)}">
         </div>
       `;

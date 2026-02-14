@@ -108,10 +108,35 @@ code {
   cursor: default;
   user-select: none;
   overflow: hidden;
+  height: 100%;
+}
+
+.span-labels-container {
+  position: absolute;
+  left: 20px;
+  width: 230px;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.timeline-container {
+  position: absolute;
+  left: 250px;
+  right: 20px;
+  top: 0;
+  bottom: 0;
+  will-change: transform;
 }
 
 .timeline {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  border-bottom: 2px solid #ddd;
 }
 
 .timeline-tick {
@@ -119,10 +144,6 @@ code {
   top: 0;
   height: 100%;
   border-left: 1px solid #ddd;
-}
-
-.timeline-container {
-  will-change: transform;
 }
 
 .timeline-label {
@@ -139,6 +160,9 @@ code {
 
 /* Spans */
 .span-row {
+  position: absolute;
+  left: 0;
+  right: 0;
   transition: background 0.2s;
 }
 
@@ -153,6 +177,18 @@ code {
   color: #333;
 }
 
+.span-label-fixed {
+  position: absolute;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: auto;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 2px 5px;
+  color: #333;
+}
+
 .status-icon {
   display: inline-block;
   width: 12px;
@@ -160,6 +196,10 @@ code {
 }
 
 .span-bar {
+  position: absolute;
+  height: 100%;
+  border-radius: 3px;
+  cursor: pointer;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -171,6 +211,11 @@ code {
 }
 
 .span-duration {
+  position: absolute;
+  left: 100%;
+  margin-left: 5px;
+  white-space: nowrap;
+  font-size: 11px;
   color: #666;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -178,6 +223,11 @@ code {
 }
 
 .span-event {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.8);
   cursor: help;
 }
 
