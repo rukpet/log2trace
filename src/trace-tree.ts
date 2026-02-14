@@ -48,14 +48,14 @@ export class TraceTree {
     }
 
     // Sort children by start time
+    const compareByStartTime = (a: Span, b: Span) => {
+      const diff = BigInt(a.startTimeUnixNano) - BigInt(b.startTimeUnixNano);
+      return diff < 0n ? -1 : diff > 0n ? 1 : 0;
+    };
     for (const children of childrenOf.values()) {
-      children.sort((a, b) =>
-        parseInt(a.startTimeUnixNano) - parseInt(b.startTimeUnixNano)
-      );
+      children.sort(compareByStartTime);
     }
-    roots.sort((a, b) =>
-      parseInt(a.startTimeUnixNano) - parseInt(b.startTimeUnixNano)
-    );
+    roots.sort(compareByStartTime);
 
     return new TraceTree(roots, childrenOf, serviceNameOf);
   }

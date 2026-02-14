@@ -100,8 +100,8 @@ export class TraceVisualizerElement extends HTMLElement {
 
     this._overrides = {
       ...this._overrides,
-      width: width ? parseInt(width) : undefined,
-      height: height ? parseInt(height) : undefined,
+      width: width ? parseInt(width, 10) : undefined,
+      height: height ? parseInt(height, 10) : undefined,
       showEvents: showEvents !== 'false',
     };
   }
