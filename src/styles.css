@@ -261,10 +261,10 @@ code {
   color: #666;
   font-family: 'Courier New', monospace;
   font-size: 13px;
-  white-space: pre-wrap;
+  white-space: pre;
   background: #f5f5f5;
   padding: 10px;
   border-radius: 4px;
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
 }
