@@ -28,7 +28,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['data-url', 'width', 'height', 'show-events', 'full-width', 'detail-panel-width'];
+    return ['data-url', 'width', 'height', 'show-events', 'show-legend', 'full-width', 'detail-panel-width'];
   }
 
   connectedCallback() {
@@ -97,6 +97,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const width = this.getAttribute('width');
     const height = this.getAttribute('height');
     const showEvents = this.getAttribute('show-events');
+    const showLegend = this.getAttribute('show-legend');
     const fullWidth = this.getAttribute('full-width');
     const detailPanelWidth = this.getAttribute('detail-panel-width');
 
@@ -105,6 +106,7 @@ export class TraceVisualizerElement extends HTMLElement {
       width: width ? parseInt(width, 10) : undefined,
       height: height ? parseInt(height, 10) : undefined,
       showEvents: showEvents !== 'false',
+      showLegend: showLegend !== null && showLegend !== 'false',
       fullWidth: fullWidth !== null && fullWidth !== 'false',
       detailPanelWidth: detailPanelWidth || undefined,
     };
@@ -173,6 +175,23 @@ export class TraceVisualizerElement extends HTMLElement {
         </div>
       </div>
     `;
+  }
+
+  private renderLegend(config: VisualizationConfig): string {
+    const items = Object.entries(config.colorScheme)
+      .filter(([kindValue]) => Number(kindValue) !== SpanKind.Unspecified)
+      .map(([kindValue, color]) => {
+        const label = SpanKind[Number(kindValue)] || 'Unknown';
+        return `
+          <div class="legend-item">
+            <div class="legend-color" style="background: ${color};"></div>
+            <span>${label}</span>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `<div class="legend">${items}</div>`;
   }
 
   private renderSpanLabels(
@@ -435,6 +454,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const traceViewer = this.shadow.querySelector('.trace-viewer');
     if (!traceViewer) return;
 
+    const config = this.resolveConfig();
     const controls = document.createElement('div');
     controls.className = 'zoom-controls';
     controls.innerHTML = `
@@ -442,9 +462,10 @@ export class TraceVisualizerElement extends HTMLElement {
       <span class="zoom-display">100%</span>
       <button class="zoom-btn zoom-out" title="Zoom Out">&minus;</button>
       <button class="zoom-btn zoom-reset" title="Reset (or double-click)">Reset</button>
+      ${config.showLegend ? this.renderLegend(config) : ''}
     `;
 
-    traceViewer.insertBefore(controls, traceViewer.firstChild);
+    traceViewer.appendChild(controls);
 
     controls.querySelector('.zoom-in')?.addEventListener('click', () => {
       this.zoomLevel = Math.min(10, this.zoomLevel * 1.2);
