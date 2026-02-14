@@ -2,11 +2,11 @@ import {
   TraceData,
   ResourceSpans,
   Span,
-} from './types/opentelemetry/trace.js';
+} from './opentelemetry/trace.js';
 import {
   extractString,
-} from './types/opentelemetry/common.js';
-import { TraceTree } from './types/trace-tree.js';
+} from './opentelemetry/common.js';
+import { TraceTree } from './trace-tree.js';
 
 /**
  * Parse OpenTelemetry trace data into a TraceTree
