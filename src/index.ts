@@ -19,7 +19,5 @@ export { TraceParser } from './parser.js';
 export * from './types/opentelemetry/common.js';
 export * from './types/opentelemetry/resource.js';
 export * from './types/opentelemetry/trace.js';
-export * from './types/opentelemetry/logs.js';
-
 // Auto-register the component when imported
 import './component.js';

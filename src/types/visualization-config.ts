@@ -16,7 +16,6 @@ export class VisualizationConfig {
   readonly spanHeight: number;
   readonly spanPadding: number;
   readonly showEvents: boolean;
-  readonly showAttributes: boolean;
   readonly colorScheme: Record<string, string>;
 
   constructor(overrides: Partial<VisualizationConfig> = {}) {
@@ -26,7 +25,6 @@ export class VisualizationConfig {
     this.spanHeight = overrides.spanHeight || 30;
     this.spanPadding = overrides.spanPadding || 5;
     this.showEvents = overrides.showEvents !== false;
-    this.showAttributes = overrides.showAttributes !== false;
     this.colorScheme = overrides.colorScheme || DEFAULT_COLOR_SCHEME;
   }
 }
