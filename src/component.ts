@@ -1,19 +1,11 @@
 import { TraceData, Span, SpanKind } from './types/opentelemetry/trace.js';
 import { TraceTree, VisualizationConfig } from './types/internal.js';
 import { TraceParser } from './parser.js';
+const { nanoToMilli } = TraceTree;
 import css from './styles.css';
 
 const styleSheet = new CSSStyleSheet();
 styleSheet.replaceSync(css);
-
-const DEFAULT_COLOR_SCHEME: Record<string, string> = {
-  [SpanKind.Internal]: '#4A90E2',
-  [SpanKind.Server]: '#7ED321',
-  [SpanKind.Client]: '#F5A623',
-  [SpanKind.Producer]: '#BD10E0',
-  [SpanKind.Consumer]: '#50E3C2',
-  [SpanKind.Unspecified]: '#9013FE'
-};
 
 /**
  * Custom Web Component for trace visualization
@@ -21,7 +13,7 @@ const DEFAULT_COLOR_SCHEME: Record<string, string> = {
  */
 export class TraceVisualizerElement extends HTMLElement {
   private _traceData: TraceData | null = null;
-  private _config: VisualizationConfig = {};
+  private _overrides: Partial<VisualizationConfig> = {};
   private shadow: ShadowRoot;
   private zoomLevel: number = 1;
   private panOffset: number = 0;
@@ -71,13 +63,13 @@ export class TraceVisualizerElement extends HTMLElement {
   /**
    * Set visualization configuration
    */
-  set config(config: VisualizationConfig) {
-    this._config = { ...this._config, ...config };
+  set config(config: Partial<VisualizationConfig>) {
+    this._overrides = { ...this._overrides, ...config };
     this.render();
   }
 
   get config(): VisualizationConfig {
-    return this._config;
+    return new VisualizationConfig(this._overrides);
   }
 
   /**
@@ -107,26 +99,17 @@ export class TraceVisualizerElement extends HTMLElement {
     const showEvents = this.getAttribute('show-events');
     const showAttributes = this.getAttribute('show-attributes');
 
-    this._config = {
-      ...this._config,
+    this._overrides = {
+      ...this._overrides,
       width: width ? parseInt(width) : undefined,
       height: height ? parseInt(height) : undefined,
       showEvents: showEvents !== 'false',
-      showAttributes: showAttributes !== 'false'
+      showAttributes: showAttributes !== 'false',
     };
   }
 
-  private resolveConfig(): Required<VisualizationConfig> {
-    return {
-      width: this._config.width || 1200,
-      height: this._config.height || 600,
-      backgroundColor: this._config.backgroundColor || '#ffffff',
-      spanHeight: this._config.spanHeight || 30,
-      spanPadding: this._config.spanPadding || 5,
-      showEvents: this._config.showEvents !== false,
-      showAttributes: this._config.showAttributes !== false,
-      colorScheme: this._config.colorScheme || DEFAULT_COLOR_SCHEME
-    };
+  private resolveConfig(): VisualizationConfig {
+    return new VisualizationConfig(this._overrides);
   }
 
   // ---------------------------------------------------------------------------
@@ -151,8 +134,8 @@ export class TraceVisualizerElement extends HTMLElement {
 
   private renderTrace(tree: TraceTree): string {
     const config = this.resolveConfig();
-    const flatSpans = TraceParser.flattenSpans(tree);
-    const timeRange = TraceParser.getTimeRange(tree);
+    const flatSpans = tree.flatten();
+    const timeRange = tree.getTimeRange();
     const chartHeight = flatSpans.length * (config.spanHeight + config.spanPadding);
     const totalHeight = Math.max(chartHeight + 100, config.height);
     const traceId = tree.roots[0]?.traceId || 'N/A';
@@ -182,7 +165,7 @@ export class TraceVisualizerElement extends HTMLElement {
   private renderSpanLabels(
     tree: TraceTree,
     flatSpans: Array<{ span: Span; level: number }>,
-    config: Required<VisualizationConfig>
+    config: VisualizationConfig
   ): string {
     return flatSpans.map(({ span, level }, index) => {
       const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
@@ -227,7 +210,7 @@ export class TraceVisualizerElement extends HTMLElement {
   private renderSpans(
     flatSpans: Array<{ span: Span; level: number }>,
     timeRange: { min: number; max: number },
-    config: Required<VisualizationConfig>
+    config: VisualizationConfig
   ): string {
     return flatSpans.map(({ span }, index) =>
       this.renderSpan(span, index, timeRange, config)
@@ -238,14 +221,14 @@ export class TraceVisualizerElement extends HTMLElement {
     span: Span,
     index: number,
     timeRange: { min: number; max: number },
-    config: Required<VisualizationConfig>
+    config: VisualizationConfig
   ): string {
     const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
     const color = config.colorScheme[span.kind] || '#999';
 
     const totalDuration = timeRange.max - timeRange.min;
-    const startMs = TraceParser.nanoToMilli(span.startTimeUnixNano);
-    const endMs = TraceParser.nanoToMilli(span.endTimeUnixNano);
+    const startMs = nanoToMilli(span.startTimeUnixNano);
+    const endMs = nanoToMilli(span.endTimeUnixNano);
     const spanDuration = endMs - startMs;
     const startPercent = ((startMs - timeRange.min) / totalDuration) * 100;
     const widthPercent = (spanDuration / totalDuration) * 100;
@@ -270,11 +253,11 @@ export class TraceVisualizerElement extends HTMLElement {
   private renderEvents(span: Span): string {
     if (!span.events || span.events.length === 0) return '';
 
-    const startMs = TraceParser.nanoToMilli(span.startTimeUnixNano);
-    const spanDuration = TraceParser.nanoToMilli(span.endTimeUnixNano) - startMs;
+    const startMs = nanoToMilli(span.startTimeUnixNano);
+    const spanDuration = nanoToMilli(span.endTimeUnixNano) - startMs;
 
     return span.events.map(event => {
-      const eventMs = TraceParser.nanoToMilli(event.timeUnixNano);
+      const eventMs = nanoToMilli(event.timeUnixNano);
       const eventOffset = ((eventMs - startMs) / spanDuration) * 100;
       return `
         <div class="span-event"
@@ -322,7 +305,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   private attachEventListeners(tree: TraceTree): void {
     const spanBars = this.shadow.querySelectorAll('.span-bar');
-    const flatSpans = TraceParser.flattenSpans(tree);
+    const flatSpans = tree.flatten();
 
     spanBars.forEach(bar => {
       bar.addEventListener('click', (event) => {
