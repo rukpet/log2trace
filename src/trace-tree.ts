@@ -6,6 +6,7 @@ import {
 import {
   extractString,
 } from './opentelemetry/common.js';
+import { nanoToMilli } from './time.js';
 
 /**
  * Tree structure for organizing raw OTel Spans for visualization.
@@ -67,10 +68,6 @@ export class TraceTree {
     return extractString(serviceNameAttr?.value) ?? 'unknown-service';
   }
 
-  static nanoToMilli(nano: string): number {
-    return Number(BigInt(nano) / 1_000_000n);
-  }
-
   flatten(): Array<{ span: Span; level: number }> {
     const result: Array<{ span: Span; level: number }> = [];
 
@@ -98,8 +95,8 @@ export class TraceTree {
     let max = -Infinity;
 
     for (const { span } of flat) {
-      const start = TraceTree.nanoToMilli(span.startTimeUnixNano);
-      const end = TraceTree.nanoToMilli(span.endTimeUnixNano);
+      const start = nanoToMilli(span.startTimeUnixNano);
+      const end = nanoToMilli(span.endTimeUnixNano);
       if (start < min) min = start;
       if (end > max) max = end;
     }
