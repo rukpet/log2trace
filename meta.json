@@ -1,0 +1,165 @@
+{
+  "inputs": {
+    "src/opentelemetry/trace.ts": {
+      "bytes": 7189,
+      "imports": [
+        {
+          "path": "./common.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./resource.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/opentelemetry/common.ts": {
+      "bytes": 2280,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/trace-tree.ts": {
+      "bytes": 3285,
+      "imports": [
+        {
+          "path": "./opentelemetry/trace.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/opentelemetry/common.ts",
+          "kind": "import-statement",
+          "original": "./opentelemetry/common.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/visualization-config.ts": {
+      "bytes": 1247,
+      "imports": [
+        {
+          "path": "src/opentelemetry/trace.ts",
+          "kind": "import-statement",
+          "original": "./opentelemetry/trace.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/styles.css": {
+      "bytes": 4612,
+      "imports": []
+    },
+    "src/component.ts": {
+      "bytes": 17440,
+      "imports": [
+        {
+          "path": "src/opentelemetry/trace.ts",
+          "kind": "import-statement",
+          "original": "./opentelemetry/trace.js"
+        },
+        {
+          "path": "src/trace-tree.ts",
+          "kind": "import-statement",
+          "original": "./trace-tree.js"
+        },
+        {
+          "path": "src/visualization-config.ts",
+          "kind": "import-statement",
+          "original": "./visualization-config.js"
+        },
+        {
+          "path": "src/styles.css",
+          "kind": "import-statement",
+          "original": "./styles.css"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/opentelemetry/resource.ts": {
+      "bytes": 1157,
+      "imports": [
+        {
+          "path": "./common.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 649,
+      "imports": [
+        {
+          "path": "src/component.ts",
+          "kind": "import-statement",
+          "original": "./component.js"
+        },
+        {
+          "path": "src/opentelemetry/common.ts",
+          "kind": "import-statement",
+          "original": "./opentelemetry/common.js"
+        },
+        {
+          "path": "src/opentelemetry/resource.ts",
+          "kind": "import-statement",
+          "original": "./opentelemetry/resource.js"
+        },
+        {
+          "path": "src/opentelemetry/trace.ts",
+          "kind": "import-statement",
+          "original": "./opentelemetry/trace.js"
+        },
+        {
+          "path": "src/component.ts",
+          "kind": "import-statement",
+          "original": "./component.js"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js.map": {
+      "imports": [],
+      "exports": [],
+      "inputs": {},
+      "bytes": 51296
+    },
+    "dist/index.js": {
+      "imports": [],
+      "exports": [
+        "SpanKind",
+        "TraceVisualizerElement",
+        "extractString"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/opentelemetry/trace.ts": {
+          "bytesInOutput": 182
+        },
+        "src/opentelemetry/common.ts": {
+          "bytesInOutput": 36
+        },
+        "src/trace-tree.ts": {
+          "bytesInOutput": 1168
+        },
+        "src/visualization-config.ts": {
+          "bytesInOutput": 526
+        },
+        "src/styles.css": {
+          "bytesInOutput": 4895
+        },
+        "src/component.ts": {
+          "bytesInOutput": 9861
+        },
+        "src/index.ts": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 16772
+    }
+  }
+}
