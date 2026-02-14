@@ -35,6 +35,27 @@
   color: #666;
 }
 
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
 /* Message states */
 .message {
   padding: 40px;
@@ -168,14 +189,14 @@ code {
 /* Zoom controls */
 .zoom-controls {
   position: sticky;
-  top: 0;
+  bottom: 0;
   z-index: 100;
   display: flex;
   gap: 10px;
   align-items: center;
   padding: 10px;
   background: rgba(255, 255, 255, 0.95);
-  border-bottom: 1px solid #ddd;
+  border-top: 1px solid #ddd;
   backdrop-filter: blur(5px);
 }
 
