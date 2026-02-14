@@ -1,6 +1,6 @@
-import { TraceData, Span, SpanKind } from './types/opentelemetry/trace.js';
-import { TraceTree } from './types/trace-tree.js';
-import { VisualizationConfig } from './types/visualization-config.js';
+import { TraceData, Span, SpanKind } from './opentelemetry/trace.js';
+import { TraceTree } from './trace-tree.js';
+import { VisualizationConfig } from './visualization-config.js';
 import { TraceParser } from './parser.js';
 const { nanoToMilli } = TraceTree;
 import css from './styles.css';

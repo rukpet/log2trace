@@ -16,8 +16,8 @@ export { TraceVisualizerElement } from './component.js';
 export { TraceParser } from './parser.js';
 
 // Export public types (OpenTelemetry standard types)
-export * from './types/opentelemetry/common.js';
-export * from './types/opentelemetry/resource.js';
-export * from './types/opentelemetry/trace.js';
+export * from './opentelemetry/common.js';
+export * from './opentelemetry/resource.js';
+export * from './opentelemetry/trace.js';
 // Auto-register the component when imported
 import './component.js';
