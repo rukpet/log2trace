@@ -1,7 +1,6 @@
 import { TraceData, Span, SpanKind } from './opentelemetry/trace.js';
 import { TraceTree } from './trace-tree.js';
 import { VisualizationConfig } from './visualization-config.js';
-import { TraceParser } from './parser.js';
 const { nanoToMilli } = TraceTree;
 import css from './styles.css';
 
@@ -122,7 +121,7 @@ export class TraceVisualizerElement extends HTMLElement {
     }
 
     try {
-      const tree = TraceParser.parse(this._traceData);
+      const tree = TraceTree.build(this._traceData);
       this.shadow.innerHTML = this.renderTrace(tree);
       this.attachEventListeners(tree);
       this.attachZoomPanListeners();
