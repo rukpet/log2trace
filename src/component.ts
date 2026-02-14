@@ -12,12 +12,12 @@ styleSheet.replaceSync(css);
  * Usage: <trace-visualizer></trace-visualizer>
  */
 export class TraceVisualizerElement extends HTMLElement {
-  private _traceData: TraceData | null = null;
+  private _tree = new TraceTree([], new Map(), new Map());
   private _overrides: Partial<VisualizationConfig> = {};
   private shadow: ShadowRoot;
-  private zoomLevel: number = 1;
+  private zoomLevel: number = 1; //  TODO: limit zooming because right now you can zomm too far
   private panOffset: number = 0;
-  private isPanning: boolean = false;
+  private isPanning: boolean = false; // TODO: limit panning because right now you can pan infinitely
   private panStartX: number = 0;
   private panStartOffset: number = 0;
 
@@ -52,12 +52,12 @@ export class TraceVisualizerElement extends HTMLElement {
    * Set trace data programmatically
    */
   set traceData(data: TraceData) {
-    this._traceData = data;
+    this._tree = TraceTree.build(data);
     this.render();
   }
 
-  get traceData(): TraceData | null {
-    return this._traceData;
+  get traceData(): TraceTree {
+    return this._tree;
   }
 
   /**
@@ -122,15 +122,14 @@ export class TraceVisualizerElement extends HTMLElement {
     const config = this.resolveConfig();
     this.classList.toggle('full-width', config.fullWidth);
 
-    if (!this._traceData) {
+    if (this._tree.roots.length === 0) {
       this.renderEmpty();
       return;
     }
 
     try {
-      const tree = TraceTree.build(this._traceData);
-      this.shadow.innerHTML = this.renderTrace(tree);
-      this.attachEventListeners(tree);
+      this.shadow.innerHTML = this.renderTrace(this._tree);
+      this.attachEventListeners(this._tree);
       this.attachZoomPanListeners();
     } catch (error) {
       this.renderError(error instanceof Error ? error.message : 'Rendering failed');
@@ -187,6 +186,7 @@ export class TraceVisualizerElement extends HTMLElement {
       const statusIcon = this.getStatusIcon(span.status?.code ?? 0);
       const serviceName = tree.serviceNameOf.get(span.spanId) || 'unknown-service';
 
+      // TODO: optimmize html size by removing inline style where it possible
       return `
         <div class="span-label-fixed" style="position: absolute; top: ${yPosition}px; left: ${indent}px; width: ${230 - indent}px; height: ${config.spanHeight}px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: auto; font-size: 12px; line-height: 1.2; padding: 2px 5px; color: #333;" title="${span.name}">
           <span class="status-icon" style="display: inline-block; width: 12px; font-size: 10px;">${statusIcon}</span>
