@@ -148,7 +148,7 @@ export class TraceRenderer {
           <div class="span-duration" style="position: absolute; left: 100%; margin-left: 5px; white-space: nowrap; font-size: 11px; color: #666;">
             ${this.formatDuration(span.duration)}
           </div>
-          ${this.config.showEvents ? this.renderEvents(span, widthPercent) : ''}
+          ${this.config.showEvents ? this.renderEvents(span) : ''}
         </div>
       </div>
     `;
@@ -157,7 +157,7 @@ export class TraceRenderer {
   /**
    * Render events within a span
    */
-  private renderEvents(span: ProcessedSpan, spanWidthPercent: number): string {
+  private renderEvents(span: ProcessedSpan): string {
     if (!span.events || span.events.length === 0) return '';
 
     return span.events.map(event => {
