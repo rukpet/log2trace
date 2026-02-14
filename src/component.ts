@@ -140,7 +140,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const traceId = tree.roots[0]?.traceId || 'N/A';
 
     return `
-      <div class="trace-viewer" style="width: ${config.width}px; background: ${config.backgroundColor};">
+      <div class="trace-viewer" style="background: ${config.backgroundColor};">
         <div class="trace-header">
           <h3>Trace: ${traceId}</h3>
           <div class="trace-stats">
@@ -148,13 +148,22 @@ export class TraceVisualizerElement extends HTMLElement {
             <span>Duration: ${this.formatDuration(timeRange.max - timeRange.min)}</span>
           </div>
         </div>
-        <div class="trace-chart" style="position: relative; height: ${totalHeight}px; overflow: hidden;">
-          <div class="span-labels-container" style="position: absolute; left: 20px; width: 230px; top: 0; bottom: 0; pointer-events: none; z-index: 10;">
-            ${this.renderSpanLabels(tree, flatSpans, config)}
+        <div class="trace-body" style="height: ${totalHeight}px;">
+          <div class="trace-chart" style="position: relative; height: 100%; overflow: hidden;">
+            <div class="span-labels-container" style="position: absolute; left: 20px; width: 230px; top: 0; bottom: 0; pointer-events: none; z-index: 10;">
+              ${this.renderSpanLabels(tree, flatSpans, config)}
+            </div>
+            <div class="timeline-container" style="position: absolute; left: 250px; right: 20px; top: 0; bottom: 0;">
+              ${this.renderTimeline(timeRange)}
+              ${this.renderSpans(flatSpans, timeRange, config)}
+            </div>
           </div>
-          <div class="timeline-container" style="position: absolute; left: 250px; right: 20px; top: 0; bottom: 0;">
-            ${this.renderTimeline(timeRange)}
-            ${this.renderSpans(flatSpans, timeRange, config)}
+          <div class="detail-panel">
+            <div class="detail-panel-header">
+              <h3>Span Details</h3>
+              <button class="detail-panel-close" title="Close">&times;</button>
+            </div>
+            <div class="detail-content"></div>
           </div>
         </div>
       </div>
@@ -305,6 +314,9 @@ export class TraceVisualizerElement extends HTMLElement {
   private attachEventListeners(tree: TraceTree): void {
     const spanBars = this.shadow.querySelectorAll('.span-bar');
     const flatSpans = tree.flatten();
+    const detailPanel = this.shadow.querySelector('.detail-panel') as HTMLElement;
+    const detailContent = this.shadow.querySelector('.detail-content') as HTMLElement;
+    const closeBtn = this.shadow.querySelector('.detail-panel-close') as HTMLElement;
 
     spanBars.forEach(bar => {
       bar.addEventListener('click', (event) => {
@@ -312,6 +324,9 @@ export class TraceVisualizerElement extends HTMLElement {
         const entry = flatSpans.find(e => e.span.spanId === spanId);
 
         if (entry) {
+          detailContent.textContent = JSON.stringify(entry.span, null, 2);
+          detailPanel.classList.add('visible');
+
           this.dispatchEvent(new CustomEvent('span-selected', {
             detail: { span: entry.span },
             bubbles: true,
@@ -319,6 +334,10 @@ export class TraceVisualizerElement extends HTMLElement {
           }));
         }
       });
+    });
+
+    closeBtn?.addEventListener('click', () => {
+      detailPanel.classList.remove('visible');
     });
   }
 
