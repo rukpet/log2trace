@@ -28,7 +28,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['data-url', 'width', 'height', 'show-events'];
+    return ['data-url', 'width', 'height', 'show-events', 'full-width', 'detail-panel-width'];
   }
 
   connectedCallback() {
@@ -97,12 +97,16 @@ export class TraceVisualizerElement extends HTMLElement {
     const width = this.getAttribute('width');
     const height = this.getAttribute('height');
     const showEvents = this.getAttribute('show-events');
+    const fullWidth = this.getAttribute('full-width');
+    const detailPanelWidth = this.getAttribute('detail-panel-width');
 
     this._overrides = {
       ...this._overrides,
       width: width ? parseInt(width, 10) : undefined,
       height: height ? parseInt(height, 10) : undefined,
       showEvents: showEvents !== 'false',
+      fullWidth: fullWidth !== null && fullWidth !== 'false',
+      detailPanelWidth: detailPanelWidth || undefined,
     };
   }
 
@@ -115,6 +119,9 @@ export class TraceVisualizerElement extends HTMLElement {
   // ---------------------------------------------------------------------------
 
   private render(): void {
+    const config = this.resolveConfig();
+    this.classList.toggle('full-width', config.fullWidth);
+
     if (!this._traceData) {
       this.renderEmpty();
       return;
@@ -157,7 +164,7 @@ export class TraceVisualizerElement extends HTMLElement {
               ${this.renderSpans(flatSpans, timeRange, config)}
             </div>
           </div>
-          <div class="detail-panel">
+          <div class="detail-panel" style="width: ${config.detailPanelWidth};">
             <div class="detail-panel-header">
               <h3>Span Details</h3>
               <button class="detail-panel-close" title="Close">&times;</button>
