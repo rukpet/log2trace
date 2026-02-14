@@ -3,32 +3,16 @@
  * These types are used internally and not part of the public API
  */
 
-import { Status, SpanKind } from './opentelemetry/trace.js';
+import { Span } from './opentelemetry/trace.js';
 
 /**
- * Processed span for visualization
+ * Tree structure for organizing raw OTel Spans for visualization.
+ * Spans are kept as-is; relationships and metadata are stored in lookup maps.
  */
-export interface ProcessedSpan {
-  traceId: string;
-  spanId: string;
-  parentSpanId?: string;
-  name: string;
-  serviceName: string;
-  kind: SpanKind;
-  startTime: number; // milliseconds
-  endTime: number; // milliseconds
-  duration: number; // milliseconds
-  attributes: Record<string, any>;
-  events: ProcessedEvent[];
-  status: Status;
-  level: number; // depth in the trace tree
-  children: ProcessedSpan[];
-}
-
-export interface ProcessedEvent {
-  time: number; // milliseconds
-  name: string;
-  attributes: Record<string, any>;
+export interface TraceTree {
+  roots: Span[];
+  childrenOf: Map<string, Span[]>;
+  serviceNameOf: Map<string, string>;
 }
 
 export interface VisualizationConfig {
