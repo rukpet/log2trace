@@ -29,7 +29,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['data-url', 'width', 'height', 'show-events', 'show-attributes'];
+    return ['data-url', 'width', 'height', 'show-events'];
   }
 
   connectedCallback() {
@@ -98,14 +98,12 @@ export class TraceVisualizerElement extends HTMLElement {
     const width = this.getAttribute('width');
     const height = this.getAttribute('height');
     const showEvents = this.getAttribute('show-events');
-    const showAttributes = this.getAttribute('show-attributes');
 
     this._overrides = {
       ...this._overrides,
       width: width ? parseInt(width) : undefined,
       height: height ? parseInt(height) : undefined,
       showEvents: showEvents !== 'false',
-      showAttributes: showAttributes !== 'false',
     };
   }
 
