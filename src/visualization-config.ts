@@ -30,7 +30,7 @@ export class VisualizationConfig {
     this.showEvents = overrides.showEvents !== false;
     this.showLegend = overrides.showLegend === true;
     this.fullWidth = overrides.fullWidth === true;
-    this.detailPanelWidth = overrides.detailPanelWidth || '50%';
+    this.detailPanelWidth = overrides.detailPanelWidth || '40%';
     this.colorScheme = overrides.colorScheme || DEFAULT_COLOR_SCHEME;
   }
 }
