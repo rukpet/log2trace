@@ -126,7 +126,6 @@ code {
   right: 80px;
   top: 0;
   height: 40px;
-  overflow: hidden;
   z-index: 5;
   pointer-events: none;
   border-bottom: 2px solid #ddd;
