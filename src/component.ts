@@ -487,11 +487,11 @@ export class TraceVisualizerElement extends HTMLElement {
     const controls = document.createElement('div');
     controls.className = 'zoom-controls';
     controls.innerHTML = `
+      ${config.showLegend ? this.renderLegend(config) : ''}
       <button class="zoom-btn zoom-in" title="Zoom In">+</button>
       <span class="zoom-display">100%</span>
       <button class="zoom-btn zoom-out" title="Zoom Out">&minus;</button>
       <button class="zoom-btn zoom-reset" title="Reset (or double-click)">Reset</button>
-      ${config.showLegend ? this.renderLegend(config) : ''}
     `;
 
     traceViewer.appendChild(controls);

@@ -38,7 +38,6 @@
 .legend {
   display: flex;
   gap: 16px;
-  margin-left: auto;
   flex-wrap: wrap;
 }
 
@@ -262,6 +261,10 @@ code {
   font-size: 14px;
   font-weight: bold;
   transition: all 0.2s;
+}
+
+.zoom-btn.zoom-in {
+  margin-left: auto;
 }
 
 .zoom-btn:hover {
