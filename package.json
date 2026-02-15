@@ -6,6 +6,7 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
+    "build-simple": "tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --loader:.css=text",
     "build": "tsc && esbuild src/index.ts --bundle --minify --sourcemap --metafile=dist/meta.json --format=esm --outfile=dist/index.js --loader:.css=text",
     "check": "tsc --noEmit",
     "demo": "npm run build && node demo/server.js",
