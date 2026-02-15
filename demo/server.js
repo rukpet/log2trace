@@ -12,7 +12,8 @@ const contentTypes = {
   '.js': 'text/javascript',
   '.json': 'application/json',
   '.css': 'text/css',
-  '.ts': 'text/typescript'
+  '.ts': 'text/typescript',
+  '.svg': 'image/svg+xml'
 };
 
 const server = http.createServer((req, res) => {
