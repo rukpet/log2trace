@@ -20,11 +20,19 @@ export class TraceVisualizerElement extends HTMLElement {
   private isPanning: boolean = false;
   private panStartX: number = 0;
   private panStartOffset: number = 0;
+  private resizeObserver: ResizeObserver;
 
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
     this.shadow.adoptedStyleSheets = [styleSheet];
+    this.resizeObserver = new ResizeObserver(() => {
+      this.clampPanOffset();
+      this.recalculateTimelineTicks();
+      if (this.zoomLevel > 1) {
+        this.updateZoomPan();
+      }
+    });
   }
 
   static get observedAttributes() {
@@ -39,6 +47,10 @@ export class TraceVisualizerElement extends HTMLElement {
     if (dataUrl) {
       this.loadTraceData(dataUrl);
     }
+  }
+
+  disconnectedCallback() {
+    this.resizeObserver.disconnect();
   }
 
   attributeChangedCallback(_name: string, oldValue: string, newValue: string) {
@@ -131,10 +143,19 @@ export class TraceVisualizerElement extends HTMLElement {
       this.shadow.innerHTML = Template.getTraceMarkup(this._tree, config);
       this.attachEventListeners(this._tree);
       this.attachZoomPanListeners();
+      this.observeTimelineResize();
       this.recalculateTimelineTicks();
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Rendering failed');
     }
+  }
+
+  private observeTimelineResize(): void {
+    const timelineClip = this.shadow.querySelector('.timeline-clip') as HTMLElement;
+    if (!timelineClip) return;
+
+    this.resizeObserver.disconnect();
+    this.resizeObserver.observe(timelineClip);
   }
 
   private recalculateTimelineTicks(): void {
@@ -239,6 +260,7 @@ export class TraceVisualizerElement extends HTMLElement {
     });
 
     this.addZoomControls();
+
   }
 
   private clampPanOffset(): void {
