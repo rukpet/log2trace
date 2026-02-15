@@ -28,7 +28,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['data-url', 'width', 'height', 'show-events', 'show-legend', 'full-width', 'detail-panel-width'];
+    return ['data-url', 'width', 'height', 'show-legend', 'full-width', 'detail-panel-width'];
   }
 
   connectedCallback() {
@@ -96,7 +96,6 @@ export class TraceVisualizerElement extends HTMLElement {
   private updateConfigFromAttributes(): void {
     const width = this.getAttribute('width');
     const height = this.getAttribute('height');
-    const showEvents = this.getAttribute('show-events');
     const showLegend = this.getAttribute('show-legend');
     const fullWidth = this.getAttribute('full-width');
     const detailPanelWidth = this.getAttribute('detail-panel-width');
@@ -105,7 +104,6 @@ export class TraceVisualizerElement extends HTMLElement {
       ...this._overrides,
       width: width ? parseInt(width, 10) : undefined,
       height: height ? parseInt(height, 10) : undefined,
-      showEvents: showEvents !== 'false',
       showLegend: showLegend !== null && showLegend !== 'false',
       fullWidth: fullWidth !== null && fullWidth !== 'false',
       detailPanelWidth: detailPanelWidth || undefined,
@@ -296,7 +294,7 @@ export class TraceVisualizerElement extends HTMLElement {
           <div class="span-duration">
             ${this.formatDuration(spanDuration)}
           </div>
-          ${config.showEvents ? this.renderEvents(span) : ''}
+          ${this.renderEvents(span)}
         </div>
       </div>
     `;

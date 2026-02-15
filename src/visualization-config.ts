@@ -15,7 +15,6 @@ export class VisualizationConfig {
   readonly backgroundColor: string;
   readonly spanHeight: number;
   readonly spanPadding: number;
-  readonly showEvents: boolean;
   readonly showLegend: boolean;
   readonly fullWidth: boolean;
   readonly detailPanelWidth: string;
@@ -27,7 +26,6 @@ export class VisualizationConfig {
     this.backgroundColor = overrides.backgroundColor || '#ffffff';
     this.spanHeight = overrides.spanHeight || 30;
     this.spanPadding = overrides.spanPadding || 5;
-    this.showEvents = overrides.showEvents !== false;
     this.showLegend = overrides.showLegend === true;
     this.fullWidth = overrides.fullWidth === true;
     this.detailPanelWidth = overrides.detailPanelWidth || '40%';
