@@ -133,6 +133,7 @@ export class TraceVisualizerElement extends HTMLElement {
       this.shadow.innerHTML = this.renderTrace(this._tree);
       this.attachEventListeners(this._tree);
       this.attachZoomPanListeners();
+      this.recalculateTimelineTicks();
     } catch (error) {
       this.renderError(error instanceof Error ? error.message : 'Rendering failed');
     }
@@ -234,10 +235,26 @@ export class TraceVisualizerElement extends HTMLElement {
     return tickElements.join('');
   }
 
+  private calculateTickCount(containerWidth?: number): number {
+    const width = containerWidth || 600;
+    const minTickSpacing = 90; // minimum pixels between ticks to avoid label overlap
+    return Math.max(2, Math.floor(width / minTickSpacing));
+  }
+
+  private recalculateTimelineTicks(): void {
+    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+    const timelineEl = this.shadow.querySelector('.timeline') as HTMLElement;
+    if (!timelineContainer || !timelineEl) return;
+
+    const timeRange = this._tree.getTimeRange();
+    const ticks = this.calculateTickCount(timelineContainer.clientWidth);
+    timelineEl.innerHTML = this.renderTimelineTicks(timeRange, ticks);
+  }
+
   private renderTimeline(timeRange: { min: number; max: number }): string {
     return `
       <div class="timeline">
-        ${this.renderTimelineTicks(timeRange, 10)}
+        ${this.renderTimelineTicks(timeRange, this.calculateTickCount())}
       </div>
     `;
   }
@@ -452,11 +469,12 @@ export class TraceVisualizerElement extends HTMLElement {
       timelineContainer.style.transformOrigin = 'left center';
     }
 
-    // Update timeline ticks count based on zoom level
+    // Update timeline ticks count based on zoom level and available width
     const timelineEl = this.shadow.querySelector('.timeline') as HTMLElement;
-    if (timelineEl) {
+    if (timelineEl && timelineContainer) {
       const timeRange = this._tree.getTimeRange();
-      const ticks = Math.round(10 * this.zoomLevel);
+      const visibleWidth = timelineContainer.clientWidth * this.zoomLevel;
+      const ticks = this.calculateTickCount(visibleWidth);
       timelineEl.innerHTML = this.renderTimelineTicks(timeRange, ticks);
     }
 
