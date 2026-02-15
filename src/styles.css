@@ -131,10 +131,19 @@ code {
   border-bottom: 2px solid #ddd;
 }
 
-.timeline-container {
+.timeline-clip {
   position: absolute;
   left: 250px;
   right: 80px;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.timeline-container {
+  position: absolute;
+  left: 0;
+  right: 0;
   top: 0;
   bottom: 0;
   will-change: transform;

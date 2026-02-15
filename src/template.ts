@@ -222,8 +222,10 @@ export class Template {
                 ${Template.getTimelineTicksMarkup(timeRange, Template.calculateTickCount())}
               </div>
             </div>
-            <div class="timeline-container">
-              ${Template.getSpansMarkup(flatSpans, timeRange, config)}
+            <div class="timeline-clip">
+              <div class="timeline-container">
+                ${Template.getSpansMarkup(flatSpans, timeRange, config)}
+              </div>
             </div>
           </div>
           <div class="detail-panel" style="width: ${config.detailPanelWidth};">
