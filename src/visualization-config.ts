@@ -22,8 +22,8 @@ export class VisualizationConfig {
   readonly colorScheme: Record<string, string>;
 
   constructor(overrides: Partial<VisualizationConfig> = {}) {
-    this.width = overrides.width || 1200;
-    this.height = overrides.height || 600;
+    this.width = overrides.width || 0;
+    this.height = overrides.height || 0;
     this.backgroundColor = overrides.backgroundColor || '#ffffff';
     this.spanHeight = overrides.spanHeight || 30;
     this.spanPadding = overrides.spanPadding || 5;

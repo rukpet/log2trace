@@ -216,9 +216,8 @@ export class TraceVisualizerElement extends HTMLElement {
     }).join('');
   }
 
-  private renderTimeline(timeRange: { min: number; max: number }): string {
+  private renderTimelineTicks(timeRange: { min: number; max: number }, ticks: number): string {
     const duration = timeRange.max - timeRange.min;
-    const ticks = 10;
     const tickElements: string[] = [];
 
     for (let i = 0; i <= ticks; i++) {
@@ -232,9 +231,13 @@ export class TraceVisualizerElement extends HTMLElement {
       `);
     }
 
+    return tickElements.join('');
+  }
+
+  private renderTimeline(timeRange: { min: number; max: number }): string {
     return `
       <div class="timeline">
-        ${tickElements.join('')}
+        ${this.renderTimelineTicks(timeRange, 10)}
       </div>
     `;
   }
@@ -447,6 +450,14 @@ export class TraceVisualizerElement extends HTMLElement {
     if (timelineContainer) {
       timelineContainer.style.transform = `translateX(${this.panOffset}px) scaleX(${this.zoomLevel})`;
       timelineContainer.style.transformOrigin = 'left center';
+    }
+
+    // Update timeline ticks count based on zoom level
+    const timelineEl = this.shadow.querySelector('.timeline') as HTMLElement;
+    if (timelineEl) {
+      const timeRange = this._tree.getTimeRange();
+      const ticks = Math.round(10 * this.zoomLevel);
+      timelineEl.innerHTML = this.renderTimelineTicks(timeRange, ticks);
     }
 
     const durationLabels = this.shadow.querySelectorAll('.span-duration');
