@@ -387,9 +387,10 @@ export class TraceVisualizerElement extends HTMLElement {
 
   private attachZoomPanListeners(): void {
     const traceChart = this.shadow.querySelector('.trace-chart') as HTMLElement;
-    if (!traceChart) return;
+    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+    if (!traceChart || !timelineContainer) return;
 
-    traceChart.addEventListener('wheel', (e: WheelEvent) => {
+    timelineContainer.addEventListener('wheel', (e: WheelEvent) => {
       e.preventDefault();
 
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
@@ -401,17 +402,17 @@ export class TraceVisualizerElement extends HTMLElement {
       }
     }, { passive: false });
 
-    traceChart.addEventListener('mousedown', (e: MouseEvent) => {
+    timelineContainer.addEventListener('mousedown', (e: MouseEvent) => {
       if (e.button === 0 && !(e.target as HTMLElement).classList.contains('span-bar')) {
         this.isPanning = true;
         this.panStartX = e.clientX;
         this.panStartOffset = this.panOffset;
-        traceChart.style.cursor = 'grabbing';
+        timelineContainer.style.cursor = 'grabbing';
         e.preventDefault();
       }
     });
 
-    traceChart.addEventListener('mousemove', (e: MouseEvent) => {
+    timelineContainer.addEventListener('mousemove', (e: MouseEvent) => {
       if (this.isPanning) {
         const deltaX = e.clientX - this.panStartX;
         this.panOffset = this.panStartOffset + deltaX;
@@ -419,21 +420,21 @@ export class TraceVisualizerElement extends HTMLElement {
       }
     });
 
-    traceChart.addEventListener('mouseup', () => {
+    timelineContainer.addEventListener('mouseup', () => {
       if (this.isPanning) {
         this.isPanning = false;
-        traceChart.style.cursor = 'default';
+        timelineContainer.style.cursor = 'default';
       }
     });
 
-    traceChart.addEventListener('mouseleave', () => {
+    timelineContainer.addEventListener('mouseleave', () => {
       if (this.isPanning) {
         this.isPanning = false;
-        traceChart.style.cursor = 'default';
+        timelineContainer.style.cursor = 'default';
       }
     });
 
-    traceChart.addEventListener('dblclick', () => {
+    timelineContainer.addEventListener('dblclick', () => {
       this.zoomLevel = 1;
       this.panOffset = 0;
       this.updateZoomPan();
