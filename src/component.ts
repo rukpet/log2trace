@@ -15,9 +15,9 @@ export class TraceVisualizerElement extends HTMLElement {
   private _tree = new TraceTree([], new Map(), new Map());
   private _overrides: Partial<VisualizationConfig> = {};
   private shadow: ShadowRoot;
-  private zoomLevel: number = 1; //  TODO: limit zooming because right now you can zomm too far
+  private zoomLevel: number = 1;
   private panOffset: number = 0;
-  private isPanning: boolean = false; // TODO: limit panning because right now you can pan infinitely
+  private isPanning: boolean = false;
   private panStartX: number = 0;
   private panStartOffset: number = 0;
 
@@ -373,7 +373,7 @@ export class TraceVisualizerElement extends HTMLElement {
       e.preventDefault();
 
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.max(0.5, Math.min(10, this.zoomLevel * delta));
+      const newZoom = Math.max(1, Math.min(10, this.zoomLevel * delta));
 
       if (newZoom !== this.zoomLevel) {
         this.zoomLevel = newZoom;
@@ -422,8 +422,27 @@ export class TraceVisualizerElement extends HTMLElement {
     this.addZoomControls();
   }
 
+  private clampPanOffset(): void {
+    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+    if (!timelineContainer) return;
+
+    const containerWidth = timelineContainer.clientWidth;
+    const scaledWidth = containerWidth * this.zoomLevel;
+
+    if (scaledWidth <= containerWidth) {
+      this.panOffset = 0;
+      return;
+    }
+
+    const maxPan = 0;
+    const minPan = -(scaledWidth - containerWidth);
+    this.panOffset = Math.max(minPan, Math.min(maxPan, this.panOffset));
+  }
+
   private updateZoomPan(): void {
     const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+
+    this.clampPanOffset();
 
     if (timelineContainer) {
       timelineContainer.style.transform = `translateX(${this.panOffset}px) scaleX(${this.zoomLevel})`;
@@ -472,7 +491,7 @@ export class TraceVisualizerElement extends HTMLElement {
     });
 
     controls.querySelector('.zoom-out')?.addEventListener('click', () => {
-      this.zoomLevel = Math.max(0.5, this.zoomLevel * 0.8);
+      this.zoomLevel = Math.max(1, this.zoomLevel * 0.8);
       this.updateZoomPan();
     });
 
