@@ -26,7 +26,7 @@ export class Template {
 
   static calculateTickCount(containerWidth?: number): number {
     const width = containerWidth || 600;
-    const minTickSpacing = 90;
+    const minTickSpacing = 120;
     return Math.max(2, Math.floor(width / minTickSpacing));
   }
 
@@ -79,6 +79,34 @@ export class Template {
 
       tickElements.push(`
         <div class="timeline-tick" style="left: ${position}%;">
+          <div class="timeline-label">${Template.formatDuration(relativeTime)}</div>
+        </div>
+      `);
+    }
+
+    return tickElements.join('');
+  }
+
+  static getTimelineOverlayTicksMarkup(
+    timeRange: { min: number; max: number },
+    containerWidth: number,
+    zoomLevel: number,
+    panOffset: number
+  ): string {
+    const duration = timeRange.max - timeRange.min;
+    const scaledWidth = containerWidth * zoomLevel;
+    const ticks = Template.calculateTickCount(scaledWidth);
+    const tickElements: string[] = [];
+
+    for (let i = 0; i <= ticks; i++) {
+      const fraction = i / ticks;
+      const pixelX = fraction * scaledWidth + panOffset;
+
+      if (pixelX < -80 || pixelX > containerWidth + 10) continue;
+
+      const relativeTime = duration * fraction;
+      tickElements.push(`
+        <div class="timeline-tick" style="left: ${pixelX}px;">
           <div class="timeline-label">${Template.formatDuration(relativeTime)}</div>
         </div>
       `);
@@ -189,8 +217,12 @@ export class Template {
             <div class="span-labels-container">
               ${Template.getSpanLabelsMarkup(tree, flatSpans, config)}
             </div>
+            <div class="timeline-overlay">
+              <div class="timeline">
+                ${Template.getTimelineTicksMarkup(timeRange, Template.calculateTickCount())}
+              </div>
+            </div>
             <div class="timeline-container">
-              ${Template.getTimelineMarkup(timeRange)}
               ${Template.getSpansMarkup(flatSpans, timeRange, config)}
             </div>
           </div>

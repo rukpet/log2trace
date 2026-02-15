@@ -11,7 +11,6 @@
 
 /* Trace viewer layout */
 .trace-viewer {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   padding: 20px;
   box-sizing: border-box;
 }
@@ -102,8 +101,6 @@ code {
 /* Trace chart & timeline */
 .trace-chart {
   position: relative;
-  overflow-x: auto;
-  overflow-y: auto;
   cursor: default;
   user-select: none;
   overflow: hidden;
@@ -123,6 +120,18 @@ code {
   background: white;
 }
 
+.timeline-overlay {
+  position: absolute;
+  left: 250px;
+  right: 80px;
+  top: 0;
+  height: 40px;
+  overflow: hidden;
+  z-index: 5;
+  pointer-events: none;
+  border-bottom: 2px solid #ddd;
+}
+
 .timeline-container {
   position: absolute;
   left: 250px;
@@ -138,7 +147,6 @@ code {
   left: 0;
   right: 0;
   height: 40px;
-  border-bottom: 2px solid #ddd;
 }
 
 .timeline-tick {
@@ -155,9 +163,6 @@ code {
   font-size: 11px;
   color: #666;
   white-space: nowrap;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
 /* Spans */
@@ -165,18 +170,10 @@ code {
   position: absolute;
   left: 0;
   right: 0;
-  transition: background 0.2s;
 }
 
 .span-row:hover {
   background: #f5f5f5;
-}
-
-.span-label {
-  font-size: 12px;
-  line-height: 1.2;
-  padding: 2px 5px;
-  color: #333;
 }
 
 .span-label-fixed {
@@ -219,9 +216,6 @@ code {
   white-space: nowrap;
   font-size: 11px;
   color: #666;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
 .span-event {
@@ -249,7 +243,6 @@ code {
   padding: 10px;
   background: rgba(255, 255, 255, 0.95);
   border-top: 1px solid #ddd;
-  backdrop-filter: blur(5px);
 }
 
 .zoom-btn {

@@ -139,12 +139,14 @@ export class TraceVisualizerElement extends HTMLElement {
 
   private recalculateTimelineTicks(): void {
     const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
-    const timelineEl = this.shadow.querySelector('.timeline') as HTMLElement;
-    if (!timelineContainer || !timelineEl) return;
+    const timelineOverlay = this.shadow.querySelector('.timeline-overlay .timeline') as HTMLElement;
+    if (!timelineContainer || !timelineOverlay) return;
 
     const timeRange = this._tree.getTimeRange();
-    const ticks = Template.calculateTickCount(timelineContainer.clientWidth);
-    timelineEl.innerHTML = Template.getTimelineTicksMarkup(timeRange, ticks);
+    const containerWidth = timelineContainer.clientWidth;
+    timelineOverlay.innerHTML = Template.getTimelineOverlayTicksMarkup(
+      timeRange, containerWidth, this.zoomLevel, this.panOffset
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -266,24 +268,18 @@ export class TraceVisualizerElement extends HTMLElement {
       timelineContainer.style.transformOrigin = 'left center';
     }
 
-    // Update timeline ticks count based on zoom level and available width
-    const timelineEl = this.shadow.querySelector('.timeline') as HTMLElement;
-    if (timelineEl && timelineContainer) {
+    // Update timeline overlay ticks (outside scaled container)
+    const timelineOverlay = this.shadow.querySelector('.timeline-overlay .timeline') as HTMLElement;
+    if (timelineOverlay && timelineContainer) {
       const timeRange = this._tree.getTimeRange();
-      const visibleWidth = timelineContainer.clientWidth * this.zoomLevel;
-      const ticks = Template.calculateTickCount(visibleWidth);
-      timelineEl.innerHTML = Template.getTimelineTicksMarkup(timeRange, ticks);
+      const containerWidth = timelineContainer.clientWidth;
+      timelineOverlay.innerHTML = Template.getTimelineOverlayTicksMarkup(
+        timeRange, containerWidth, this.zoomLevel, this.panOffset
+      );
     }
 
     const durationLabels = this.shadow.querySelectorAll('.span-duration');
-    const timelineLabels = this.shadow.querySelectorAll('.timeline-label');
-
     durationLabels.forEach(label => {
-      (label as HTMLElement).style.transform = `scaleX(${1 / this.zoomLevel})`;
-      (label as HTMLElement).style.transformOrigin = 'left center';
-    });
-
-    timelineLabels.forEach(label => {
       (label as HTMLElement).style.transform = `scaleX(${1 / this.zoomLevel})`;
       (label as HTMLElement).style.transformOrigin = 'left center';
     });
