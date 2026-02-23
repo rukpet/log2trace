@@ -20,6 +20,9 @@ export class TraceVisualizerElement extends HTMLElement {
   private isPanning: boolean = false;
   private panStartX: number = 0;
   private panStartOffset: number = 0;
+  private isMinimapDragging: boolean = false;
+  private minimapDragStartX: number = 0;
+  private minimapDragStartOffset: number = 0;
   private resizeObserver: ResizeObserver;
   private selectedSpanIndex: number = -1;
 
@@ -32,12 +35,14 @@ export class TraceVisualizerElement extends HTMLElement {
       this.recalculateTimelineTicks();
       if (this.zoomLevel > 1) {
         this.updateZoomPan();
+      } else {
+        this.updateMinimapViewport();
       }
     });
   }
 
   static get observedAttributes() {
-    return ['data-url', 'width', 'height', 'show-legend', 'full-width', 'detail-panel-width'];
+    return ['data-url', 'width', 'height', 'show-legend', 'full-width', 'detail-panel-width', 'show-minimap'];
   }
 
   connectedCallback() {
@@ -114,6 +119,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const showLegend = this.getAttribute('show-legend');
     const fullWidth = this.getAttribute('full-width');
     const detailPanelWidth = this.getAttribute('detail-panel-width');
+    const showMinimap = this.getAttribute('show-minimap');
 
     this._overrides = {
       ...this._overrides,
@@ -122,6 +128,7 @@ export class TraceVisualizerElement extends HTMLElement {
       showLegend: showLegend !== null && showLegend !== 'false',
       fullWidth: fullWidth !== null && fullWidth !== 'false',
       detailPanelWidth: detailPanelWidth || undefined,
+      showMinimap: showMinimap !== 'false',
     };
   }
 
@@ -153,6 +160,11 @@ export class TraceVisualizerElement extends HTMLElement {
       
       this.attachEventListeners(this._tree);
       this.attachZoomPanListeners();
+      
+      if (config.showMinimap) {
+        this.attachMinimapListeners();
+      }
+      
       this.observeTimelineResize();
       this.recalculateTimelineTicks();
     } catch (error) {
@@ -341,6 +353,95 @@ export class TraceVisualizerElement extends HTMLElement {
     if (zoomDisplay) {
       zoomDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
     }
+
+    this.updateMinimapViewport();
+  }
+
+  private updateMinimapViewport(): void {
+    const viewport = this.shadow.querySelector('.minimap-viewport') as HTMLElement;
+    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+    if (!viewport || !timelineContainer) return;
+
+    const containerWidth = timelineContainer.clientWidth;
+    const scaledWidth = containerWidth * this.zoomLevel;
+
+    if (this.zoomLevel === 1) {
+      viewport.style.left = '0%';
+      viewport.style.width = '100%';
+      viewport.style.cursor = 'default';
+      return;
+    }
+
+    viewport.style.cursor = 'grab';
+    const visibleWidthPercent = (containerWidth / scaledWidth) * 100;
+    const viewportLeftPercent = (-this.panOffset / scaledWidth) * 100;
+
+    viewport.style.left = `${viewportLeftPercent}%`;
+    viewport.style.width = `${visibleWidthPercent}%`;
+  }
+
+  private attachMinimapListeners(): void {
+    const minimapSpans = this.shadow.querySelector('.minimap-spans') as HTMLElement;
+    const minimapViewport = this.shadow.querySelector('.minimap-viewport') as HTMLElement;
+    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+
+    if (!minimapSpans || !minimapViewport || !timelineContainer) return;
+
+    // Click to navigate
+    minimapSpans.addEventListener('click', (e: MouseEvent) => {
+      const rect = minimapSpans.getBoundingClientRect();
+      const clickPercent = (e.clientX - rect.left) / rect.width;
+      
+      const containerWidth = timelineContainer.clientWidth;
+      const scaledWidth = containerWidth * this.zoomLevel;
+      
+      // Center the viewport on the clicked position
+      this.panOffset = -(clickPercent * scaledWidth) + (containerWidth / 2);
+      this.updateZoomPan();
+    });
+
+    // Drag viewport to pan
+    minimapViewport.addEventListener('mousedown', (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.isMinimapDragging = true;
+      this.minimapDragStartX = e.clientX;
+      this.minimapDragStartOffset = this.panOffset;
+      minimapViewport.style.cursor = 'grabbing';
+    });
+
+    this.shadow.addEventListener('mousemove', (e: Event) => {
+      if (!this.isMinimapDragging) return;
+
+      const mouseEvent = e as MouseEvent;
+      const minimapRect = minimapSpans.getBoundingClientRect();
+      const minimapWidth = minimapRect.width;
+      const deltaX = mouseEvent.clientX - this.minimapDragStartX;
+      
+      const containerWidth = timelineContainer.clientWidth;
+      const scaledWidth = containerWidth * this.zoomLevel;
+      
+      // Convert pixel delta to pan offset (negative to match drag direction)
+      const deltaPercent = deltaX / minimapWidth;
+      const deltaPan = deltaPercent * scaledWidth;
+      
+      this.panOffset = this.minimapDragStartOffset - deltaPan;
+      this.updateZoomPan();
+    });
+
+    this.shadow.addEventListener('mouseup', () => {
+      if (this.isMinimapDragging) {
+        this.isMinimapDragging = false;
+        minimapViewport.style.cursor = this.zoomLevel === 1 ? 'default' : 'grab';
+      }
+    });
+
+    this.shadow.addEventListener('mouseleave', () => {
+      if (this.isMinimapDragging) {
+        this.isMinimapDragging = false;
+        minimapViewport.style.cursor = this.zoomLevel === 1 ? 'default' : 'grab';
+      }
+    });
   }
 
   private addZoomControls(): void {

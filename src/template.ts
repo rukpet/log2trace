@@ -115,6 +115,33 @@ export class Template {
     return tickElements.join('');
   }
 
+  static getMinimapMarkup(
+    flatSpans: Array<{ span: Span; level: number }>,
+    timeRange: { min: number; max: number },
+    config: VisualizationConfig
+  ): string {
+    const totalDuration = timeRange.max - timeRange.min;
+    const spanElements = flatSpans.map(({ span }) => {
+      const startMs = nanoToMilli(span.startTimeUnixNano);
+      const endMs = nanoToMilli(span.endTimeUnixNano);
+      const startPercent = ((startMs - timeRange.min) / totalDuration) * 100;
+      const widthPercent = ((endMs - startMs) / totalDuration) * 100;
+      
+      return `<div class="minimap-span kind-${span.kind}" style="left:${startPercent}%;width:${Math.max(widthPercent, 0.1)}%"></div>`;
+    }).join('');
+
+    const positionClass = config.minimapPosition;
+    
+    return `
+      <div class="minimap-container ${positionClass}" style="height: ${config.minimapHeight}px;">
+        <div class="minimap-spans">
+          ${spanElements}
+        </div>
+        <div class="minimap-viewport" style="left: 0%; width: 100%;"></div>
+      </div>
+    `;
+  }
+
   // ---------------------------------------------------------------------------
   // Composite markup
   // ---------------------------------------------------------------------------
@@ -200,7 +227,8 @@ export class Template {
     const flatSpans = tree.flatten();
     const timeRange = tree.getTimeRange();
     const chartHeight = flatSpans.length * (config.spanHeight + config.spanPadding);
-    const totalHeight = Math.max(chartHeight + 100, config.height);
+    const minimapSpace = config.showMinimap ? config.minimapHeight : 0;
+    const totalHeight = Math.max(chartHeight + 100 + minimapSpace, config.height);
     const traceId = tree.roots[0]?.traceId || 'N/A';
 
     return `
@@ -227,6 +255,7 @@ export class Template {
                 ${Template.getSpansMarkup(flatSpans, timeRange, config)}
               </div>
             </div>
+            ${config.showMinimap ? Template.getMinimapMarkup(flatSpans, timeRange, config) : ''}
           </div>
           <div class="detail-panel" style="width: ${config.detailPanelWidth};">
             <div class="detail-panel-header">

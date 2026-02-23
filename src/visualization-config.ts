@@ -19,6 +19,9 @@ export class VisualizationConfig {
   readonly fullWidth: boolean;
   readonly detailPanelWidth: string;
   readonly colorScheme: Record<string, string>;
+  readonly showMinimap: boolean;
+  readonly minimapHeight: number;
+  readonly minimapPosition: 'bottom' | 'top';
 
   constructor(overrides: Partial<VisualizationConfig> = {}) {
     this.width = overrides.width || 0;
@@ -30,5 +33,8 @@ export class VisualizationConfig {
     this.fullWidth = overrides.fullWidth === true;
     this.detailPanelWidth = overrides.detailPanelWidth || '40%';
     this.colorScheme = overrides.colorScheme || DEFAULT_COLOR_SCHEME;
+    this.showMinimap = overrides.showMinimap !== false;
+    this.minimapHeight = overrides.minimapHeight || 80;
+    this.minimapPosition = overrides.minimapPosition || 'bottom';
   }
 }
