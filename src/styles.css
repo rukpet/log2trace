@@ -4,6 +4,10 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+:host(:focus) {
+  outline: none;
+}
+
 :host(.full-width) {
   width: 100%;
   max-width: 100%;
@@ -87,12 +91,17 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 code {
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   padding: 2px 6px;
   border-radius: 3px;
   font-family: 'Courier New', monospace;
@@ -207,14 +216,20 @@ code {
   height: 100%;
   border-radius: 3px;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .span-bar:hover {
   transform: scaleY(1.2);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   z-index: 10;
+}
+
+.span-bar.selected {
+  outline: 3px solid #007bff;
+  outline-offset: 2px;
+  z-index: 15;
 }
 
 .span-duration {
@@ -291,7 +306,7 @@ code {
   overflow: hidden;
 }
 
-.trace-body > .trace-chart {
+.trace-body>.trace-chart {
   flex: 1;
   min-width: 0;
 }
@@ -349,4 +364,97 @@ code {
   border-radius: 4px;
   flex: 1;
   overflow: auto;
+}
+
+/* Tooltip */
+.span-tooltip {
+  position: fixed;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-width: 350px;
+  pointer-events: none;
+  display: none;
+  font-size: 13px;
+}
+
+.tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.tooltip-header strong {
+  color: #333;
+  font-size: 14px;
+}
+
+.tooltip-status {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tooltip-status.ok {
+  background: #d4edda;
+  color: #155724;
+}
+
+.tooltip-status.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.tooltip-status.unset {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.tooltip-operation {
+  color: #555;
+  margin-bottom: 10px;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.tooltip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tooltip-label {
+  color: #666;
+  font-weight: 500;
+}
+
+.tooltip-value {
+  color: #333;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.tooltip-hint {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+  color: #999;
+  font-size: 11px;
+  font-style: italic;
+  text-align: center;
 }

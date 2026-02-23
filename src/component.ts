@@ -1,4 +1,4 @@
-import { TraceData } from './opentelemetry/trace.js';
+import { TraceData, Span, SpanKind } from './opentelemetry/trace.js';
 import { TraceTree } from './trace-tree.js';
 import { Template } from './template.js';
 import { VisualizationConfig } from './visualization-config.js';
@@ -21,6 +21,7 @@ export class TraceVisualizerElement extends HTMLElement {
   private panStartX: number = 0;
   private panStartOffset: number = 0;
   private resizeObserver: ResizeObserver;
+  private selectedSpanIndex: number = -1;
 
   constructor() {
     super();
@@ -41,6 +42,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   connectedCallback() {
     this.render();
+    this.setupKeyboardNavigation();
 
     // Load data from URL if specified
     const dataUrl = this.getAttribute('data-url');
@@ -51,6 +53,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   disconnectedCallback() {
     this.resizeObserver.disconnect();
+    this.removeKeyboardNavigation();
   }
 
   attributeChangedCallback(_name: string, oldValue: string, newValue: string) {
@@ -141,6 +144,13 @@ export class TraceVisualizerElement extends HTMLElement {
 
     try {
       this.shadow.innerHTML = Template.getTraceMarkup(this._tree, config);
+      
+      // Create persistent tooltip element
+      const tooltip = document.createElement('div');
+      tooltip.className = 'span-tooltip';
+      tooltip.style.display = 'none';
+      this.shadow.appendChild(tooltip);
+      
       this.attachEventListeners(this._tree);
       this.attachZoomPanListeners();
       this.observeTimelineResize();
@@ -181,7 +191,8 @@ export class TraceVisualizerElement extends HTMLElement {
     const detailContent = this.shadow.querySelector('.detail-content') as HTMLElement;
     const closeBtn = this.shadow.querySelector('.detail-panel-close') as HTMLElement;
 
-    spanBars.forEach(bar => {
+    spanBars.forEach((bar, index) => {
+      // Click handler
       bar.addEventListener('click', (event) => {
         const spanId = (event.currentTarget as HTMLElement).getAttribute('data-span-id');
         const entry = flatSpans.find(e => e.span.spanId === spanId);
@@ -189,6 +200,8 @@ export class TraceVisualizerElement extends HTMLElement {
         if (entry) {
           detailContent.textContent = JSON.stringify(entry.span, null, 2);
           detailPanel.classList.add('visible');
+          this.selectedSpanIndex = index;
+          this.updateSpanSelection();
 
           this.dispatchEvent(new CustomEvent('span-selected', {
             detail: { span: entry.span },
@@ -197,10 +210,28 @@ export class TraceVisualizerElement extends HTMLElement {
           }));
         }
       });
+
+      // Hover tooltip handler
+      bar.addEventListener('mouseenter', (event) => {
+        const spanId = (event.currentTarget as HTMLElement).getAttribute('data-span-id');
+        const entry = flatSpans.find(e => e.span.spanId === spanId);
+        
+        if (entry) {
+          const serviceName = tree.serviceNameOf.get(entry.span.spanId) || 'unknown-service';
+          const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+          this.showTooltip(entry.span, serviceName, rect.left, rect.bottom);
+        }
+      });
+
+      bar.addEventListener('mouseleave', () => {
+        this.hideTooltip();
+      });
     });
 
     closeBtn?.addEventListener('click', () => {
       detailPanel.classList.remove('visible');
+      this.selectedSpanIndex = -1;
+      this.updateSpanSelection();
     });
   }
 
@@ -338,6 +369,168 @@ export class TraceVisualizerElement extends HTMLElement {
       this.panOffset = 0;
       this.updateZoomPan();
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tooltip
+  // ---------------------------------------------------------------------------
+
+  private showTooltip(span: Span, serviceName: string, x: number, y: number): void {
+    let tooltip = this.shadow.querySelector('.span-tooltip') as HTMLElement;
+    
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.className = 'span-tooltip';
+      this.shadow.appendChild(tooltip);
+    }
+
+    tooltip.innerHTML = Template.getTooltipMarkup(span, serviceName);
+    tooltip.style.display = 'block';
+    tooltip.style.left = `${x + 10}px`;
+    tooltip.style.top = `${y + 10}px`;
+  }
+
+  private hideTooltip(): void {
+    const tooltip = this.shadow.querySelector('.span-tooltip') as HTMLElement;
+    if (tooltip) {
+      tooltip.style.display = 'none';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Keyboard Navigation
+  // ---------------------------------------------------------------------------
+
+  private keyboardHandler = (e: KeyboardEvent) => {
+    const flatSpans = this._tree.flatten();
+    if (flatSpans.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowUp':
+        e.preventDefault();
+        this.selectPreviousSpan();
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        this.selectNextSpan();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        this.panOffset += 50;
+        this.updateZoomPan();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        this.panOffset -= 50;
+        this.updateZoomPan();
+        break;
+      case '+':
+      case '=':
+        e.preventDefault();
+        this.zoomLevel = Math.min(10, this.zoomLevel * 1.2);
+        this.updateZoomPan();
+        break;
+      case '-':
+      case '_':
+        e.preventDefault();
+        this.zoomLevel = Math.max(1, this.zoomLevel * 0.8);
+        this.updateZoomPan();
+        break;
+      case '0':
+      case 'Home':
+        e.preventDefault();
+        this.zoomLevel = 1;
+        this.panOffset = 0;
+        this.updateZoomPan();
+        break;
+      case 'Escape':
+        e.preventDefault();
+        const detailPanel = this.shadow.querySelector('.detail-panel');
+        detailPanel?.classList.remove('visible');
+        this.selectedSpanIndex = -1;
+        this.updateSpanSelection();
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (this.selectedSpanIndex >= 0) {
+          this.openSpanDetails(this.selectedSpanIndex);
+        }
+        break;
+    }
+  };
+
+  private setupKeyboardNavigation(): void {
+    this.addEventListener('keydown', this.keyboardHandler);
+    this.setAttribute('tabindex', '0');
+  }
+
+  private removeKeyboardNavigation(): void {
+    this.removeEventListener('keydown', this.keyboardHandler);
+  }
+
+  private selectNextSpan(): void {
+    const flatSpans = this._tree.flatten();
+    if (flatSpans.length === 0) return;
+    
+    this.selectedSpanIndex = Math.min(flatSpans.length - 1, this.selectedSpanIndex + 1);
+    this.updateSpanSelection();
+    this.scrollToSelectedSpan();
+  }
+
+  private selectPreviousSpan(): void {
+    if (this.selectedSpanIndex <= 0) {
+      this.selectedSpanIndex = 0;
+    } else {
+      this.selectedSpanIndex--;
+    }
+    this.updateSpanSelection();
+    this.scrollToSelectedSpan();
+  }
+
+  private updateSpanSelection(): void {
+    const spanBars = this.shadow.querySelectorAll('.span-bar');
+    spanBars.forEach((bar, index) => {
+      if (index === this.selectedSpanIndex) {
+        bar.classList.add('selected');
+      } else {
+        bar.classList.remove('selected');
+      }
+    });
+  }
+
+  private scrollToSelectedSpan(): void {
+    if (this.selectedSpanIndex < 0) return;
+    
+    const config = this.resolveConfig();
+    const yPosition = 50 + this.selectedSpanIndex * (config.spanHeight + config.spanPadding);
+    const traceChart = this.shadow.querySelector('.trace-chart') as HTMLElement;
+    
+    if (traceChart) {
+      const chartRect = traceChart.getBoundingClientRect();
+      const targetY = yPosition - chartRect.height / 2;
+      traceChart.scrollTop = targetY;
+    }
+  }
+
+  private openSpanDetails(index: number): void {
+    const flatSpans = this._tree.flatten();
+    const entry = flatSpans[index];
+    if (!entry) return;
+
+    const detailPanel = this.shadow.querySelector('.detail-panel') as HTMLElement;
+    const detailContent = this.shadow.querySelector('.detail-content') as HTMLElement;
+    
+    if (detailContent) {
+      detailContent.textContent = JSON.stringify(entry.span, null, 2);
+    }
+    detailPanel?.classList.add('visible');
+
+    this.dispatchEvent(new CustomEvent('span-selected', {
+      detail: { span: entry.span },
+      bubbles: true,
+      composed: true
+    }));
   }
 
 }

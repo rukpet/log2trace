@@ -280,4 +280,49 @@ export class Template {
       </div>
     `;
   }
+
+  static getTooltipMarkup(
+    span: Span,
+    serviceName: string
+  ): string {
+    const duration = nanoToMilli(span.endTimeUnixNano) - nanoToMilli(span.startTimeUnixNano);
+    const kindLabel = SpanKind[span.kind] || 'Unknown';
+    const statusLabel = span.status?.code === 1 ? 'OK' : span.status?.code === 2 ? 'Error' : 'Unset';
+    const statusClass = span.status?.code === 2 ? 'error' : span.status?.code === 1 ? 'ok' : 'unset';
+
+    return `
+      <div class="tooltip-header">
+        <strong>${serviceName}</strong>
+        <span class="tooltip-status ${statusClass}">${statusLabel}</span>
+      </div>
+      <div class="tooltip-operation">${span.name}</div>
+      <div class="tooltip-info">
+        <div class="tooltip-row">
+          <span class="tooltip-label">Duration:</span>
+          <span class="tooltip-value">${Template.formatDuration(duration)}</span>
+        </div>
+        <div class="tooltip-row">
+          <span class="tooltip-label">Kind:</span>
+          <span class="tooltip-value">${kindLabel}</span>
+        </div>
+        <div class="tooltip-row">
+          <span class="tooltip-label">Span ID:</span>
+          <span class="tooltip-value">${span.spanId.substring(0, 16)}...</span>
+        </div>
+        ${span.status?.message ? `
+          <div class="tooltip-row">
+            <span class="tooltip-label">Message:</span>
+            <span class="tooltip-value">${span.status.message}</span>
+          </div>
+        ` : ''}
+        ${span.events && span.events.length > 0 ? `
+          <div class="tooltip-row">
+            <span class="tooltip-label">Events:</span>
+            <span class="tooltip-value">${span.events.length}</span>
+          </div>
+        ` : ''}
+      </div>
+      <div class="tooltip-hint">Click for full details</div>
+    `;
+  }
 }
