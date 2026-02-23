@@ -6,8 +6,8 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build-simple": "tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --loader:.css=text",
-    "build": "tsc && esbuild src/index.ts --bundle --minify --sourcemap --metafile=dist/meta.json --format=esm --outfile=dist/index.js --loader:.css=text",
+    "minify-css": "lightningcss --minify src/styles.css -o src/styles.min.css",
+    "build": "npm run minify-css && tsc && esbuild src/index.ts --bundle --minify --sourcemap --metafile=dist/meta.json --format=esm --outfile=dist/index.js --loader:.css=text",
     "check": "tsc --noEmit",
     "demo": "npm run build && node demo/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -25,6 +25,7 @@
   "license": "MIT",
   "devDependencies": {
     "esbuild": "^0.27.3",
+    "lightningcss-cli": "^1.31.1",
     "typescript": "^5.9.3"
   },
   "files": [
