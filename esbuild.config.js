@@ -2,6 +2,8 @@ import * as esbuild from 'esbuild';
 import { readFileSync } from 'fs';
 import { transform } from 'lightningcss';
 
+const isWatchMode = process.argv.includes('--watch');
+
 const cssMinifyPlugin = {
   name: 'css-minify',
   setup(build) {
@@ -20,7 +22,7 @@ const cssMinifyPlugin = {
   },
 };
 
-await esbuild.build({
+const buildOptions = {
   entryPoints: ['src/index.ts'],
   bundle: true,
   minify: true,
@@ -28,8 +30,24 @@ await esbuild.build({
   metafile: true,
   format: 'esm',
   outfile: 'dist/index.js',
-  plugins: [cssMinifyPlugin],
-}).then(result => {
+  plugins: [
+    cssMinifyPlugin,
+    ...(isWatchMode ? [{
+      name: 'watch-plugin',
+      setup(build) {
+        build.onEnd(result => {
+          if (result.errors.length > 0) {
+            console.error('✗ Build failed with errors');
+          } else {
+            logBuildResult(result);
+          }
+        });
+      }
+    }] : [])
+  ],
+};
+
+function logBuildResult(result) {
   console.log('✓ Build complete');
   if (result.metafile) {
     const outputs = Object.entries(result.metafile.outputs);
@@ -38,4 +56,35 @@ await esbuild.build({
       console.log(`  ${file.padEnd(30)} ${sizeKB}kb`);
     });
   }
-}).catch(() => process.exit(1));
+}
+
+const context = await esbuild.context(buildOptions);
+
+if (isWatchMode) {
+  console.log('👀 Watching for changes...');
+  
+  await context.watch();
+  
+  // Graceful shutdown
+  process.on('SIGINT', async () => {
+    console.log('\n✓ Stopping watch mode...');
+    await context.dispose();
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    await context.dispose();
+    process.exit(0);
+  });
+} else {
+  // One-shot build mode
+  try {
+    const result = await context.rebuild();
+    logBuildResult(result);
+    await context.dispose();
+  } catch (error) {
+    console.error('✗ Build failed:', error.message);
+    await context.dispose();
+    process.exit(1);
+  }
+}
