@@ -2,7 +2,7 @@ import { TraceData, Span, SpanKind } from './opentelemetry/trace.js';
 import { TraceTree } from './trace-tree.js';
 import { Template } from './template.js';
 import { VisualizationConfig } from './visualization-config.js';
-import css from './styles.min.css';
+import css from './styles.css';
 
 const styleSheet = new CSSStyleSheet();
 styleSheet.replaceSync(css);

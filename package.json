@@ -6,8 +6,7 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "minify-css": "lightningcss --minify src/styles.css -o src/styles.min.css",
-    "build": "npm run minify-css && tsc && esbuild src/index.ts --bundle --minify --sourcemap --metafile=dist/meta.json --format=esm --outfile=dist/index.js --loader:.css=text",
+    "build": "tsc && node esbuild.config.js",
     "check": "tsc --noEmit",
     "demo:kill": "npx kill-port 3000",
     "demo": "npm run demo:kill && npm run build && node demo/server.js"
@@ -25,7 +24,7 @@
   "license": "MIT",
   "devDependencies": {
     "esbuild": "^0.27.3",
-    "lightningcss-cli": "^1.31.1",
+    "lightningcss": "^1.31.1",
     "typescript": "^5.9.3"
   },
   "files": [
