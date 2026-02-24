@@ -6,10 +6,18 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc && node esbuild.config.js",
+    "clean": "npx rimraf dist",
+    "prebuild": "npm run clean",
+    "build": "run-p build:*",
+    "build:tsc": "tsc",
+    "build:bundle": "node esbuild.config.js",
     "check": "tsc --noEmit",
     "demo:kill": "npx kill-port 3000",
-    "demo": "npm run demo:kill && npm run build && node demo/server.js"
+    "demo:server": "node demo/server.js",
+    "demo": "run-s demo:kill build demo:server",
+    "dev": "run-p watch:* demo:server",
+    "watch:tsc": "tsc --watch",
+    "watch:bundle": "node esbuild.config.js --watch"
   },
   "keywords": [
     "opentelemetry",
@@ -25,6 +33,7 @@
   "devDependencies": {
     "esbuild": "^0.27.3",
     "lightningcss": "^1.31.1",
+    "npm-run-all": "^4.1.5",
     "typescript": "^5.9.3"
   },
   "files": [
