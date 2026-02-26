@@ -209,7 +209,6 @@ const devOptions = {
   outfile: 'dist/index.js',
   plugins: [
     ...makeVanillaExtractPlugins(false),
-    htmlMinifyPlugin,
     ...(isWatchMode ? [watchPlugin] : []),
   ],
 };
