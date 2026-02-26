@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { readFileSync } from 'fs';
+import { readFileSync, rmSync } from 'fs';
 import { transform } from 'lightningcss';
 import ts from 'typescript';
 import { minify as minifyHtml } from 'html-minifier-terser';
@@ -70,6 +70,17 @@ function makeVanillaExtractPlugins() {
         // dev bundle (loader:'text' would JSON-escape them into \n sequences).
         const escaped = contents.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
         return { contents: `export default \`${escaped}\`;`, loader: 'js' };
+      });
+      // Delete the empty .css and .css.map sidecars that esbuild emits when
+      // vanilla-extract's CSS namespace is processed (CSS is already inlined
+      // in the JS bundle via adoptedStyleSheets — no separate file needed).
+      build.onEnd(() => {
+        const outfile = build.initialOptions.outfile;
+        if (!outfile) return;
+        const cssSidecar = outfile.replace(/\.js$/, '.css');
+        for (const f of [cssSidecar, `${cssSidecar}.map`]) {
+          rmSync(f, { force: true });
+        }
       });
     },
   };
@@ -216,10 +227,12 @@ function logBuildResult(result) {
   console.log('✓ Build complete');
   if (result.metafile) {
     const outputs = Object.entries(result.metafile.outputs);
-    outputs.forEach(([file, info]) => {
-      const sizeKB = (info.bytes / 1024).toFixed(1);
-      console.log(`  ${file.padEnd(30)} ${sizeKB}kb`);
-    });
+    outputs
+      .filter(([file]) => !file.endsWith('.css') && !file.endsWith('.css.map'))
+      .forEach(([file, info]) => {
+        const sizeKB = (info.bytes / 1024).toFixed(1);
+        console.log(`  ${file.padEnd(30)} ${sizeKB}kb`);
+      });
   }
 }
 
