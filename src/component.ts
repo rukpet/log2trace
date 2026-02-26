@@ -1,11 +1,12 @@
-import { TraceData, Span, SpanKind } from './opentelemetry/trace.js';
+import { TraceData, Span } from './opentelemetry/trace.js';
 import { TraceTree } from './trace-tree.js';
 import { Template } from './template.js';
 import { VisualizationConfig } from './visualization-config.js';
-import css from './styles.css';
+import componentCss from 'virtual:component-css';
+import * as styles from './styles.css.ts';
 
 const styleSheet = new CSSStyleSheet();
-styleSheet.replaceSync(css);
+styleSheet.replaceSync(componentCss);
 
 /**
  * Custom Web Component for trace visualization
@@ -135,6 +136,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   private render(): void {
     const config = this.resolveConfig();
+    // 'full-width' is a public API class applied to the host element from outside
     this.classList.toggle('full-width', config.fullWidth);
 
     if (this._tree.roots.length === 0) {
@@ -144,13 +146,13 @@ export class TraceVisualizerElement extends HTMLElement {
 
     try {
       this.shadow.innerHTML = Template.getTraceMarkup(this._tree, config);
-      
+
       // Create persistent tooltip element
       const tooltip = document.createElement('div');
-      tooltip.className = 'span-tooltip';
+      tooltip.className = styles.spanTooltip;
       tooltip.style.display = 'none';
       this.shadow.appendChild(tooltip);
-      
+
       this.attachEventListeners(this._tree);
       this.attachZoomPanListeners();
       this.observeTimelineResize();
@@ -161,7 +163,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private observeTimelineResize(): void {
-    const timelineClip = this.shadow.querySelector('.timeline-clip') as HTMLElement;
+    const timelineClip = this.shadow.querySelector('.' + styles.timelineClip) as HTMLElement;
     if (!timelineClip) return;
 
     this.resizeObserver.disconnect();
@@ -169,8 +171,8 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private recalculateTimelineTicks(): void {
-    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
-    const timelineOverlay = this.shadow.querySelector('.timeline-overlay .timeline') as HTMLElement;
+    const timelineContainer = this.shadow.querySelector('.' + styles.timelineContainer) as HTMLElement;
+    const timelineOverlay = this.shadow.querySelector(`.${styles.timelineOverlay} .${styles.timeline}`) as HTMLElement;
     if (!timelineContainer || !timelineOverlay) return;
 
     const timeRange = this._tree.getTimeRange();
@@ -185,11 +187,11 @@ export class TraceVisualizerElement extends HTMLElement {
   // ---------------------------------------------------------------------------
 
   private attachEventListeners(tree: TraceTree): void {
-    const spanBars = this.shadow.querySelectorAll('.span-bar');
+    const spanBars = this.shadow.querySelectorAll('.' + styles.spanBar);
     const flatSpans = tree.flatten();
-    const detailPanel = this.shadow.querySelector('.detail-panel') as HTMLElement;
-    const detailContent = this.shadow.querySelector('.detail-content') as HTMLElement;
-    const closeBtn = this.shadow.querySelector('.detail-panel-close') as HTMLElement;
+    const detailPanel = this.shadow.querySelector('.' + styles.detailPanel) as HTMLElement;
+    const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
+    const closeBtn = this.shadow.querySelector('.' + styles.detailPanelClose) as HTMLElement;
 
     spanBars.forEach((bar, index) => {
       // Click handler
@@ -199,7 +201,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
         if (entry) {
           detailContent.textContent = JSON.stringify(entry.span, null, 2);
-          detailPanel.classList.add('visible');
+          detailPanel.classList.add(styles.detailPanelVisible);
           this.selectedSpanIndex = index;
           this.updateSpanSelection();
 
@@ -215,7 +217,7 @@ export class TraceVisualizerElement extends HTMLElement {
       bar.addEventListener('mouseenter', (event) => {
         const spanId = (event.currentTarget as HTMLElement).getAttribute('data-span-id');
         const entry = flatSpans.find(e => e.span.spanId === spanId);
-        
+
         if (entry) {
           const serviceName = tree.serviceNameOf.get(entry.span.spanId) || 'unknown-service';
           const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
@@ -229,15 +231,15 @@ export class TraceVisualizerElement extends HTMLElement {
     });
 
     closeBtn?.addEventListener('click', () => {
-      detailPanel.classList.remove('visible');
+      detailPanel.classList.remove(styles.detailPanelVisible);
       this.selectedSpanIndex = -1;
       this.updateSpanSelection();
     });
   }
 
   private attachZoomPanListeners(): void {
-    const traceChart = this.shadow.querySelector('.trace-chart') as HTMLElement;
-    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+    const traceChart = this.shadow.querySelector('.' + styles.traceChart) as HTMLElement;
+    const timelineContainer = this.shadow.querySelector('.' + styles.timelineContainer) as HTMLElement;
     if (!traceChart || !timelineContainer) return;
 
     timelineContainer.addEventListener('wheel', (e: WheelEvent) => {
@@ -253,7 +255,7 @@ export class TraceVisualizerElement extends HTMLElement {
     }, { passive: false });
 
     timelineContainer.addEventListener('mousedown', (e: MouseEvent) => {
-      if (e.button === 0 && !(e.target as HTMLElement).classList.contains('span-bar')) {
+      if (e.button === 0 && !(e.target as HTMLElement).classList.contains(styles.spanBar)) {
         this.isPanning = true;
         this.panStartX = e.clientX;
         this.panStartOffset = this.panOffset;
@@ -295,7 +297,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private clampPanOffset(): void {
-    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+    const timelineContainer = this.shadow.querySelector('.' + styles.timelineContainer) as HTMLElement;
     if (!timelineContainer) return;
 
     const containerWidth = timelineContainer.clientWidth;
@@ -312,7 +314,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private updateZoomPan(): void {
-    const timelineContainer = this.shadow.querySelector('.timeline-container') as HTMLElement;
+    const timelineContainer = this.shadow.querySelector('.' + styles.timelineContainer) as HTMLElement;
 
     this.clampPanOffset();
 
@@ -322,7 +324,7 @@ export class TraceVisualizerElement extends HTMLElement {
     }
 
     // Update timeline overlay ticks (outside scaled container)
-    const timelineOverlay = this.shadow.querySelector('.timeline-overlay .timeline') as HTMLElement;
+    const timelineOverlay = this.shadow.querySelector(`.${styles.timelineOverlay} .${styles.timeline}`) as HTMLElement;
     if (timelineOverlay && timelineContainer) {
       const timeRange = this._tree.getTimeRange();
       const containerWidth = timelineContainer.clientWidth;
@@ -331,40 +333,40 @@ export class TraceVisualizerElement extends HTMLElement {
       );
     }
 
-    const durationLabels = this.shadow.querySelectorAll('.span-duration');
+    const durationLabels = this.shadow.querySelectorAll('.' + styles.spanDuration);
     durationLabels.forEach(label => {
       (label as HTMLElement).style.transform = `scaleX(${1 / this.zoomLevel})`;
       (label as HTMLElement).style.transformOrigin = 'left center';
     });
 
-    const zoomDisplay = this.shadow.querySelector('.zoom-display') as HTMLElement;
+    const zoomDisplay = this.shadow.querySelector('.' + styles.zoomDisplay) as HTMLElement;
     if (zoomDisplay) {
       zoomDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
     }
   }
 
   private addZoomControls(): void {
-    const traceViewer = this.shadow.querySelector('.trace-viewer');
+    const traceViewer = this.shadow.querySelector('.' + styles.traceViewer);
     if (!traceViewer) return;
 
     const config = this.resolveConfig();
     const controls = document.createElement('div');
-    controls.className = 'zoom-controls';
+    controls.className = styles.zoomControls;
     controls.innerHTML = Template.getZoomControlsMarkup(config);
 
     traceViewer.appendChild(controls);
 
-    controls.querySelector('.zoom-in')?.addEventListener('click', () => {
+    controls.querySelector('.' + styles.zoomIn)?.addEventListener('click', () => {
       this.zoomLevel = Math.min(10, this.zoomLevel * 1.2);
       this.updateZoomPan();
     });
 
-    controls.querySelector('.zoom-out')?.addEventListener('click', () => {
+    controls.querySelector('.' + styles.zoomOut)?.addEventListener('click', () => {
       this.zoomLevel = Math.max(1, this.zoomLevel * 0.8);
       this.updateZoomPan();
     });
 
-    controls.querySelector('.zoom-reset')?.addEventListener('click', () => {
+    controls.querySelector('.' + styles.zoomReset)?.addEventListener('click', () => {
       this.zoomLevel = 1;
       this.panOffset = 0;
       this.updateZoomPan();
@@ -376,11 +378,11 @@ export class TraceVisualizerElement extends HTMLElement {
   // ---------------------------------------------------------------------------
 
   private showTooltip(span: Span, serviceName: string, x: number, y: number): void {
-    let tooltip = this.shadow.querySelector('.span-tooltip') as HTMLElement;
-    
+    let tooltip = this.shadow.querySelector('.' + styles.spanTooltip) as HTMLElement;
+
     if (!tooltip) {
       tooltip = document.createElement('div');
-      tooltip.className = 'span-tooltip';
+      tooltip.className = styles.spanTooltip;
       this.shadow.appendChild(tooltip);
     }
 
@@ -391,7 +393,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private hideTooltip(): void {
-    const tooltip = this.shadow.querySelector('.span-tooltip') as HTMLElement;
+    const tooltip = this.shadow.querySelector('.' + styles.spanTooltip) as HTMLElement;
     if (tooltip) {
       tooltip.style.display = 'none';
     }
@@ -443,13 +445,14 @@ export class TraceVisualizerElement extends HTMLElement {
         this.panOffset = 0;
         this.updateZoomPan();
         break;
-      case 'Escape':
+      case 'Escape': {
         e.preventDefault();
-        const detailPanel = this.shadow.querySelector('.detail-panel');
-        detailPanel?.classList.remove('visible');
+        const detailPanel = this.shadow.querySelector('.' + styles.detailPanel);
+        detailPanel?.classList.remove(styles.detailPanelVisible);
         this.selectedSpanIndex = -1;
         this.updateSpanSelection();
         break;
+      }
       case 'Enter':
       case ' ':
         e.preventDefault();
@@ -472,7 +475,7 @@ export class TraceVisualizerElement extends HTMLElement {
   private selectNextSpan(): void {
     const flatSpans = this._tree.flatten();
     if (flatSpans.length === 0) return;
-    
+
     this.selectedSpanIndex = Math.min(flatSpans.length - 1, this.selectedSpanIndex + 1);
     this.updateSpanSelection();
     this.scrollToSelectedSpan();
@@ -489,23 +492,23 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private updateSpanSelection(): void {
-    const spanBars = this.shadow.querySelectorAll('.span-bar');
+    const spanBars = this.shadow.querySelectorAll('.' + styles.spanBar);
     spanBars.forEach((bar, index) => {
       if (index === this.selectedSpanIndex) {
-        bar.classList.add('selected');
+        bar.classList.add(styles.spanBarSelected);
       } else {
-        bar.classList.remove('selected');
+        bar.classList.remove(styles.spanBarSelected);
       }
     });
   }
 
   private scrollToSelectedSpan(): void {
     if (this.selectedSpanIndex < 0) return;
-    
+
     const config = this.resolveConfig();
     const yPosition = 50 + this.selectedSpanIndex * (config.spanHeight + config.spanPadding);
-    const traceChart = this.shadow.querySelector('.trace-chart') as HTMLElement;
-    
+    const traceChart = this.shadow.querySelector('.' + styles.traceChart) as HTMLElement;
+
     if (traceChart) {
       const chartRect = traceChart.getBoundingClientRect();
       const targetY = yPosition - chartRect.height / 2;
@@ -518,13 +521,13 @@ export class TraceVisualizerElement extends HTMLElement {
     const entry = flatSpans[index];
     if (!entry) return;
 
-    const detailPanel = this.shadow.querySelector('.detail-panel') as HTMLElement;
-    const detailContent = this.shadow.querySelector('.detail-content') as HTMLElement;
-    
+    const detailPanel = this.shadow.querySelector('.' + styles.detailPanel) as HTMLElement;
+    const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
+
     if (detailContent) {
       detailContent.textContent = JSON.stringify(entry.span, null, 2);
     }
-    detailPanel?.classList.add('visible');
+    detailPanel?.classList.add(styles.detailPanelVisible);
 
     this.dispatchEvent(new CustomEvent('span-selected', {
       detail: { span: entry.span },
