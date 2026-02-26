@@ -117,29 +117,45 @@ const cssMinifyPlugin = {
   },
 };
 
-const buildOptions = {
+const watchPlugin = {
+  name: 'watch-plugin',
+  setup(build) {
+    build.onEnd(result => {
+      if (result.errors.length > 0) {
+        console.error('✗ Build failed with errors');
+      } else {
+        logBuildResult(result);
+      }
+    });
+  },
+};
+
+const sharedOptions = {
   entryPoints: ['src/index.ts'],
   bundle: true,
-  minify: true,
   sourcemap: true,
   metafile: true,
   format: 'esm',
-  outfile: 'dist/index.js',
+};
+
+const minifiedOptions = {
+  ...sharedOptions,
+  minify: true,
+  outfile: 'dist/index.min.js',
   plugins: [
     htmlMinifyPlugin,
     cssMinifyPlugin,
-    ...(isWatchMode ? [{
-      name: 'watch-plugin',
-      setup(build) {
-        build.onEnd(result => {
-          if (result.errors.length > 0) {
-            console.error('✗ Build failed with errors');
-          } else {
-            logBuildResult(result);
-          }
-        });
-      }
-    }] : [])
+    ...(isWatchMode ? [watchPlugin] : []),
+  ],
+};
+
+const devOptions = {
+  ...sharedOptions,
+  minify: false,
+  outfile: 'dist/index.js',
+  loader: { '.css': 'text' },
+  plugins: [
+    ...(isWatchMode ? [watchPlugin] : []),
   ],
 };
 
@@ -154,33 +170,35 @@ function logBuildResult(result) {
   }
 }
 
-const context = await esbuild.context(buildOptions);
+const [minCtx, devCtx] = await Promise.all([
+  esbuild.context(minifiedOptions),
+  esbuild.context(devOptions),
+]);
 
 if (isWatchMode) {
   console.log('👀 Watching for changes...');
-  
-  await context.watch();
-  
-  // Graceful shutdown
-  process.on('SIGINT', async () => {
-    console.log('\n✓ Stopping watch mode...');
-    await context.dispose();
-    process.exit(0);
-  });
 
-  process.on('SIGTERM', async () => {
-    await context.dispose();
+  await Promise.all([minCtx.watch(), devCtx.watch()]);
+
+  const shutdown = async () => {
+    console.log('\n✓ Stopping watch mode...');
+    await Promise.all([minCtx.dispose(), devCtx.dispose()]);
     process.exit(0);
-  });
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 } else {
-  // One-shot build mode
   try {
-    const result = await context.rebuild();
-    logBuildResult(result);
-    await context.dispose();
+    const [minResult, devResult] = await Promise.all([
+      minCtx.rebuild(),
+      devCtx.rebuild(),
+    ]);
+    logBuildResult(minResult);
+    logBuildResult(devResult);
+    await Promise.all([minCtx.dispose(), devCtx.dispose()]);
   } catch (error) {
     console.error('✗ Build failed:', error.message);
-    await context.dispose();
+    await Promise.all([minCtx.dispose(), devCtx.dispose()]);
     process.exit(1);
   }
 }
