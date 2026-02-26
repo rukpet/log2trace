@@ -3,8 +3,80 @@ import { readFileSync } from 'fs';
 import { transform } from 'lightningcss';
 import ts from 'typescript';
 import { minify as minifyHtml } from 'html-minifier-terser';
+import { vanillaExtractPlugin } from '@vanilla-extract/esbuild-plugin';
 
 const isWatchMode = process.argv.includes('--watch');
+
+
+/**
+ * Creates the two-plugin set needed to use vanilla-extract with Shadow DOM.
+ *
+ * Problem: vanilla-extract normally emits CSS via `loader: 'css'`, producing a
+ * companion .css file. For Shadow DOM we need the CSS as a plain string for
+ * adoptedStyleSheets — not as a separate file.
+ *
+ * Solution:
+ *  1. vePlugin — runs vanilla-extract compilation. processCss captures the CSS
+ *     text, resolves cssReady, then returns '' to suppress the companion .css
+ *     file (esbuild sees empty CSS → nothing emitted).
+ *  2. cssTextPlugin — virtual module `virtual:component-css` that awaits
+ *     cssReady and returns the captured CSS as a text string.
+ *
+ * Timing: while cssTextPlugin.onLoad awaits cssReady, the Node.js event loop
+ * is free to process other esbuild messages, including the vanillaCssNamespace
+ * onLoad that calls processCss and resolves cssReady.
+ *
+ * @param {boolean} shouldMinify - whether to minify CSS via lightningcss
+ */
+function makeVanillaExtractPlugins(shouldMinify = false) {
+  let capturedCss = '';
+  let cssResolve = /** @type {(() => void) | null} */ (null);
+  let cssReady = new Promise(resolve => { cssResolve = resolve; });
+
+  // Plugin 1 — vanilla-extract compiler with CSS capture.
+  const vePlugin = vanillaExtractPlugin({
+    processCss: async (css) => {
+      if (shouldMinify) {
+        const { code } = transform({ code: Buffer.from(css), minify: true });
+        capturedCss += code.toString();
+      } else {
+        capturedCss += css;
+      }
+      cssResolve?.();
+      // Return empty string so esbuild receives empty CSS and emits nothing,
+      // suppressing the companion .css sidecar file.
+      return '';
+    },
+  });
+
+  // Plugin 2 — virtual module that exposes the captured CSS as a text string.
+  // Import it as: import componentCss from 'virtual:component-css'
+  const cssTextPlugin = {
+    name: 've-css-as-text',
+    setup(build) {
+      build.onStart(() => {
+        capturedCss = '';
+        cssReady = new Promise(resolve => { cssResolve = resolve; });
+      });
+      build.onResolve({ filter: /^virtual:component-css$/ }, () => ({
+        path: 'virtual:component-css',
+        namespace: 've-css-text',
+      }));
+      build.onLoad({ filter: /.*/, namespace: 've-css-text' }, async () => {
+        // Wait until processCss has been called (styles.css.ts fully compiled).
+        // The Node.js event loop remains free while awaiting, so esbuild can
+        // concurrently process styles.css.ts and its virtual CSS dependency.
+        await cssReady;
+        return {
+          contents: capturedCss,
+          loader: 'text',
+        };
+      });
+    },
+  };
+
+  return [vePlugin, cssTextPlugin];
+}
 
 const htmlMinifyPlugin = {
   name: 'html-minify',
@@ -99,24 +171,6 @@ const htmlMinifyPlugin = {
   },
 };
 
-const cssMinifyPlugin = {
-  name: 'css-minify',
-  setup(build) {
-    build.onLoad({ filter: /\.css$/ }, async (args) => {
-      const css = readFileSync(args.path, 'utf8');
-      const { code } = transform({
-        filename: args.path,
-        code: Buffer.from(css),
-        minify: true,
-      });
-      return {
-        contents: code.toString(),
-        loader: 'text',
-      };
-    });
-  },
-};
-
 const watchPlugin = {
   name: 'watch-plugin',
   setup(build) {
@@ -143,8 +197,8 @@ const minifiedOptions = {
   minify: true,
   outfile: 'dist/index.min.js',
   plugins: [
+    ...makeVanillaExtractPlugins(true),
     htmlMinifyPlugin,
-    cssMinifyPlugin,
     ...(isWatchMode ? [watchPlugin] : []),
   ],
 };
@@ -153,8 +207,9 @@ const devOptions = {
   ...sharedOptions,
   minify: false,
   outfile: 'dist/index.js',
-  loader: { '.css': 'text' },
   plugins: [
+    ...makeVanillaExtractPlugins(false),
+    htmlMinifyPlugin,
     ...(isWatchMode ? [watchPlugin] : []),
   ],
 };

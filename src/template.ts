@@ -2,6 +2,7 @@ import { Span, SpanKind } from './opentelemetry/trace.js';
 import { nanoToMilli } from './time.js';
 import { TraceTree } from './trace-tree.js';
 import { VisualizationConfig } from './visualization-config.js';
+import * as styles from './styles.css.ts';
 
 export class Template {
 
@@ -44,7 +45,7 @@ export class Template {
       const eventMs = nanoToMilli(event.timeUnixNano);
       const eventOffset = ((eventMs - startMs) / spanDuration) * 100;
       return `
-        <div class="span-event"
+        <div class="${styles.spanEvent}"
              style="left:${eventOffset}%"
              title="${event.name}\nTime: ${Template.formatDuration(eventMs - startMs)}">
         </div>
@@ -58,15 +59,15 @@ export class Template {
       .map(([kindValue, color]) => {
         const label = SpanKind[Number(kindValue)] || 'Unknown';
         return `
-          <div class="legend-item">
-            <div class="legend-color" style="background: ${color};"></div>
+          <div class="${styles.legendItem}">
+            <div class="${styles.legendColor}" style="background: ${color};"></div>
             <span>${label}</span>
           </div>
         `;
       })
       .join('');
 
-    return `<div class="legend">${items}</div>`;
+    return `<div class="${styles.legend}">${items}</div>`;
   }
 
   static getTimelineTicksMarkup(timeRange: { min: number; max: number }, ticks: number): string {
@@ -78,8 +79,8 @@ export class Template {
       const relativeTime = (duration * i / ticks);
 
       tickElements.push(`
-        <div class="timeline-tick" style="left: ${position}%;">
-          <div class="timeline-label">${Template.formatDuration(relativeTime)}</div>
+        <div class="${styles.timelineTick}" style="left: ${position}%;">
+          <div class="${styles.timelineLabel}">${Template.formatDuration(relativeTime)}</div>
         </div>
       `);
     }
@@ -106,8 +107,8 @@ export class Template {
 
       const relativeTime = duration * fraction;
       tickElements.push(`
-        <div class="timeline-tick" style="left: ${pixelX}px;">
-          <div class="timeline-label">${Template.formatDuration(relativeTime)}</div>
+        <div class="${styles.timelineTick}" style="left: ${pixelX}px;">
+          <div class="${styles.timelineLabel}">${Template.formatDuration(relativeTime)}</div>
         </div>
       `);
     }
@@ -121,7 +122,7 @@ export class Template {
 
   static getTimelineMarkup(timeRange: { min: number; max: number }): string {
     return `
-      <div class="timeline">
+      <div class="${styles.timeline}">
         ${Template.getTimelineTicksMarkup(timeRange, Template.calculateTickCount())}
       </div>
     `;
@@ -146,12 +147,12 @@ export class Template {
     const kindLabel = SpanKind[span.kind];
 
     return `
-      <div class="span-row" style="top:${yPosition}px;height:${config.spanHeight}px">
-        <div class="span-bar"
+      <div class="${styles.spanRow}" style="top:${yPosition}px;height:${config.spanHeight}px">
+        <div class="${styles.spanBar}"
              style="left:${startPercent}%;width:${Math.max(widthPercent, 0.5)}%;background:${color}"
              data-span-id="${span.spanId}"
              title="${span.name}\nDuration: ${Template.formatDuration(spanDuration)}\nKind: ${kindLabel}">
-          <div class="span-duration">
+          <div class="${styles.spanDuration}">
             ${Template.formatDuration(spanDuration)}
           </div>
           ${Template.getEventsMarkup(span)}
@@ -182,8 +183,8 @@ export class Template {
       const serviceName = tree.serviceNameOf.get(span.spanId) || 'unknown-service';
 
       return `
-        <div class="span-label-fixed" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${span.name}">
-          <span class="status-icon">${statusIcon}</span>
+        <div class="${styles.spanLabelFixed}" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${span.name}">
+          <span class="${styles.statusIcon}">${statusIcon}</span>
           <strong>${serviceName}</strong>
           <br/>
           <small>${span.name}</small>
@@ -204,36 +205,36 @@ export class Template {
     const traceId = tree.roots[0]?.traceId || 'N/A';
 
     return `
-      <div class="trace-viewer" style="background: ${config.backgroundColor};">
-        <div class="trace-header">
+      <div class="${styles.traceViewer}" style="background: ${config.backgroundColor};">
+        <div class="${styles.traceHeader}">
           <h3>Trace: ${traceId}</h3>
-          <div class="trace-stats">
+          <div class="${styles.traceStats}">
             <span>Total Spans: ${flatSpans.length}</span>
             <span>Duration: ${Template.formatDuration(timeRange.max - timeRange.min)}</span>
           </div>
         </div>
-        <div class="trace-body" style="height: ${totalHeight}px;">
-          <div class="trace-chart">
-            <div class="span-labels-container">
+        <div class="${styles.traceBody}" style="height: ${totalHeight}px;">
+          <div class="${styles.traceChart}">
+            <div class="${styles.spanLabelsContainer}">
               ${Template.getSpanLabelsMarkup(tree, flatSpans, config)}
             </div>
-            <div class="timeline-overlay">
-              <div class="timeline">
+            <div class="${styles.timelineOverlay}">
+              <div class="${styles.timeline}">
                 ${Template.getTimelineTicksMarkup(timeRange, Template.calculateTickCount())}
               </div>
             </div>
-            <div class="timeline-clip">
-              <div class="timeline-container">
+            <div class="${styles.timelineClip}">
+              <div class="${styles.timelineContainer}">
                 ${Template.getSpansMarkup(flatSpans, timeRange, config)}
               </div>
             </div>
           </div>
-          <div class="detail-panel" style="width: ${config.detailPanelWidth};">
-            <div class="detail-panel-header">
+          <div class="${styles.detailPanel}" style="width: ${config.detailPanelWidth};">
+            <div class="${styles.detailPanelHeader}">
               <h3>Span Details</h3>
-              <button class="detail-panel-close" title="Close">&times;</button>
+              <button class="${styles.detailPanelClose}" title="Close">&times;</button>
             </div>
-            <div class="detail-content"></div>
+            <div class="${styles.detailContent}"></div>
           </div>
         </div>
       </div>
@@ -242,9 +243,9 @@ export class Template {
 
   static getLoadingMarkup(): string {
     return `
-      <div class="trace-viewer">
-        <div class="message loading">
-          <div class="spinner"></div>
+      <div class="${styles.traceViewer}">
+        <div class="${styles.message} ${styles.messageLoading}">
+          <div class="${styles.spinner}"></div>
           Loading trace data...
         </div>
       </div>
@@ -253,8 +254,8 @@ export class Template {
 
   static getEmptyMarkup(): string {
     return `
-      <div class="trace-viewer">
-        <div class="message empty">
+      <div class="${styles.traceViewer}">
+        <div class="${styles.message} ${styles.messageEmpty}">
           No trace data loaded. Set the <code>data-url</code> attribute or use <code>.traceData</code> property.
         </div>
       </div>
@@ -264,17 +265,17 @@ export class Template {
   static getZoomControlsMarkup(config: VisualizationConfig): string {
     return `
       ${config.showLegend ? Template.getLegendMarkup(config) : ''}
-      <button class="zoom-btn zoom-in" title="Zoom In">+</button>
-      <span class="zoom-display">100%</span>
-      <button class="zoom-btn zoom-out" title="Zoom Out">&minus;</button>
-      <button class="zoom-btn zoom-reset" title="Reset (or double-click)">Reset</button>
+      <button class="${styles.zoomBtn} ${styles.zoomIn}" title="Zoom In">+</button>
+      <span class="${styles.zoomDisplay}">100%</span>
+      <button class="${styles.zoomBtn} ${styles.zoomOut}" title="Zoom Out">&minus;</button>
+      <button class="${styles.zoomBtn} ${styles.zoomReset}" title="Reset (or double-click)">Reset</button>
     `;
   }
 
   static getErrorMarkup(message: string): string {
     return `
-      <div class="trace-viewer">
-        <div class="message error">
+      <div class="${styles.traceViewer}">
+        <div class="${styles.message} ${styles.messageError}">
           <strong>Error:</strong> ${message}
         </div>
       </div>
@@ -288,41 +289,42 @@ export class Template {
     const duration = nanoToMilli(span.endTimeUnixNano) - nanoToMilli(span.startTimeUnixNano);
     const kindLabel = SpanKind[span.kind] || 'Unknown';
     const statusLabel = span.status?.code === 1 ? 'OK' : span.status?.code === 2 ? 'Error' : 'Unset';
-    const statusClass = span.status?.code === 2 ? 'error' : span.status?.code === 1 ? 'ok' : 'unset';
+    type TooltipStatusVariant = keyof typeof styles.tooltipStatusVariants;
+    const statusVariant: TooltipStatusVariant = span.status?.code === 2 ? 'error' : span.status?.code === 1 ? 'ok' : 'unset';
 
     return `
-      <div class="tooltip-header">
+      <div class="${styles.tooltipHeader}">
         <strong>${serviceName}</strong>
-        <span class="tooltip-status ${statusClass}">${statusLabel}</span>
+        <span class="${styles.tooltipStatus} ${styles.tooltipStatusVariants[statusVariant]}">${statusLabel}</span>
       </div>
-      <div class="tooltip-operation">${span.name}</div>
-      <div class="tooltip-info">
-        <div class="tooltip-row">
-          <span class="tooltip-label">Duration:</span>
-          <span class="tooltip-value">${Template.formatDuration(duration)}</span>
+      <div class="${styles.tooltipOperation}">${span.name}</div>
+      <div class="${styles.tooltipInfo}">
+        <div class="${styles.tooltipRow}">
+          <span class="${styles.tooltipLabel}">Duration:</span>
+          <span class="${styles.tooltipValue}">${Template.formatDuration(duration)}</span>
         </div>
-        <div class="tooltip-row">
-          <span class="tooltip-label">Kind:</span>
-          <span class="tooltip-value">${kindLabel}</span>
+        <div class="${styles.tooltipRow}">
+          <span class="${styles.tooltipLabel}">Kind:</span>
+          <span class="${styles.tooltipValue}">${kindLabel}</span>
         </div>
-        <div class="tooltip-row">
-          <span class="tooltip-label">Span ID:</span>
-          <span class="tooltip-value">${span.spanId.substring(0, 16)}...</span>
+        <div class="${styles.tooltipRow}">
+          <span class="${styles.tooltipLabel}">Span ID:</span>
+          <span class="${styles.tooltipValue}">${span.spanId.substring(0, 16)}...</span>
         </div>
         ${span.status?.message ? `
-          <div class="tooltip-row">
-            <span class="tooltip-label">Message:</span>
-            <span class="tooltip-value">${span.status.message}</span>
+          <div class="${styles.tooltipRow}">
+            <span class="${styles.tooltipLabel}">Message:</span>
+            <span class="${styles.tooltipValue}">${span.status.message}</span>
           </div>
         ` : ''}
         ${span.events && span.events.length > 0 ? `
-          <div class="tooltip-row">
-            <span class="tooltip-label">Events:</span>
-            <span class="tooltip-value">${span.events.length}</span>
+          <div class="${styles.tooltipRow}">
+            <span class="${styles.tooltipLabel}">Events:</span>
+            <span class="${styles.tooltipValue}">${span.events.length}</span>
           </div>
         ` : ''}
       </div>
-      <div class="tooltip-hint">Click for full details</div>
+      <div class="${styles.tooltipHint}">Click for full details</div>
     `;
   }
 }
