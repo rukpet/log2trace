@@ -1,8 +1,103 @@
 import * as esbuild from 'esbuild';
 import { readFileSync } from 'fs';
 import { transform } from 'lightningcss';
+import ts from 'typescript';
+import { minify as minifyHtml } from 'html-minifier-terser';
 
 const isWatchMode = process.argv.includes('--watch');
+
+const htmlMinifyPlugin = {
+  name: 'html-minify',
+  setup(build) {
+    build.onLoad({ filter: /template\.ts$/ }, async (args) => {
+      let source = readFileSync(args.path, 'utf8');
+
+      // Two passes: nested (inner) templates first, then outer templates.
+      // Pass 1 minifies inner templates (e.g. inside ternary expressions).
+      // Pass 2 re-parses the updated source so outer templates incorporate
+      // already-minified inner text when their expressions are extracted.
+      for (const processNested of [true, false]) {
+        const sf = ts.createSourceFile(args.path, source, ts.ScriptTarget.Latest, true);
+        const candidates = [];
+
+        const collect = (node) => {
+          const isTemplate =
+            ts.isNoSubstitutionTemplateLiteral(node) ||
+            ts.isTemplateExpression(node);
+
+          if (isTemplate) {
+            const staticParts = ts.isTemplateExpression(node)
+              ? [node.head.text, ...node.templateSpans.map(s => s.literal.text)]
+              : [node.text];
+            const containsHtml = staticParts.some(p => /<[a-zA-Z/]/.test(p));
+
+            if (containsHtml) {
+              let ancestor = node.parent;
+              let isNested = false;
+              while (ancestor) {
+                if (ts.isTemplateSpan(ancestor)) { isNested = true; break; }
+                ancestor = ancestor.parent;
+              }
+              if (isNested === processNested) candidates.push(node);
+            }
+          }
+          ts.forEachChild(node, collect);
+        };
+        collect(sf);
+
+        // Build minified replacement for each candidate
+        const replacements = []; // [start, end, newText]
+
+        for (const node of candidates) {
+          if (ts.isNoSubstitutionTemplateLiteral(node)) {
+            const minified = await minifyHtml(node.text, {
+              collapseWhitespace: true,
+              removeComments: true,
+            });
+            replacements.push([node.getStart(sf), node.end, '`' + minified + '`']);
+          } else {
+            const spans = node.templateSpans;
+            const exprs = spans.map(s =>
+              source.slice(s.expression.getStart(sf), s.expression.end)
+            );
+
+            // Replace ${...} with stable placeholders, minify, then restore
+            let combined = node.head.text;
+            spans.forEach((s, i) => {
+              combined += `__HTMLEXPR_${i}__`;
+              combined += s.literal.text;
+            });
+
+            const minified = await minifyHtml(combined, {
+              collapseWhitespace: true,
+              removeComments: true,
+              removeAttributeQuotes: false,
+            });
+
+            // split() with capture group → [head, '0', mid0, '1', mid1, ..., tail]
+            const parts = minified.split(/__HTMLEXPR_(\d+)__/);
+
+            let newTemplate = '`' + parts[0];
+            for (let i = 0; i < spans.length; i++) {
+              newTemplate += '${' + exprs[i] + '}' + parts[i * 2 + 2];
+            }
+            newTemplate += '`';
+
+            replacements.push([node.getStart(sf), node.end, newTemplate]);
+          }
+        }
+
+        // Apply end-to-start so earlier positions stay valid
+        replacements.sort((a, b) => b[0] - a[0]);
+        for (const [start, end, text] of replacements) {
+          source = source.slice(0, start) + text + source.slice(end);
+        }
+      }
+
+      return { contents: source, loader: 'ts' };
+    });
+  },
+};
 
 const cssMinifyPlugin = {
   name: 'css-minify',
@@ -31,6 +126,7 @@ const buildOptions = {
   format: 'esm',
   outfile: 'dist/index.js',
   plugins: [
+    htmlMinifyPlugin,
     cssMinifyPlugin,
     ...(isWatchMode ? [{
       name: 'watch-plugin',
