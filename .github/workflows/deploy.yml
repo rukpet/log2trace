@@ -37,8 +37,8 @@ jobs:
           cp demo/demo.html _site/index.html
           cp demo/example.json _site/example.json
           cp demo/favicon.svg _site/favicon.svg
-          cp dist/index.js _site/dist/index.js
-          cp dist/index.js.map _site/dist/index.js.map
+          cp dist/index.min.js _site/dist/index.js
+          cp dist/index.min.js.map _site/dist/index.js.map
 
       - uses: actions/upload-pages-artifact@v3
         with:

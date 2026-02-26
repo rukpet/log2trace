@@ -26,9 +26,8 @@ const isWatchMode = process.argv.includes('--watch');
  * is free to process other esbuild messages, including the vanillaCssNamespace
  * onLoad that calls processCss and resolves cssReady.
  *
- * @param {boolean} shouldMinify - whether to minify CSS via lightningcss
  */
-function makeVanillaExtractPlugins(shouldMinify = false) {
+function makeVanillaExtractPlugins() {
   let capturedCss = '';
   let cssResolve = /** @type {(() => void) | null} */ (null);
   let cssReady = new Promise(resolve => { cssResolve = resolve; });
@@ -36,12 +35,7 @@ function makeVanillaExtractPlugins(shouldMinify = false) {
   // Plugin 1 — vanilla-extract compiler with CSS capture.
   const vePlugin = vanillaExtractPlugin({
     processCss: async (css) => {
-      if (shouldMinify) {
-        const { code } = transform({ code: Buffer.from(css), minify: true });
-        capturedCss += code.toString();
-      } else {
-        capturedCss += css;
-      }
+      capturedCss += css;
       cssResolve?.();
       // Return empty string so esbuild receives empty CSS and emits nothing,
       // suppressing the companion .css sidecar file.
@@ -67,10 +61,15 @@ function makeVanillaExtractPlugins(shouldMinify = false) {
         // The Node.js event loop remains free while awaiting, so esbuild can
         // concurrently process styles.css.ts and its virtual CSS dependency.
         await cssReady;
-        return {
-          contents: capturedCss,
-          loader: 'text',
-        };
+        let contents = capturedCss;
+        if (build.initialOptions.minify) {
+          const { code } = transform({ code: Buffer.from(contents), minify: true });
+          contents = code.toString();
+        }
+        // Use a JS template literal so actual newlines are preserved in the
+        // dev bundle (loader:'text' would JSON-escape them into \n sequences).
+        const escaped = contents.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+        return { contents: `export default \`${escaped}\`;`, loader: 'js' };
       });
     },
   };
@@ -197,7 +196,7 @@ const minifiedOptions = {
   minify: true,
   outfile: 'dist/index.min.js',
   plugins: [
-    ...makeVanillaExtractPlugins(true),
+    ...makeVanillaExtractPlugins(),
     htmlMinifyPlugin,
     ...(isWatchMode ? [watchPlugin] : []),
   ],
@@ -208,7 +207,7 @@ const devOptions = {
   minify: false,
   outfile: 'dist/index.js',
   plugins: [
-    ...makeVanillaExtractPlugins(false),
+    ...makeVanillaExtractPlugins(),
     ...(isWatchMode ? [watchPlugin] : []),
   ],
 };
