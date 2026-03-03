@@ -230,6 +230,7 @@ export const spanBar = style({
   cursor: 'pointer',
   boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
   transition: 'transform 0.2s, box-shadow 0.2s',
+  transformOrigin: 'center center',
   ':hover': {
     transform: 'scaleY(1.2)',
     boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
@@ -263,9 +264,10 @@ export const spanEvent = style({
   width: 2,
   background: 'rgba(255,255,255,0.8)',
   cursor: 'help',
+  transition: 'transform 0.2s',
+  transformOrigin: 'center center',
   ':hover': {
-    width: 4,
-    marginLeft: -1,
+    transform: 'scaleX(2)',
   },
 });
 
