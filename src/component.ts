@@ -351,6 +351,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const eventMarkers = this.shadow.querySelectorAll('.' + styles.spanEvent);
     eventMarkers.forEach(marker => {
       (marker as HTMLElement).style.transform = `scaleX(${1 / this.zoomLevel})`;
+      (marker as HTMLElement).style.transformOrigin = 'left center';
     });
 
     const zoomDisplay = this.shadow.querySelector('.' + styles.zoomDisplay) as HTMLElement;
