@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OTel Trace Data Demo</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <style>
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>OTel Trace Data Demo</h1>
+    </header>
+
+    <h2>OTel Trace Data (otel-trace.json)</h2>
+    <trace-visualizer data-url="./otel-trace.json" full-width show-legend></trace-visualizer>
+
+  </div>
+
+  <script type="module">
+    import { transformLogs } from './dist/index.js';
+  </script>
+</body>
+</html>

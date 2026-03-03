@@ -2,6 +2,7 @@ import { TraceData, Span } from './opentelemetry/trace.js';
 import { TraceTree } from './trace-tree.js';
 import { Template } from './template.js';
 import { VisualizationConfig } from './visualization-config.js';
+import { transformLogs, type TransformConfig } from './transform.js';
 import componentCss from 'virtual:component-css';
 import * as styles from './styles.css.ts';
 
@@ -74,6 +75,14 @@ export class TraceVisualizerElement extends HTMLElement {
 
   get traceData(): TraceTree {
     return this._tree;
+  }
+
+  /**
+   * Set raw log data with transform configuration.
+   * Convenience wrapper: transforms logs internally and renders the result.
+   */
+  set logData(input: { logs: unknown[]; config: TransformConfig }) {
+    this.traceData = transformLogs(input.logs, input.config);
   }
 
   /**
@@ -200,7 +209,7 @@ export class TraceVisualizerElement extends HTMLElement {
         const entry = flatSpans.find(e => e.span.spanId === spanId);
 
         if (entry) {
-          detailContent.textContent = JSON.stringify(entry.span, null, 2);
+          detailContent.textContent = this.getSpanDetailContent(entry.span);
           detailPanel.classList.add(styles.detailPanelVisible);
           this.selectedSpanIndex = index;
           this.updateSpanSelection();
@@ -337,6 +346,11 @@ export class TraceVisualizerElement extends HTMLElement {
     durationLabels.forEach(label => {
       (label as HTMLElement).style.transform = `scaleX(${1 / this.zoomLevel})`;
       (label as HTMLElement).style.transformOrigin = 'left center';
+    });
+
+    const eventMarkers = this.shadow.querySelectorAll('.' + styles.spanEvent);
+    eventMarkers.forEach(marker => {
+      (marker as HTMLElement).style.transform = `scaleX(${1 / this.zoomLevel})`;
     });
 
     const zoomDisplay = this.shadow.querySelector('.' + styles.zoomDisplay) as HTMLElement;
@@ -516,6 +530,10 @@ export class TraceVisualizerElement extends HTMLElement {
     }
   }
 
+  private getSpanDetailContent(span: Span): string {
+    return JSON.stringify(span, null, 2);
+  }
+
   private openSpanDetails(index: number): void {
     const flatSpans = this._tree.flatten();
     const entry = flatSpans[index];
@@ -525,7 +543,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
 
     if (detailContent) {
-      detailContent.textContent = JSON.stringify(entry.span, null, 2);
+      detailContent.textContent = this.getSpanDetailContent(entry.span);
     }
     detailPanel?.classList.add(styles.detailPanelVisible);
 

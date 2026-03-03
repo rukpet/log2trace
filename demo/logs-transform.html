@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Transform Demo</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <style>
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Log Transform Demo</h1>
+    </header>
+
+    <h2>Log Transform (logs.json)</h2>
+    <trace-visualizer id="log-viz" full-width show-legend></trace-visualizer>
+
+  </div>
+
+  <script type="module">
+    import { transformLogs } from './dist/index.js';
+
+    const resp = await fetch('./logs.json');
+    const logs = await resp.json();
+
+    document.getElementById('log-viz').logData = {
+      logs,
+      config: {
+        traceIdField: 'text.BTMID',
+        spanGroupFields: ['text.Application', 'text.Action'],
+        spanNameField: 'text.Action',
+        serviceNameField: 'text.Application',
+        timestampField: 'text.CreateDate',
+        statusCodeField: 'text.Code',
+      },
+    };
+  </script>
+</body>
+</html>
