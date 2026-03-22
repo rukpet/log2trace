@@ -7,8 +7,8 @@
  * CSS is injected via adoptedStyleSheets from the virtual:component-css module.
  */
 
-import { TraceData, Span } from './opentelemetry/trace.ts';
-import { TraceTree } from './trace-tree.ts';
+import { TraceData } from './opentelemetry/trace.ts';
+import { TraceTree, type FlatSpan } from './trace-tree.ts';
 import { Template } from './template.ts';
 import { transformLogs } from './transform.ts';
 import { type TraceVisualizerConfig, type TransformConfig, type DisplayConfig, resolveDisplayDefaults } from './config.ts';
@@ -311,8 +311,7 @@ export class TraceVisualizerElement extends HTMLElement {
         const entry = flatSpans.find(e => e.span.spanId === spanId);
 
         if (entry) {
-          const serviceName = tree.serviceNameOf.get(entry.span.spanId) || 'unknown-service';
-          detailContent.innerHTML = Template.getSpanDetailMarkup(entry.span, serviceName);
+          detailContent.innerHTML = Template.getSpanDetailMarkup(entry);
 
           detailPanel.classList.add(styles.detailPanelVisible);
           this.selectedSpanIndex = index;
@@ -332,9 +331,8 @@ export class TraceVisualizerElement extends HTMLElement {
         const entry = flatSpans.find(e => e.span.spanId === spanId);
 
         if (entry) {
-          const serviceName = tree.serviceNameOf.get(entry.span.spanId) || 'unknown-service';
           const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-          this.showTooltip(entry.span, serviceName, rect.left, rect.bottom);
+          this.showTooltip(entry, rect.left, rect.bottom);
         }
       });
 
@@ -497,7 +495,7 @@ export class TraceVisualizerElement extends HTMLElement {
   // Tooltip
   // ---------------------------------------------------------------------------
 
-  private showTooltip(span: Span, serviceName: string, x: number, y: number): void {
+  private showTooltip(entry: FlatSpan, x: number, y: number): void {
     let tooltip = this.shadow.querySelector('.' + styles.spanTooltip) as HTMLElement;
 
     if (!tooltip) {
@@ -506,7 +504,7 @@ export class TraceVisualizerElement extends HTMLElement {
       this.shadow.appendChild(tooltip);
     }
 
-    tooltip.innerHTML = Template.getTooltipMarkup(span, serviceName);
+    tooltip.innerHTML = Template.getTooltipMarkup(entry);
     tooltip.style.display = 'block';
     tooltip.style.left = `${x + 10}px`;
     tooltip.style.top = `${y + 10}px`;
@@ -645,8 +643,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
 
     if (detailContent) {
-      const serviceName = this._tree.serviceNameOf.get(entry.span.spanId) || 'unknown-service';
-      detailContent.innerHTML = Template.getSpanDetailMarkup(entry.span, serviceName);
+      detailContent.innerHTML = Template.getSpanDetailMarkup(entry);
     }
     detailPanel?.classList.add(styles.detailPanelVisible);
 
