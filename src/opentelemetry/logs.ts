@@ -7,8 +7,8 @@ import {
   AnyValue,
   KeyValue, 
   InstrumentationScope 
-} from './common.js';
-import { Resource } from './resource.js';
+} from './common.ts';
+import { Resource } from './resource.ts';
 
 /**
  * Possible values for LogRecord.SeverityNumber

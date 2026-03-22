@@ -1,4 +1,10 @@
-import { SpanKind } from './opentelemetry/trace.js';
+/**
+ * Visualization defaults: span height/padding, colors per SpanKind,
+ * detail panel width, background color. Overridable via the component's
+ * .config setter or HTML attributes.
+ */
+
+import { SpanKind } from './opentelemetry/trace.ts';
 
 const DEFAULT_COLOR_SCHEME: Record<string, string> = {
   [SpanKind.Internal]: '#4A90E2',

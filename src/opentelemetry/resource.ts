@@ -3,7 +3,7 @@
  * Based on opentelemetry-proto/resource/v1/resource.proto
  */
 
-import { KeyValue, EntityRef } from './common.js';
+import { KeyValue, EntityRef } from './common.ts';
 
 /**
  * Resource information. A Resource is an immutable representation of the entity

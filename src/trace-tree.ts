@@ -1,12 +1,21 @@
+/**
+ * Data flow step 2: TraceTree
+ *
+ * Converts flat OTel TraceData into a parent-child span tree.
+ * build() indexes spans, resolves parent links, sorts by start time.
+ * flatten() produces the ordered list that Template uses for rendering.
+ * getTimeRange() computes the min/max timestamps for the timeline axis.
+ */
+
 import {
   TraceData,
   ResourceSpans,
   Span,
-} from './opentelemetry/trace.js';
+} from './opentelemetry/trace.ts';
 import {
   extractString,
-} from './opentelemetry/common.js';
-import { nanoToMilli } from './time.js';
+} from './opentelemetry/common.ts';
+import { nanoToMilli } from './time.ts';
 
 /**
  * Tree structure for organizing raw OTel Spans for visualization.

@@ -10,6 +10,6 @@
  */
 
 // Auto-register the component when imported
-import './component.js';
+import './component.ts';
 
-export { transformLogs, type TransformConfig } from './transform.js';
+export { transformLogs, type TransformConfig } from './transform.ts';
