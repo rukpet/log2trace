@@ -17,27 +17,23 @@
     </header>
 
     <h2>Log Transform (logs.json)</h2>
-    <trace-visualizer id="log-viz" full-width show-legend></trace-visualizer>
+    <trace-visualizer
+      data-url="./logs.json"
+      trace-id-field="text.BTMID"
+      span-group-fields="text.Application,text.Action"
+      span-name-field="text.Action"
+      service-name-field="text.Application"
+      timestamp-field="text.CreateDate"
+      status-code-field="text.Code"
+      parent-span-lookup-fields="text.InitiatingApplication"
+      full-width
+      show-legend
+    ></trace-visualizer>
 
   </div>
 
   <script type="module">
-    import { transformLogs } from './dist/index.min.js';
-
-    const resp = await fetch('./logs.json');
-    const logs = await resp.json();
-
-    document.getElementById('log-viz').logData = {
-      logs,
-      config: {
-        traceIdField: 'text.BTMID',
-        spanGroupFields: ['text.Application', 'text.Action'],
-        spanNameField: 'text.Action',
-        serviceNameField: 'text.Application',
-        timestampField: 'text.CreateDate',
-        statusCodeField: 'text.Code',
-      },
-    };
+    import './dist/index.min.js';
   </script>
 </body>
 </html>

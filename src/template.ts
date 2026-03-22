@@ -10,7 +10,7 @@
 import { Span, SpanKind } from './opentelemetry/trace.ts';
 import { nanoToMilli } from './time.ts';
 import { TraceTree } from './trace-tree.ts';
-import { VisualizationConfig } from './visualization-config.ts';
+import type { DisplayConfig } from './config.ts';
 import * as styles from './styles.css.ts';
 
 export class Template {
@@ -62,7 +62,7 @@ export class Template {
     }).join('');
   }
 
-  static getLegendMarkup(config: VisualizationConfig): string {
+  static getLegendMarkup(config: DisplayConfig): string {
     const items = Object.entries(config.colorScheme)
       .filter(([kindValue]) => Number(kindValue) !== SpanKind.Unspecified)
       .map(([kindValue, color]) => {
@@ -141,7 +141,7 @@ export class Template {
     span: Span,
     index: number,
     timeRange: { min: number; max: number },
-    config: VisualizationConfig
+    config: DisplayConfig
   ): string {
     const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
     const color = config.colorScheme[span.kind] || '#999';
@@ -173,7 +173,7 @@ export class Template {
   static getSpansMarkup(
     flatSpans: Array<{ span: Span; level: number }>,
     timeRange: { min: number; max: number },
-    config: VisualizationConfig
+    config: DisplayConfig
   ): string {
     return flatSpans.map(({ span }, index) =>
       Template.getSpanMarkup(span, index, timeRange, config)
@@ -183,7 +183,7 @@ export class Template {
   static getSpanLabelsMarkup(
     tree: TraceTree,
     flatSpans: Array<{ span: Span; level: number }>,
-    config: VisualizationConfig
+    config: DisplayConfig
   ): string {
     return flatSpans.map(({ span, level }, index) => {
       const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
@@ -206,7 +206,7 @@ export class Template {
   // Top-level markup
   // ---------------------------------------------------------------------------
 
-  static getTraceMarkup(tree: TraceTree, config: VisualizationConfig): string {
+  static getTraceMarkup(tree: TraceTree, config: DisplayConfig): string {
     const flatSpans = tree.flatten();
     const timeRange = tree.getTimeRange();
     const chartHeight = flatSpans.length * (config.spanHeight + config.spanPadding);
@@ -271,7 +271,7 @@ export class Template {
     `;
   }
 
-  static getZoomControlsMarkup(config: VisualizationConfig): string {
+  static getZoomControlsMarkup(config: DisplayConfig): string {
     return `
       ${config.showLegend ? Template.getLegendMarkup(config) : ''}
       <button class="${styles.zoomBtn} ${styles.zoomIn}" title="Zoom In">+</button>

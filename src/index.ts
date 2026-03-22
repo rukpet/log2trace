@@ -12,4 +12,5 @@
 // Auto-register the component when imported
 import './component.ts';
 
-export { transformLogs, type TransformConfig } from './transform.ts';
+export { transformLogs } from './transform.ts';
+export { resolveDisplayDefaults, type TraceVisualizerConfig, type TransformConfig as TransformReady, type DisplayConfig as ResolvedDisplayConfig } from './config.ts';
