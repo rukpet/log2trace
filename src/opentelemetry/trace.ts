@@ -6,8 +6,8 @@
 import { 
   KeyValue, 
   InstrumentationScope 
-} from './common.js';
-import { Resource } from './resource.js';
+} from './common.ts';
+import { Resource } from './resource.ts';
 
 /**
  * SpanKind is the type of span. Can be used to specify additional relationships between spans

@@ -11,8 +11,8 @@ import {
   Span,
   SpanKind,
   Event,
-} from './opentelemetry/trace.js';
-import { KeyValue } from './opentelemetry/common.js';
+} from './opentelemetry/trace.ts';
+import { KeyValue } from './opentelemetry/common.ts';
 
 // ---------------------------------------------------------------------------
 // Public types

@@ -1,7 +1,16 @@
-import { Span, SpanKind } from './opentelemetry/trace.js';
-import { nanoToMilli } from './time.js';
-import { TraceTree } from './trace-tree.js';
-import { VisualizationConfig } from './visualization-config.js';
+/**
+ * Data flow step 3: Template
+ *
+ * Pure static methods that return HTML strings for every visual element
+ * (spans, timeline ticks, tooltips, detail panel, zoom controls, etc.).
+ * No DOM manipulation — the Component sets innerHTML from these strings.
+ * All CSS class names come from styles.css.ts (never raw strings).
+ */
+
+import { Span, SpanKind } from './opentelemetry/trace.ts';
+import { nanoToMilli } from './time.ts';
+import { TraceTree } from './trace-tree.ts';
+import { VisualizationConfig } from './visualization-config.ts';
 import * as styles from './styles.css.ts';
 
 export class Template {

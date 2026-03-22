@@ -1,8 +1,17 @@
-import { TraceData, Span } from './opentelemetry/trace.js';
-import { TraceTree } from './trace-tree.js';
-import { Template } from './template.js';
-import { VisualizationConfig } from './visualization-config.js';
-import { transformLogs, type TransformConfig } from './transform.js';
+/**
+ * Data flow step 4: Component
+ *
+ * Registers <trace-visualizer> custom element. Owns the Shadow DOM,
+ * event handling (click, hover, keyboard), zoom/pan, and the detail panel.
+ * Accepts data via data-url attribute, .traceData setter, or .logData setter.
+ * CSS is injected via adoptedStyleSheets from the virtual:component-css module.
+ */
+
+import { TraceData, Span } from './opentelemetry/trace.ts';
+import { TraceTree } from './trace-tree.ts';
+import { Template } from './template.ts';
+import { VisualizationConfig } from './visualization-config.ts';
+import { transformLogs, type TransformConfig } from './transform.ts';
 import componentCss from 'virtual:component-css';
 import * as styles from './styles.css.ts';
 
