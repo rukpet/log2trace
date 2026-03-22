@@ -2,7 +2,7 @@
  * Log-to-Span Transformation
  *
  * Converts arbitrary application log arrays into OTel TraceData
- * using a user-provided TransformConfig that describes field mappings.
+ * using a TraceVisualizerConfig that describes field mappings.
  */
 
 import {
@@ -13,41 +13,7 @@ import {
   Event,
 } from './opentelemetry/trace.ts';
 import { KeyValue } from './opentelemetry/common.ts';
-
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
-
-export interface TransformConfig {
-  /** Dot-path to the field that groups logs into traces (e.g. "text.BTMID") */
-  traceIdField: string;
-
-  /** Dot-path(s) that group logs into spans within a trace.
-   *  If omitted, each log becomes its own span. */
-  spanGroupFields?: string | string[];
-
-  /** Dot-path to the field used as the span name/label (e.g. "text.Action") */
-  spanNameField: string;
-
-  /** Dot-path to the field that determines the service/resource row (e.g. "text.MachineName") */
-  serviceNameField: string;
-
-  /** Dot-path to the timestamp field (ISO 8601 or epoch-ms) */
-  timestampField: string;
-
-  /** Dot-path to an explicit end-time field, if available */
-  endTimeField?: string;
-
-  /** Dot-path to a field providing parent-child hierarchy between spans */
-  parentSpanIdField?: string;
-
-  /** Dot-path to a unique log identifier (used in one-log-per-span mode) */
-  spanIdField?: string;
-
-  /** Dot-path to an error-code field (e.g. "text.Code").
-   *  If any log in a span has a non-zero / truthy value, the span status is Error. */
-  statusCodeField?: string;
-}
+import type { TransformConfig } from './config.ts';
 
 // ---------------------------------------------------------------------------
 // Internal utilities
@@ -194,6 +160,10 @@ export function transformLogs(logs: unknown[], config: TransformConfig): TraceDa
     ? (typeof config.spanGroupFields === 'string' ? [config.spanGroupFields] : config.spanGroupFields)
     : [];
 
+  const lookupFields: string[] = config.parentSpanLookupFields
+    ? (typeof config.parentSpanLookupFields === 'string' ? [config.parentSpanLookupFields] : config.parentSpanLookupFields)
+    : [];
+
   // Phase 1: group logs by trace ID
   const traceGroups = new Map<string, unknown[]>();
   for (const log of logs) {
@@ -233,6 +203,9 @@ export function transformLogs(logs: unknown[], config: TransformConfig): TraceDa
     }
 
     // Phase 3: build Span objects
+    // When lookupFields are configured, collect metadata for Phase 3.5
+    const spanEntries: { span: Span; keyParts: string[]; startNano: bigint; endNano: bigint; groupLogs: unknown[] }[] = [];
+
     for (const [compositeKey, groupLogs] of spanGroups) {
       const spanId = makeSpanId(traceKey + '\x00' + compositeKey);
 
@@ -305,10 +278,86 @@ export function transformLogs(logs: unknown[], config: TransformConfig): TraceDa
       let bucket = serviceSpans.get(serviceName);
       if (!bucket) { bucket = []; serviceSpans.set(serviceName, bucket); }
       bucket.push(span);
+
+      if (lookupFields.length > 0) {
+        spanEntries.push({
+          span,
+          keyParts: compositeKey.split('\x00'),
+          startNano,
+          endNano,
+          groupLogs,
+        });
+      }
+    }
+
+    // Phase 4: resolve parentSpanLookupFields by partial composite-key match
+    if (lookupFields.length > 0) {
+      for (const entry of spanEntries) {
+        // Skip if parentSpanIdField already resolved a parent
+        if (entry.span.parentSpanId) continue;
+
+        // Read lookup values from the first log that has them
+        const lookupParts: string[] = [];
+        let hasLookup = false;
+        for (const log of entry.groupLogs) {
+          const parts = lookupFields.map(f => {
+            const v = getField(log, f);
+            return v != null && String(v) !== '' ? String(v) : '';
+          });
+          if (parts.some(p => p !== '')) {
+            lookupParts.push(...parts);
+            hasLookup = true;
+            break;
+          }
+        }
+        if (!hasLookup) continue;
+
+        // Skip self-references: if lookup parts match own key parts
+        const ownPrefix = entry.keyParts.slice(0, lookupParts.length);
+        if (ownPrefix.every((p, i) => p === lookupParts[i])) continue;
+
+        // Find candidates whose composite key starts with lookupParts
+        const candidates: typeof spanEntries = [];
+        for (const other of spanEntries) {
+          if (other === entry) continue;
+          const prefix = other.keyParts.slice(0, lookupParts.length);
+          if (prefix.length >= lookupParts.length &&
+              prefix.every((p, i) => p === lookupParts[i])) {
+            candidates.push(other);
+          }
+        }
+        if (candidates.length === 0) continue;
+
+        // Strategy 1: encompassing span (parent fully contains child)
+        let parent: typeof spanEntries[0] | undefined;
+        for (const c of candidates) {
+          if (c.startNano <= entry.startNano && c.endNano >= entry.endNano) {
+            // Prefer the tightest encompassing span
+            if (!parent || (c.startNano >= parent.startNano && c.endNano <= parent.endNano)) {
+              parent = c;
+            }
+          }
+        }
+
+        // Strategy 2 fallback: latest span that starts before current
+        if (!parent) {
+          for (const c of candidates) {
+            if (c.startNano < entry.startNano) {
+              if (!parent || c.startNano > parent.startNano) {
+                parent = c;
+              }
+            }
+          }
+        }
+
+        if (parent) {
+          entry.span.parentSpanId = parent.span.spanId;
+        }
+      }
     }
   }
 
-  // Phase 4: organize into ResourceSpans by service
+  // Phase 5: organize into ResourceSpans by service
   const resourceSpans: ResourceSpans[] = [];
   for (const [serviceName, spans] of serviceSpans) {
     resourceSpans.push({

@@ -3,15 +3,15 @@
  *
  * Registers <trace-visualizer> custom element. Owns the Shadow DOM,
  * event handling (click, hover, keyboard), zoom/pan, and the detail panel.
- * Accepts data via data-url attribute, .traceData setter, or .logData setter.
+ * Accepts data via HTML attributes, .traceData setter, or .logData setter.
  * CSS is injected via adoptedStyleSheets from the virtual:component-css module.
  */
 
 import { TraceData, Span } from './opentelemetry/trace.ts';
 import { TraceTree } from './trace-tree.ts';
 import { Template } from './template.ts';
-import { VisualizationConfig } from './visualization-config.ts';
-import { transformLogs, type TransformConfig } from './transform.ts';
+import { transformLogs } from './transform.ts';
+import { type TraceVisualizerConfig, type TransformConfig, type DisplayConfig, resolveDisplayDefaults } from './config.ts';
 import componentCss from 'virtual:component-css';
 import * as styles from './styles.css.ts';
 
@@ -24,7 +24,7 @@ styleSheet.replaceSync(componentCss);
  */
 export class TraceVisualizerElement extends HTMLElement {
   private _tree = new TraceTree([], new Map(), new Map());
-  private _overrides: Partial<VisualizationConfig> = {};
+  private _programmatic: TraceVisualizerConfig = {};
   private shadow: ShadowRoot;
   private zoomLevel: number = 1;
   private panOffset: number = 0;
@@ -48,17 +48,30 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['data-url', 'width', 'height', 'show-legend', 'full-width', 'detail-panel-width'];
+    return [
+      'data-url',
+      // Transform
+      'trace-id-field', 'span-group-fields', 'span-name-field', 'service-name-field',
+      'timestamp-field', 'end-time-field', 'parent-span-id-field', 'parent-span-lookup-fields',
+      'span-id-field', 'status-code-field',
+      // Display
+      'width', 'height', 'background-color', 'span-height', 'span-padding',
+      'show-legend', 'full-width', 'detail-panel-width', 'color-scheme',
+    ];
   }
 
   connectedCallback() {
     this.render();
     this.setupKeyboardNavigation();
 
-    // Load data from URL if specified
     const dataUrl = this.getAttribute('data-url');
     if (dataUrl) {
-      this.loadTraceData(dataUrl);
+      const merged = this.config;
+      if (this.isTransformReady(merged)) {
+        this.loadAndTransform(dataUrl, merged);
+      } else {
+        this.loadTraceData(dataUrl);
+      }
     }
   }
 
@@ -69,7 +82,6 @@ export class TraceVisualizerElement extends HTMLElement {
 
   attributeChangedCallback(_name: string, oldValue: string, newValue: string) {
     if (oldValue !== newValue) {
-      this.updateConfigFromAttributes();
       this.render();
     }
   }
@@ -95,57 +107,132 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   /**
-   * Set visualization configuration
+   * Set configuration programmatically (flat: transform + display fields)
    */
-  set config(config: Partial<VisualizationConfig>) {
-    this._overrides = { ...this._overrides, ...config };
+  set config(config: TraceVisualizerConfig) {
+    this._programmatic = { ...this._programmatic, ...config };
     this.render();
   }
 
-  get config(): VisualizationConfig {
-    return new VisualizationConfig(this._overrides);
+  get config(): TraceVisualizerConfig {
+    return { ...this._attrConfig(), ...this._programmatic };
   }
 
-  /**
-   * Load trace data from URL
-   */
+  /** Load pre-formatted OTel TraceData from URL. */
   async loadTraceData(url: string): Promise<void> {
     try {
       this.shadow.innerHTML = Template.getLoadingMarkup();
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to load: ${response.statusText}`);
-      }
-      const data = await response.json();
-      this.traceData = data;
+      this.traceData = await this.fetchJson(url);
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Failed to load trace data');
     }
+  }
+
+  /** Load raw logs from URL and transform them into TraceData. */
+  async loadAndTransform(url: string, config: TransformConfig): Promise<void> {
+    try {
+      this.shadow.innerHTML = Template.getLoadingMarkup();
+      const logs = await this.fetchJson(url);
+      this.traceData = transformLogs(logs, config);
+    } catch (error) {
+      this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Failed to load trace data');
+    }
+  }
+
+  private async fetchJson(url: string): Promise<any> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to load: ${response.statusText}`);
+    }
+    return response.json();
   }
 
   // ---------------------------------------------------------------------------
   // Config
   // ---------------------------------------------------------------------------
 
-  private updateConfigFromAttributes(): void {
-    const width = this.getAttribute('width');
-    const height = this.getAttribute('height');
-    const showLegend = this.getAttribute('show-legend');
-    const fullWidth = this.getAttribute('full-width');
-    const detailPanelWidth = this.getAttribute('detail-panel-width');
-
-    this._overrides = {
-      ...this._overrides,
-      width: width ? parseInt(width, 10) : undefined,
-      height: height ? parseInt(height, 10) : undefined,
-      showLegend: showLegend !== null && showLegend !== 'false',
-      fullWidth: fullWidth !== null && fullWidth !== 'false',
-      detailPanelWidth: detailPanelWidth || undefined,
+  /** Parse all HTML attributes into a flat TraceVisualizerConfig. */
+  private _attrConfig(): TraceVisualizerConfig {
+    const str = (attr: string) => this.getAttribute(attr) ?? undefined;
+    const csv = (attr: string) => {
+      const v = this.getAttribute(attr);
+      return v ? v.split(',').map(s => s.trim()) : undefined;
     };
+    const num = (attr: string) => {
+      const v = this.getAttribute(attr);
+      return v ? parseInt(v, 10) : undefined;
+    };
+    const bool = (attr: string) => {
+      const v = this.getAttribute(attr);
+      return v !== null ? v !== 'false' : undefined;
+    };
+
+    const config: TraceVisualizerConfig = {};
+
+    // Data
+    const dataUrl = str('data-url');
+    if (dataUrl !== undefined) config.dataUrl = dataUrl;
+
+    // Transform fields
+    const traceIdField = str('trace-id-field');
+    if (traceIdField !== undefined) config.traceIdField = traceIdField;
+    const spanGroupFields = csv('span-group-fields');
+    if (spanGroupFields !== undefined) config.spanGroupFields = spanGroupFields;
+    const spanNameField = str('span-name-field');
+    if (spanNameField !== undefined) config.spanNameField = spanNameField;
+    const serviceNameField = str('service-name-field');
+    if (serviceNameField !== undefined) config.serviceNameField = serviceNameField;
+    const timestampField = str('timestamp-field');
+    if (timestampField !== undefined) config.timestampField = timestampField;
+    const endTimeField = str('end-time-field');
+    if (endTimeField !== undefined) config.endTimeField = endTimeField;
+    const parentSpanIdField = str('parent-span-id-field');
+    if (parentSpanIdField !== undefined) config.parentSpanIdField = parentSpanIdField;
+    const parentSpanLookupFields = csv('parent-span-lookup-fields');
+    if (parentSpanLookupFields !== undefined) config.parentSpanLookupFields = parentSpanLookupFields;
+    const spanIdField = str('span-id-field');
+    if (spanIdField !== undefined) config.spanIdField = spanIdField;
+    const statusCodeField = str('status-code-field');
+    if (statusCodeField !== undefined) config.statusCodeField = statusCodeField;
+
+    // Display fields
+    const width = num('width');
+    if (width !== undefined) config.width = width;
+    const height = num('height');
+    if (height !== undefined) config.height = height;
+    const backgroundColor = str('background-color');
+    if (backgroundColor !== undefined) config.backgroundColor = backgroundColor;
+    const spanHeight = num('span-height');
+    if (spanHeight !== undefined) config.spanHeight = spanHeight;
+    const spanPadding = num('span-padding');
+    if (spanPadding !== undefined) config.spanPadding = spanPadding;
+    const showLegend = bool('show-legend');
+    if (showLegend !== undefined) config.showLegend = showLegend;
+    const fullWidth = bool('full-width');
+    if (fullWidth !== undefined) config.fullWidth = fullWidth;
+    const detailPanelWidth = str('detail-panel-width');
+    if (detailPanelWidth !== undefined) config.detailPanelWidth = detailPanelWidth;
+
+    const colorSchemeAttr = this.getAttribute('color-scheme');
+    if (colorSchemeAttr) {
+      try { config.colorScheme = JSON.parse(colorSchemeAttr); } catch { /* ignore */ }
+    }
+
+    return config;
   }
 
-  private resolveConfig(): VisualizationConfig {
-    return new VisualizationConfig(this._overrides);
+  private isTransformReady(config: TraceVisualizerConfig): config is TransformConfig {
+    return [
+      config.traceIdField,
+      config.spanNameField,
+      config.serviceNameField,
+      config.timestampField,
+    ].every(Boolean);
+  }
+
+  private resolveConfig(): DisplayConfig {
+    const merged = { ...this._attrConfig(), ...this._programmatic };
+    return resolveDisplayDefaults(merged);
   }
 
   // ---------------------------------------------------------------------------
