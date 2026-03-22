@@ -112,12 +112,12 @@ export type TransformConfig = TraceVisualizerConfig &
 // ---------------------------------------------------------------------------
 
 const DEFAULT_COLOR_SCHEME: Record<string, string> = {
-  [SpanKind.Internal]: '#4A90E2',
-  [SpanKind.Server]: '#7ED321',
-  [SpanKind.Client]: '#F5A623',
-  [SpanKind.Producer]: '#BD10E0',
-  [SpanKind.Consumer]: '#50E3C2',
-  [SpanKind.Unspecified]: '#9013FE',
+  [SpanKind.Internal]: '#4A90E2',    // blue — neutral, most common
+  [SpanKind.Server]: '#2ECC71',      // green — incoming request
+  [SpanKind.Client]: '#F39C12',      // amber — outgoing request
+  [SpanKind.Producer]: '#9B59B6',    // purple — async send
+  [SpanKind.Consumer]: '#E74C3C',    // red — async receive
+  [SpanKind.Unspecified]: '#95A5A6', // grey — unknown/default
 };
 
 /** Resolved config with all display defaults applied. */
