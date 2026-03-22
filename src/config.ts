@@ -10,6 +10,14 @@ import { SpanKind } from './opentelemetry/trace.ts';
 // Config interface
 // ---------------------------------------------------------------------------
 
+/** A rule mapping log field values to a SpanKind. */
+export interface SpanKindRule {
+  /** Dot-path → value pairs; all must match for the rule to apply. */
+  match: Record<string, string>;
+  /** SpanKind name: "Server", "Client", "Internal", "Producer", "Consumer", "Unspecified". */
+  kind: string;
+}
+
 export interface TraceVisualizerConfig {
   /** URL to fetch trace/log data from */
   dataUrl?: string;
@@ -50,6 +58,16 @@ export interface TraceVisualizerConfig {
   /** Dot-path to an error-code field (e.g. "text.Code").
    *  If any log in a span has a non-zero / truthy value, the span status is Error. */
   statusCodeField?: string;
+
+  /** Rules for determining SpanKind from log field values.
+   *  Each rule has `match` (dot-path→value pairs, all must match) and `kind` (SpanKind name).
+   *  First matching rule wins; default is `defaultSpanKind` or Unspecified. */
+  spanKindRules?: SpanKindRule[];
+
+  /** Default SpanKind when no rule matches or no rules are configured.
+   *  Accepts a SpanKind name (e.g. "Internal", "Server") or numeric value (0-5).
+   *  Defaults to "Unspecified". */
+  defaultSpanKind?: string;
 
   // -- Display fields -----------------------------------------------------
 

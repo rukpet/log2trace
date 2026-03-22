@@ -53,7 +53,7 @@ export class TraceVisualizerElement extends HTMLElement {
       // Transform
       'trace-id-field', 'span-group-fields', 'span-name-field', 'service-name-field',
       'timestamp-field', 'end-time-field', 'parent-span-id-field', 'parent-span-lookup-fields',
-      'span-id-field', 'status-code-field',
+      'span-id-field', 'status-code-field', 'span-kind-rules', 'default-span-kind',
       // Display
       'width', 'height', 'background-color', 'span-height', 'span-padding',
       'show-legend', 'full-width', 'detail-panel-width', 'color-scheme',
@@ -194,6 +194,12 @@ export class TraceVisualizerElement extends HTMLElement {
     if (spanIdField !== undefined) config.spanIdField = spanIdField;
     const statusCodeField = str('status-code-field');
     if (statusCodeField !== undefined) config.statusCodeField = statusCodeField;
+    const spanKindRules = str('span-kind-rules');
+    if (spanKindRules !== undefined) {
+      try { config.spanKindRules = JSON.parse(spanKindRules); } catch { /* ignore malformed JSON */ }
+    }
+    const defaultSpanKind = str('default-span-kind');
+    if (defaultSpanKind !== undefined) config.defaultSpanKind = defaultSpanKind;
 
     // Display fields
     const width = num('width');

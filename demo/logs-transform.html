@@ -26,6 +26,19 @@
       timestamp-field="text.CreateDate"
       status-code-field="text.Code"
       parent-span-lookup-fields="text.InitiatingApplication"
+      span-kind-rules='[
+        {"match":{"text.ClassName":"API"},"kind":"Server"},
+        {"match":{"text.MethodName":"LogOutgoingDomainRequest"},"kind":"Client"},
+        {"match":{"text.MethodName":"LogReceivedDomainResponse"},"kind":"Client"},
+        {"match":{"text.ClassName":"HttpUtilSync"},"kind":"Client"},
+        {"match":{"text.MethodName":"UnaryServerHandler"},"kind":"Server"},
+        {"match":{"text.ClassName":"LoggingInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"ServerLoggingInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"LoggerInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"<ProcessConsumeResult>d__27"},"kind":"Consumer"},
+        {"match":{"text.ClassName":"<ProcessConsumeResult>d__26"},"kind":"Consumer"},
+        {"match":{"text.ClassName":"DomainServiceMessageInspector"},"kind":"Internal"}
+      ]'
       full-width
       show-legend
     ></trace-visualizer>
