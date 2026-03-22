@@ -10,7 +10,7 @@
 import { Span, SpanKind, Event } from './opentelemetry/trace.ts';
 import { AnyValue, KeyValue } from './opentelemetry/common.ts';
 import { nanoToMilli } from './time.ts';
-import { TraceTree } from './trace-tree.ts';
+import { TraceTree, type FlatSpan } from './trace-tree.ts';
 import type { DisplayConfig } from './config.ts';
 import * as styles from './styles.css.ts';
 
@@ -66,7 +66,7 @@ export class Template {
     return `<table class="${styles.detailAttrTable}">${rows}</table>`;
   }
 
-  static getSpanDetailMarkup(span: Span, serviceName: string): string {
+  static getSpanDetailMarkup({ span, serviceName }: FlatSpan): string {
     const esc = Template.escapeHtml;
     const startMs = nanoToMilli(span.startTimeUnixNano);
     const endMs = nanoToMilli(span.endTimeUnixNano);
@@ -308,7 +308,7 @@ export class Template {
   }
 
   static getSpansMarkup(
-    flatSpans: Array<{ span: Span; level: number }>,
+    flatSpans: FlatSpan[],
     timeRange: { min: number; max: number },
     config: DisplayConfig
   ): string {
@@ -318,15 +318,13 @@ export class Template {
   }
 
   static getSpanLabelsMarkup(
-    tree: TraceTree,
-    flatSpans: Array<{ span: Span; level: number }>,
+    flatSpans: FlatSpan[],
     config: DisplayConfig
   ): string {
-    return flatSpans.map(({ span, level }, index) => {
+    return flatSpans.map(({ span, level, serviceName }, index) => {
       const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
       const indent = level * 20;
       const statusIcon = Template.getStatusIcon(span.status?.code ?? 0);
-      const serviceName = tree.serviceNameOf.get(span.spanId) || 'unknown-service';
 
       return `
         <div class="${styles.spanLabelFixed}" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${span.name}">
@@ -362,7 +360,7 @@ export class Template {
         <div class="${styles.traceBody}" style="height: ${totalHeight}px;">
           <div class="${styles.traceChart}">
             <div class="${styles.spanLabelsContainer}">
-              ${Template.getSpanLabelsMarkup(tree, flatSpans, config)}
+              ${Template.getSpanLabelsMarkup(flatSpans, config)}
             </div>
             <div class="${styles.timelineOverlay}">
               <div class="${styles.timeline}">
@@ -428,10 +426,7 @@ export class Template {
     `;
   }
 
-  static getTooltipMarkup(
-    span: Span,
-    serviceName: string
-  ): string {
+  static getTooltipMarkup({ span, serviceName }: FlatSpan): string {
     const duration = nanoToMilli(span.endTimeUnixNano) - nanoToMilli(span.startTimeUnixNano);
     const kindLabel = SpanKind[span.kind] || 'Unknown';
     const statusLabel = span.status?.code === 1 ? 'OK' : span.status?.code === 2 ? 'Error' : 'Unset';

@@ -17,6 +17,12 @@ import {
 } from './opentelemetry/common.ts';
 import { nanoToMilli } from './time.ts';
 
+export interface FlatSpan {
+  span: Span;
+  level: number;
+  serviceName: string;
+}
+
 /**
  * Tree structure for organizing raw OTel Spans for visualization.
  * Spans are kept as-is; relationships and metadata are stored in lookup maps.
@@ -77,12 +83,13 @@ export class TraceTree {
     return extractString(serviceNameAttr?.value) ?? 'unknown-service';
   }
 
-  flatten(): Array<{ span: Span; level: number }> {
-    const result: Array<{ span: Span; level: number }> = [];
+  flatten(): FlatSpan[] {
+    const result: FlatSpan[] = [];
 
     const walk = (spans: Span[], level: number) => {
       for (const span of spans) {
-        result.push({ span, level });
+        const serviceName = this.serviceNameOf.get(span.spanId) || 'unknown-service';
+        result.push({ span, level, serviceName });
         const children = this.childrenOf.get(span.spanId);
         if (children && children.length > 0) {
           walk(children, level + 1);
