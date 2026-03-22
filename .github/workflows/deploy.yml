@@ -43,9 +43,6 @@ jobs:
           cp dist/index.min.js _site/dist/index.min.js
           cp dist/index.min.js.map _site/dist/index.min.js.map
 
-      - name: Stamp build date
-        run: sed -i "s/__BUILD_DATE__/$(date -u +'%Y-%m-%d %H:%M UTC')/g" _site/*.html
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

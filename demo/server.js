@@ -16,6 +16,14 @@ const contentTypes = {
   '.svg': 'image/svg+xml'
 };
 
+// Resolve build date from dist output timestamp
+const distPath = path.join(__dirname, '..', 'dist', 'index.js');
+let buildDate = 'unknown';
+try {
+  const mtime = fs.statSync(distPath).mtime;
+  buildDate = mtime.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+} catch {}
+
 const server = http.createServer((req, res) => {
   let filePath = req.url;
   
@@ -47,8 +55,12 @@ const server = http.createServer((req, res) => {
         res.end('500 - Internal server error');
       }
     } else {
+      let body = content;
+      if (extname === '.html') {
+        body = content.toString().replace(/__BUILD_DATE__/g, buildDate);
+      }
       res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content);
+      res.end(body);
     }
   });
 });
