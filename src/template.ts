@@ -7,7 +7,8 @@
  * All CSS class names come from styles.css.ts (never raw strings).
  */
 
-import { Span, SpanKind } from './opentelemetry/trace.ts';
+import { Span, SpanKind, Event } from './opentelemetry/trace.ts';
+import { AnyValue, KeyValue } from './opentelemetry/common.ts';
 import { nanoToMilli } from './time.ts';
 import { TraceTree } from './trace-tree.ts';
 import type { DisplayConfig } from './config.ts';
@@ -32,6 +33,142 @@ export class Template {
     if (ms < 1000) return `${ms.toFixed(2)}ms`;
     if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
     return `${(ms / 60000).toFixed(2)}min`;
+  }
+
+  static escapeHtml(str: string): string {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  static extractAnyValue(value: AnyValue): string {
+    if (value.stringValue !== undefined) return value.stringValue;
+    if (value.intValue !== undefined) return String(value.intValue);
+    if (value.doubleValue !== undefined) return String(value.doubleValue);
+    if (value.boolValue !== undefined) return String(value.boolValue);
+    if (value.bytesValue !== undefined) return value.bytesValue;
+    if (value.arrayValue) return JSON.stringify(value.arrayValue.values.map(v => Template.extractAnyValue(v)));
+    if (value.kvlistValue) return JSON.stringify(Object.fromEntries(value.kvlistValue.values.map(kv => [kv.key, Template.extractAnyValue(kv.value)])));
+    return '';
+  }
+
+  static formatAbsoluteTime(nanoStr: string): string {
+    const ms = nanoToMilli(nanoStr);
+    const d = new Date(ms);
+    const pad = (n: number, len = 2) => String(n).padStart(len, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
+  }
+
+  static getAttrTableMarkup(attrs: KeyValue[]): string {
+    if (!attrs || attrs.length === 0) return '<em style="color:#999;font-size:12px">No attributes</em>';
+    const rows = attrs.map(kv => {
+      const val = Template.escapeHtml(Template.extractAnyValue(kv.value));
+      return `<tr><td title="${Template.escapeHtml(kv.key)}">${Template.escapeHtml(kv.key)}</td><td>${val}</td></tr>`;
+    }).join('');
+    return `<table class="${styles.detailAttrTable}">${rows}</table>`;
+  }
+
+  static getSpanDetailMarkup(span: Span, serviceName: string): string {
+    const esc = Template.escapeHtml;
+    const startMs = nanoToMilli(span.startTimeUnixNano);
+    const endMs = nanoToMilli(span.endTimeUnixNano);
+    const duration = endMs - startMs;
+    const kindLabel = SpanKind[span.kind] || 'Unknown';
+    const statusLabel = span.status?.code === 1 ? 'OK' : span.status?.code === 2 ? 'Error' : 'Unset';
+    type StatusVariant = keyof typeof styles.detailStatusVariants;
+    const statusVariant: StatusVariant = span.status?.code === 2 ? 'error' : span.status?.code === 1 ? 'ok' : 'unset';
+
+    // Extract log count from attributes if present
+    const logCountAttr = span.attributes?.find(a => a.key === 'log2trace.log_count');
+    const logCount = logCountAttr ? Template.extractAnyValue(logCountAttr.value) : null;
+
+    // Filter out internal attributes for display
+    const displayAttrs = (span.attributes || []).filter(a => !a.key.startsWith('log2trace.'));
+
+    // Overview section
+    const overview = `
+      <div class="${styles.detailSection}">
+        <div class="${styles.detailSpanName}">${esc(span.name)}</div>
+        <details open>
+        <summary class="${styles.detailSectionHeader}">Overview</summary>
+        <div class="${styles.detailSectionBody}">
+          <div class="${styles.detailOverviewGrid}">
+            <span class="${styles.detailLabel}">Service</span>
+            <span class="${styles.detailValue}">${esc(serviceName)}</span>
+            <span class="${styles.detailLabel}">Status</span>
+            <span class="${styles.detailValue}">
+              <span class="${styles.detailStatusBadge} ${styles.detailStatusVariants[statusVariant]}">${statusLabel}</span>
+              ${span.status?.message ? ` <span style="color:#666;font-size:12px">${esc(span.status.message)}</span>` : ''}
+            </span>
+            <span class="${styles.detailLabel}">Kind</span>
+            <span class="${styles.detailValue}">${kindLabel}</span>
+            <span class="${styles.detailLabel}">Duration</span>
+            <span class="${styles.detailValue}">${Template.formatDuration(duration)}</span>
+            <span class="${styles.detailLabel}">Start</span>
+            <span class="${styles.detailValueMono}">${Template.formatAbsoluteTime(span.startTimeUnixNano)}</span>
+            <span class="${styles.detailLabel}">End</span>
+            <span class="${styles.detailValueMono}">${Template.formatAbsoluteTime(span.endTimeUnixNano)}</span>
+            ${logCount ? `
+              <span class="${styles.detailLabel}">Log Count</span>
+              <span class="${styles.detailValue}">${esc(logCount)}</span>
+            ` : ''}
+            <span class="${styles.detailLabel}">Trace ID</span>
+            <span class="${styles.detailValueMono}">${esc(span.traceId)}</span>
+            <span class="${styles.detailLabel}">Span ID</span>
+            <span class="${styles.detailValueMono}">${esc(span.spanId)}</span>
+            ${span.parentSpanId ? `
+              <span class="${styles.detailLabel}">Parent ID</span>
+              <span class="${styles.detailValueMono}">${esc(span.parentSpanId)}</span>
+            ` : ''}
+          </div>
+        </div>
+        </details>
+      </div>
+    `;
+
+    // Attributes section (hidden when empty)
+    const attributes = displayAttrs.length > 0 ? `
+      <div class="${styles.detailSection}">
+        <details open>
+        <summary class="${styles.detailSectionHeader}">
+          Attributes
+          <span class="${styles.detailBadge}">${displayAttrs.length}</span>
+        </summary>
+        <div class="${styles.detailSectionBody}">
+          ${Template.getAttrTableMarkup(displayAttrs)}
+        </div>
+        </details>
+      </div>
+    ` : '';
+
+    // Events section
+    const events = span.events && span.events.length > 0 ? `
+      <div class="${styles.detailSection}">
+        <details open>
+        <summary class="${styles.detailSectionHeader}">
+          Events
+          <span class="${styles.detailBadge}">${span.events.length}</span>
+        </summary>
+        <div class="${styles.detailSectionBody}">
+          ${span.events.map((event: Event) => {
+            const eventMs = nanoToMilli(event.timeUnixNano);
+            const relativeMs = eventMs - startMs;
+            return `
+              <details class="${styles.detailEventCard}" open>
+                <summary class="${styles.detailEventHeader}">
+                  <span class="${styles.detailEventName}" title="${esc(event.name)}">${esc(event.name)}</span>
+                  <span class="${styles.detailEventTimestamp}">+${Template.formatDuration(relativeMs)}</span>
+                </summary>
+                <div class="${styles.detailEventBody}">
+                  ${Template.getAttrTableMarkup(event.attributes)}
+                </div>
+              </details>
+            `;
+          }).join('')}
+        </div>
+        </details>
+      </div>
+    ` : '';
+
+    return overview + attributes + events;
   }
 
   static calculateTickCount(containerWidth?: number): number {

@@ -317,15 +317,195 @@ export const detailPanelClose = style({
 });
 
 export const detailContent = style({
-  color: '#666',
-  fontFamily: "'Courier New', monospace",
+  color: '#333',
   fontSize: 13,
-  whiteSpace: 'pre',
-  background: '#f5f5f5',
-  padding: 10,
+  background: '#f8f9fa',
+  padding: 0,
   borderRadius: 4,
   flex: 1,
   overflow: 'auto',
+});
+
+// ---- Detail panel sections (native <details>/<summary>) ----
+export const detailSection = style({
+  borderBottom: '1px solid #e9ecef',
+});
+
+export const detailSectionHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '10px 12px',
+  cursor: 'pointer',
+  fontWeight: 600,
+  fontSize: 13,
+  color: '#495057',
+  userSelect: 'none',
+  listStyle: 'none',
+  ':hover': {
+    background: '#e9ecef',
+  },
+  '::marker': { display: 'none' },
+  '::before': {
+    content: '"\\25BC"',
+    fontSize: 9,
+    transition: 'transform 0.15s',
+    display: 'inline-block',
+  },
+});
+globalStyle(`${detailSectionHeader}::-webkit-details-marker`, {
+  display: 'none',
+});
+globalStyle(`details:not([open]) > ${detailSectionHeader}::before`, {
+  transform: 'rotate(-90deg)',
+});
+
+export const detailSectionBody = style({
+  padding: '4px 12px 12px',
+});
+
+export const detailOverviewGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'auto 1fr',
+  gap: '6px 12px',
+  alignItems: 'baseline',
+});
+
+export const detailLabel = style({
+  fontSize: 12,
+  color: '#6c757d',
+  fontWeight: 500,
+  whiteSpace: 'nowrap',
+});
+
+export const detailValue = style({
+  fontSize: 13,
+  color: '#212529',
+  wordBreak: 'break-all',
+});
+
+export const detailValueMono = style({
+  fontSize: 12,
+  color: '#212529',
+  fontFamily: "'Courier New', monospace",
+  wordBreak: 'break-all',
+});
+
+export const detailSpanName = style({
+  fontSize: 14,
+  fontWeight: 600,
+  color: '#212529',
+  wordBreak: 'break-word',
+  padding: '4px 12px 0',
+});
+
+export const detailStatusBadge = style({
+  display: 'inline-block',
+  padding: '1px 8px',
+  borderRadius: 3,
+  fontSize: 11,
+  fontWeight: 600,
+  textTransform: 'uppercase',
+});
+
+export const detailStatusVariants = styleVariants({
+  ok:    { backgroundColor: '#d4edda', color: '#155724' },
+  error: { backgroundColor: '#f8d7da', color: '#721c24' },
+  unset: { backgroundColor: '#e2e3e5', color: '#383d41' },
+});
+
+export const detailAttrTable = style({
+  width: '100%',
+  borderCollapse: 'collapse',
+});
+globalStyle(`${detailAttrTable} tr:nth-child(even)`, {
+  background: '#f1f3f5',
+});
+globalStyle(`${detailAttrTable} td`, {
+  padding: '4px 8px',
+  fontSize: 12,
+  verticalAlign: 'top',
+  borderBottom: '1px solid #e9ecef',
+});
+globalStyle(`${detailAttrTable} td:first-child`, {
+  fontFamily: "'Courier New', monospace",
+  color: '#495057',
+  whiteSpace: 'nowrap',
+  fontWeight: 500,
+  maxWidth: 180,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+});
+globalStyle(`${detailAttrTable} td:last-child`, {
+  color: '#212529',
+  wordBreak: 'break-word',
+  fontFamily: "'Courier New', monospace",
+});
+
+export const detailEventCard = style({
+  border: '1px solid #dee2e6',
+  borderRadius: 4,
+  marginBottom: 8,
+  overflow: 'hidden',
+});
+
+export const detailEventHeader = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '6px 10px',
+  background: '#e9ecef',
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: 'pointer',
+  userSelect: 'none',
+  gap: 8,
+  listStyle: 'none',
+  '::marker': { display: 'none' },
+  '::before': {
+    content: '"\\25BC"',
+    fontSize: 8,
+    transition: 'transform 0.15s',
+    display: 'inline-block',
+    flexShrink: 0,
+  },
+});
+globalStyle(`${detailEventHeader}::-webkit-details-marker`, {
+  display: 'none',
+});
+globalStyle(`details:not([open]) > ${detailEventHeader}::before`, {
+  transform: 'rotate(-90deg)',
+});
+
+export const detailEventName = style({
+  flex: 1,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  color: '#333',
+});
+
+export const detailEventTimestamp = style({
+  fontSize: 11,
+  color: '#6c757d',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+});
+
+export const detailEventBody = style({
+  padding: 0,
+});
+
+
+export const detailBadge = style({
+  display: 'inline-block',
+  padding: '1px 6px',
+  borderRadius: 10,
+  fontSize: 11,
+  fontWeight: 600,
+  background: '#6c757d',
+  color: 'white',
+  marginLeft: 6,
 });
 
 // ---- Zoom controls ----
