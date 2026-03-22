@@ -1,5 +1,5 @@
 /**
- * Data flow step 4: Component
+ * Data flow steps 1 & 5: Component
  *
  * Registers <trace-visualizer> custom element. Owns the Shadow DOM,
  * event handling (click, hover, keyboard), zoom/pan, and the detail panel.

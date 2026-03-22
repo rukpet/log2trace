@@ -1,5 +1,5 @@
 /**
- * Data flow step 2: TraceTree
+ * Data flow step 3: TraceTree
  *
  * Converts flat OTel TraceData into a parent-child span tree.
  * build() indexes spans, resolves parent links, sorts by start time.
