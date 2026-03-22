@@ -311,7 +311,9 @@ export class TraceVisualizerElement extends HTMLElement {
         const entry = flatSpans.find(e => e.span.spanId === spanId);
 
         if (entry) {
-          detailContent.textContent = this.getSpanDetailContent(entry.span);
+          const serviceName = tree.serviceNameOf.get(entry.span.spanId) || 'unknown-service';
+          detailContent.innerHTML = Template.getSpanDetailMarkup(entry.span, serviceName);
+
           detailPanel.classList.add(styles.detailPanelVisible);
           this.selectedSpanIndex = index;
           this.updateSpanSelection();
@@ -346,6 +348,7 @@ export class TraceVisualizerElement extends HTMLElement {
       this.selectedSpanIndex = -1;
       this.updateSpanSelection();
     });
+
   }
 
   private attachZoomPanListeners(): void {
@@ -633,10 +636,6 @@ export class TraceVisualizerElement extends HTMLElement {
     }
   }
 
-  private getSpanDetailContent(span: Span): string {
-    return JSON.stringify(span, null, 2);
-  }
-
   private openSpanDetails(index: number): void {
     const flatSpans = this._tree.flatten();
     const entry = flatSpans[index];
@@ -646,7 +645,8 @@ export class TraceVisualizerElement extends HTMLElement {
     const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
 
     if (detailContent) {
-      detailContent.textContent = this.getSpanDetailContent(entry.span);
+      const serviceName = this._tree.serviceNameOf.get(entry.span.spanId) || 'unknown-service';
+      detailContent.innerHTML = Template.getSpanDetailMarkup(entry.span, serviceName);
     }
     detailPanel?.classList.add(styles.detailPanelVisible);
 
@@ -656,6 +656,7 @@ export class TraceVisualizerElement extends HTMLElement {
       composed: true
     }));
   }
+
 
 }
 
