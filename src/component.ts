@@ -167,62 +167,42 @@ export class TraceVisualizerElement extends HTMLElement {
       return v !== null ? v !== 'false' : undefined;
     };
 
+    const json = (attr: string) => {
+      const v = this.getAttribute(attr);
+      if (!v) return undefined;
+      try { return JSON.parse(v); } catch { return undefined; }
+    };
+    const set = <K extends keyof TraceVisualizerConfig>(key: K, value: TraceVisualizerConfig[K]) => {
+      if (value !== undefined) config[key] = value;
+    };
+
     const config: TraceVisualizerConfig = {};
 
     // Data
-    const dataUrl = str('data-url');
-    if (dataUrl !== undefined) config.dataUrl = dataUrl;
-
+    set('dataUrl',               str('data-url'));
     // Transform fields
-    const traceIdField = str('trace-id-field');
-    if (traceIdField !== undefined) config.traceIdField = traceIdField;
-    const spanGroupFields = csv('span-group-fields');
-    if (spanGroupFields !== undefined) config.spanGroupFields = spanGroupFields;
-    const spanNameField = str('span-name-field');
-    if (spanNameField !== undefined) config.spanNameField = spanNameField;
-    const serviceNameField = str('service-name-field');
-    if (serviceNameField !== undefined) config.serviceNameField = serviceNameField;
-    const timestampField = str('timestamp-field');
-    if (timestampField !== undefined) config.timestampField = timestampField;
-    const endTimeField = str('end-time-field');
-    if (endTimeField !== undefined) config.endTimeField = endTimeField;
-    const parentSpanIdField = str('parent-span-id-field');
-    if (parentSpanIdField !== undefined) config.parentSpanIdField = parentSpanIdField;
-    const parentSpanLookupFields = csv('parent-span-lookup-fields');
-    if (parentSpanLookupFields !== undefined) config.parentSpanLookupFields = parentSpanLookupFields;
-    const spanIdField = str('span-id-field');
-    if (spanIdField !== undefined) config.spanIdField = spanIdField;
-    const statusCodeField = str('status-code-field');
-    if (statusCodeField !== undefined) config.statusCodeField = statusCodeField;
-    const spanKindRules = str('span-kind-rules');
-    if (spanKindRules !== undefined) {
-      try { config.spanKindRules = JSON.parse(spanKindRules); } catch { /* ignore malformed JSON */ }
-    }
-    const defaultSpanKind = str('default-span-kind');
-    if (defaultSpanKind !== undefined) config.defaultSpanKind = defaultSpanKind;
-
+    set('traceIdField',          str('trace-id-field'));
+    set('spanGroupFields',       csv('span-group-fields'));
+    set('spanNameField',         str('span-name-field'));
+    set('serviceNameField',      str('service-name-field'));
+    set('timestampField',        str('timestamp-field'));
+    set('endTimeField',          str('end-time-field'));
+    set('parentSpanIdField',     str('parent-span-id-field'));
+    set('parentSpanLookupFields', csv('parent-span-lookup-fields'));
+    set('spanIdField',           str('span-id-field'));
+    set('statusCodeField',       str('status-code-field'));
+    set('spanKindRules',         json('span-kind-rules'));
+    set('defaultSpanKind',       str('default-span-kind'));
     // Display fields
-    const width = num('width');
-    if (width !== undefined) config.width = width;
-    const height = num('height');
-    if (height !== undefined) config.height = height;
-    const backgroundColor = str('background-color');
-    if (backgroundColor !== undefined) config.backgroundColor = backgroundColor;
-    const spanHeight = num('span-height');
-    if (spanHeight !== undefined) config.spanHeight = spanHeight;
-    const spanPadding = num('span-padding');
-    if (spanPadding !== undefined) config.spanPadding = spanPadding;
-    const showLegend = bool('show-legend');
-    if (showLegend !== undefined) config.showLegend = showLegend;
-    const fullWidth = bool('full-width');
-    if (fullWidth !== undefined) config.fullWidth = fullWidth;
-    const detailPanelWidth = str('detail-panel-width');
-    if (detailPanelWidth !== undefined) config.detailPanelWidth = detailPanelWidth;
-
-    const colorSchemeAttr = this.getAttribute('color-scheme');
-    if (colorSchemeAttr) {
-      try { config.colorScheme = JSON.parse(colorSchemeAttr); } catch { /* ignore */ }
-    }
+    set('width',                 num('width'));
+    set('height',                num('height'));
+    set('backgroundColor',       str('background-color'));
+    set('spanHeight',            num('span-height'));
+    set('spanPadding',           num('span-padding'));
+    set('showLegend',            bool('show-legend'));
+    set('fullWidth',             bool('full-width'));
+    set('detailPanelWidth',      str('detail-panel-width'));
+    set('colorScheme',           json('color-scheme'));
 
     return config;
   }
