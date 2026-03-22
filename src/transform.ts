@@ -13,7 +13,7 @@ import {
   Event,
 } from './opentelemetry/trace.ts';
 import { KeyValue } from './opentelemetry/common.ts';
-import type { TransformConfig } from './config.ts';
+import type { TransformConfig, SpanKindRule } from './config.ts';
 
 // ---------------------------------------------------------------------------
 // Internal utilities
@@ -133,6 +133,33 @@ function flattenToAttributes(obj: unknown, prefix: string, out: KeyValue[]): voi
       flattenToAttributes(v, fullKey, out);
     }
   }
+}
+
+/** Map a string or number to a SpanKind enum value. */
+function parseSpanKind(value: string): SpanKind {
+  const s = value.toUpperCase().replace('SPAN_KIND_', '');
+  const map: Record<string, SpanKind> = {
+    UNSPECIFIED: SpanKind.Unspecified,
+    INTERNAL: SpanKind.Internal,
+    SERVER: SpanKind.Server,
+    CLIENT: SpanKind.Client,
+    PRODUCER: SpanKind.Producer,
+    CONSUMER: SpanKind.Consumer,
+  };
+  return map[s] ?? SpanKind.Unspecified;
+}
+
+/** Evaluate spanKindRules against a group of logs. First matching rule wins. */
+function resolveSpanKind(logs: unknown[], rules: SpanKindRule[], fallback: SpanKind = SpanKind.Unspecified): SpanKind {
+  for (const rule of rules) {
+    const entries = Object.entries(rule.match);
+    for (const log of logs) {
+      if (entries.every(([path, val]) => String(getField(log, path) ?? '') === val)) {
+        return parseSpanKind(rule.kind);
+      }
+    }
+  }
+  return fallback;
 }
 
 /** Pick the most common string from an array. */
@@ -263,7 +290,11 @@ export function transformLogs(logs: unknown[], config: TransformConfig): TraceDa
         spanId,
         ...(parentSpanId ? { parentSpanId } : {}),
         name,
-        kind: SpanKind.Internal,
+        kind: resolveSpanKind(
+          groupLogs,
+          config.spanKindRules ?? [],
+          config.defaultSpanKind ? parseSpanKind(config.defaultSpanKind) : SpanKind.Unspecified,
+        ),
         startTimeUnixNano: startNano.toString(),
         endTimeUnixNano: endNano.toString(),
         status: hasError ? { code: 2 } : { code: 1 },
