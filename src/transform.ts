@@ -1,8 +1,8 @@
 /**
- * Log-to-Span Transformation
+ * Data flow step 2: Log-to-Span Transformation
  *
  * Converts arbitrary application log arrays into OTel TraceData
- * using a TraceVisualizerConfig that describes field mappings.
+ * using a TransformConfig that describes field mappings.
  */
 
 import {

@@ -1,5 +1,5 @@
 /**
- * Data flow step 3: Template
+ * Data flow step 4: Template
  *
  * Pure static methods that return HTML strings for every visual element
  * (spans, timeline ticks, tooltips, detail panel, zoom controls, etc.).

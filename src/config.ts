@@ -53,10 +53,10 @@ export interface TraceVisualizerConfig {
 
   // -- Display fields -----------------------------------------------------
 
-  /** Canvas width in pixels (0 = fit container) */
+  /** Container width in pixels (0 = fit container) */
   width?: number;
 
-  /** Minimum canvas height in pixels (0 = fit content) */
+  /** Minimum container height in pixels (0 = fit content) */
   height?: number;
 
   /** Container background color (CSS value, default "#ffffff") */
