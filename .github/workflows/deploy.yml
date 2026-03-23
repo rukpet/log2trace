@@ -33,11 +33,12 @@ jobs:
 
       - name: Assemble site
         run: |
+          BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
           mkdir -p _site/dist
-          cp demo/demo.html _site/index.html
-          cp demo/otel-trace.html _site/otel-trace.html
+          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/demo.html > _site/index.html
+          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/otel-trace.html > _site/otel-trace.html
           cp demo/otel-trace.json _site/otel-trace.json
-          cp demo/logs-transform.html _site/logs-transform.html
+          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/logs-transform.html > _site/logs-transform.html
           cp demo/logs.json _site/logs.json
           cp demo/favicon.svg _site/favicon.svg
           cp dist/index.min.js _site/dist/index.min.js
