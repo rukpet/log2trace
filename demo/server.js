@@ -59,7 +59,11 @@ const server = http.createServer((req, res) => {
       if (extname === '.html') {
         body = content.toString().replace(/__BUILD_DATE__/g, buildDate);
       }
-      res.writeHead(200, { 'Content-Type': contentType });
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+      });
       res.end(body);
     }
   });
