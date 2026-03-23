@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performance Benchmark</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .subtitle { color: #666; margin-bottom: 2rem; }
+    .targets {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .targets h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+    .targets ul { padding-left: 1.5rem; font-size: 0.9rem; color: #555; }
+    .targets li { margin-bottom: 0.25rem; }
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid #0066cc;
+      background: #0066cc;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.15s;
+    }
+    button:hover { background: #0052a3; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #status { font-size: 0.9rem; color: #666; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+    }
+    th, td {
+      padding: 0.5rem 0.75rem;
+      text-align: right;
+      border-bottom: 1px solid #eee;
+    }
+    th { background: #f8f9fa; font-weight: 600; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    .pass { color: #2ecc71; font-weight: 600; }
+    .fail { color: #e74c3c; font-weight: 600; }
+    .skip { color: #999; }
+
+    #render-target {
+      margin-top: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #render-target trace-visualizer { display: block; }
+
+    footer {
+      margin-top: 3rem;
+      color: #999;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Performance Benchmark</h1>
+  <p class="subtitle">Median of multiple timed runs per stage, after JIT warmup. Results include browser paint via double-rAF.</p>
+
+  <div class="targets">
+    <h2>Performance Targets</h2>
+    <ul>
+      <li><strong>Transform</strong> (logs &rarr; OTel): &le; 5 ms @ 100, &le; 50 ms @ 1 K, &le; 250 ms @ 10 K</li>
+      <li><strong>Tree build</strong> (index + sort): &le; 2 ms @ 100, &le; 20 ms @ 1 K, &le; 100 ms @ 10 K</li>
+      <li><strong>HTML generate</strong> (template strings): &le; 5 ms @ 100, &le; 50 ms @ 1 K, &le; 500 ms @ 10 K</li>
+      <li><strong>DOM render (JS)</strong> (innerHTML + event listeners): &le; 50 ms @ 100, &le; 200 ms @ 1 K, &le; 2 000 ms @ 10 K</li>
+      <li><strong>DOM render (+ paint)</strong> (JS + layout + paint via double-rAF): no target</li>
+      <li><strong>Total pipeline</strong> (logs in &rarr; pixels on screen): &le; 50 ms @ 100, &le; 300 ms @ 1 K, &le; 3 000 ms @ 10 K</li>
+    </ul>
+  </div>
+
+  <div class="controls">
+    <button id="run-btn">Run Benchmark</button>
+    <span id="status"></span>
+  </div>
+
+  <div id="log" style="background:#1a1a2e;color:#a0a0b8;font-family:monospace;font-size:0.8rem;padding:0.75rem 1rem;border-radius:8px;margin-bottom:1.5rem;max-height:200px;overflow-y:auto;display:none;white-space:pre-wrap;line-height:1.5"></div>
+
+  <table id="results">
+    <thead>
+      <tr>
+        <th>Stage</th>
+        <th>100</th>
+        <th>500</th>
+        <th>1 000</th>
+        <th>5 000</th>
+        <th>10 000</th>
+      </tr>
+    </thead>
+    <tbody id="results-body">
+      <tr><td colspan="6" class="skip" style="text-align:center;padding:1.5rem">Click "Run Benchmark" to start</td></tr>
+    </tbody>
+  </table>
+
+  <div id="render-target"></div>
+
+  <footer>
+    Built on <time>__BUILD_DATE__</time> &middot;
+    <a href="./demo.html">&larr; Back to demos</a>
+  </footer>
+
+  <script type="module">
+    // Import the dev bundle for access to individual pipeline functions
+    import { transformLogs, TraceTree, Template, resolveDisplayDefaults } from './dist/index.js';
+
+    const SCALES = [100, 500, 1_000, 5_000, 10_000];
+
+    // Performance targets: [stage][scaleIndex] = max ms  (null = no target for that scale)
+    const TARGETS = {
+      transform:  [5,    25,   50,   125,  250],
+      treeBuild:  [2,    10,   20,   50,   100],
+      htmlGen:    [5,    25,   50,   250,  500],
+      domRender:  [50,   100,  200,  1000, 2000],
+      domPaint:   [null, null, null, null, null],
+      total:      [50,   150,  300,  1500, 3000],
+    };
+
+    const STAGE_LABELS = {
+      transform:  'Transform (logs \u2192 OTel)',
+      treeBuild:  'Tree build',
+      htmlGen:    'HTML generate',
+      domRender:  'DOM render (JS)',
+      domPaint:   'DOM render (+ paint)',
+      total:      'Total pipeline',
+    };
+
+    // -----------------------------------------------------------------------
+    // Synthetic data generator
+    // -----------------------------------------------------------------------
+    const SERVICES = [
+      'api-gateway', 'user-service', 'order-service',
+      'payment-service', 'inventory-service',
+    ];
+    const ACTIONS = [
+      'handleRequest', 'authenticate', 'authorize', 'fetchData',
+      'processOrder', 'validatePayment', 'checkInventory',
+      'sendNotification', 'logEvent', 'updateCache',
+    ];
+
+    function generateLogs(count) {
+      const logs = [];
+      const traceCount = Math.max(1, Math.floor(count / 20));
+      const baseTime = new Date('2026-03-23T10:00:00Z').getTime();
+
+      for (let i = 0; i < count; i++) {
+        const traceIdx = i % traceCount;
+        const serviceIdx = i % SERVICES.length;
+        const actionIdx = Math.floor(i / traceCount) % ACTIONS.length;
+        const ts = baseTime + traceIdx * 5000 + (i / count) * 3000;
+
+        logs.push({
+          traceId: `trace-${traceIdx}`,
+          service: SERVICES[serviceIdx],
+          action: ACTIONS[actionIdx],
+          timestamp: new Date(ts).toISOString(),
+          level: i % 10 === 0 ? 'ERROR' : 'INFO',
+          message: `Log entry ${i} for ${ACTIONS[actionIdx]}`,
+          requestId: `req-${traceIdx}-${serviceIdx}`,
+          duration: Math.random() * 100,
+          statusCode: i % 10 === 0 ? 500 : 200,
+        });
+      }
+      return logs;
+    }
+
+    const TRANSFORM_CONFIG = {
+      traceIdField: 'traceId',
+      spanGroupFields: ['service', 'action'],
+      spanNameField: 'action',
+      serviceNameField: 'service',
+      timestampField: 'timestamp',
+      statusCodeField: 'statusCode',
+    };
+
+    const DISPLAY_CONFIG = resolveDisplayDefaults({ showLegend: true, fullWidth: true });
+
+    // -----------------------------------------------------------------------
+    // Benchmark utilities
+    // -----------------------------------------------------------------------
+
+    /** Opaque sink to prevent dead-code elimination.  The engine cannot prove
+     *  the stored value is unused, so it must execute the producing code. */
+    const _sink = [];
+    function consume(value) { _sink.push(value); }
+
+    /** Return the median of a sorted-in-place number array. */
+    function median(arr) {
+      arr.sort((a, b) => a - b);
+      const mid = arr.length >> 1;
+      return arr.length & 1 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
+    }
+
+    /** Wait for the browser to complete layout & paint (double-rAF). */
+    function afterPaint() {
+      return new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      );
+    }
+
+    /** Append a line to the live log panel. */
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.style.display = 'block';
+      const ts = performance.now().toFixed(1).padStart(10);
+      logEl.textContent += `[${ts} ms] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function formatResult(ms) {
+      return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00b5s` : `${ms.toFixed(2)} ms`;
+    }
+
+    // -----------------------------------------------------------------------
+    // Benchmark runner
+    // -----------------------------------------------------------------------
+
+    async function runBenchmark() {
+      const btn = document.getElementById('run-btn');
+      const status = document.getElementById('status');
+      const tbody = document.getElementById('results-body');
+      btn.disabled = true;
+
+      const allResults = {};
+      for (const stage of Object.keys(STAGE_LABELS)) {
+        allResults[stage] = [];
+      }
+
+      // Methodology:
+      // - Browsers round performance.now() to ~1 ms (Spectre mitigation).
+      //   To measure sub-ms stages accurately, we batch BATCH_SIZE calls
+      //   inside a single timing window and divide.  This is repeated
+      //   SAMPLES times; the reported value is the median sample.
+      // - JIT warmup: WARMUP untimed batches before measurement.
+      // - Anti-DCE: all return values are pushed to an opaque sink.
+      // - DOM render uses double-rAF to include layout + paint.
+
+      const WARMUP  = 3;   // untimed batches (JIT warmup)
+      const SAMPLES = 7;   // timed batches → report median
+
+      // Batch size scales inversely with data size so the total time per
+      // batch stays above the ~1 ms rounding floor.
+      const BATCH_SIZE = [50, 20, 10, 3, 3]; // calls per batch, per scale
+
+      logEl.textContent = '';
+      log('Benchmark started');
+
+      // Full-pipeline JIT warmup before any measurements
+      {
+        status.textContent = 'JIT warmup\u2026';
+        log('JIT warmup (full pipeline, untimed)\u2026');
+        const warmupLogs = generateLogs(500);
+        const warmupData = transformLogs(warmupLogs, TRANSFORM_CONFIG);
+        const warmupTree = TraceTree.build(warmupData);
+        consume(Template.getTraceMarkup(warmupTree, DISPLAY_CONFIG));
+        const container = document.getElementById('render-target');
+        for (let i = 0; i < 3; i++) {
+          container.innerHTML = '';
+          const el = document.createElement('trace-visualizer');
+          el.setAttribute('full-width', '');
+          el.setAttribute('show-legend', '');
+          container.appendChild(el);
+          el._tree = warmupTree;
+          el.setAttribute('span-height', '30');
+          await afterPaint();
+          container.removeChild(el);
+        }
+        log('JIT warmup done');
+      }
+
+      for (let si = 0; si < SCALES.length; si++) {
+        const scale = SCALES[si];
+        const batch = BATCH_SIZE[si];
+        status.textContent = `Running ${scale.toLocaleString()} logs (${WARMUP}+${SAMPLES} \u00d7 ${batch})\u2026`;
+        await new Promise(r => setTimeout(r, 50));  // yield to UI
+
+        log(`\u2500\u2500\u2500 ${scale.toLocaleString()} logs (batch=${batch}) \u2500\u2500\u2500`);
+
+        const logs = generateLogs(scale);
+        log(`  Generated ${scale.toLocaleString()} synthetic logs`);
+
+        // --- Stage 1: Transform (logs -> OTel TraceData) ---
+        let traceData;
+        log('  Transform: warming up\u2026');
+        for (let w = 0; w < WARMUP; w++)
+          for (let b = 0; b < batch; b++) consume(transformLogs(logs, TRANSFORM_CONFIG));
+
+        const transformSamples = [];
+        for (let s = 0; s < SAMPLES; s++) {
+          const t0 = performance.now();
+          for (let b = 0; b < batch; b++) traceData = transformLogs(logs, TRANSFORM_CONFIG);
+          const t1 = performance.now();
+          consume(traceData);
+          transformSamples.push((t1 - t0) / batch);
+        }
+        allResults.transform.push(median(transformSamples));
+        log(`  Transform: ${formatResult(median(transformSamples))}  [${transformSamples.map(s => formatResult(s)).join(', ')}]`);
+
+        // --- Stage 2: Tree build (TraceData -> TraceTree) ---
+        let tree;
+        log('  Tree build: warming up\u2026');
+        for (let w = 0; w < WARMUP; w++)
+          for (let b = 0; b < batch; b++) consume(TraceTree.build(traceData));
+
+        const treeSamples = [];
+        for (let s = 0; s < SAMPLES; s++) {
+          const t0 = performance.now();
+          for (let b = 0; b < batch; b++) tree = TraceTree.build(traceData);
+          const t1 = performance.now();
+          consume(tree);
+          treeSamples.push((t1 - t0) / batch);
+        }
+        allResults.treeBuild.push(median(treeSamples));
+        log(`  Tree build: ${formatResult(median(treeSamples))}  [${treeSamples.map(s => formatResult(s)).join(', ')}]`);
+
+        // --- Stage 3: HTML generation (TraceTree -> markup string) ---
+        log('  HTML gen: warming up\u2026');
+        for (let w = 0; w < WARMUP; w++)
+          for (let b = 0; b < batch; b++) consume(Template.getTraceMarkup(tree, DISPLAY_CONFIG));
+
+        const htmlSamples = [];
+        for (let s = 0; s < SAMPLES; s++) {
+          const t0 = performance.now();
+          for (let b = 0; b < batch; b++) consume(Template.getTraceMarkup(tree, DISPLAY_CONFIG));
+          const t1 = performance.now();
+          htmlSamples.push((t1 - t0) / batch);
+        }
+        allResults.htmlGen.push(median(htmlSamples));
+        log(`  HTML gen:   ${formatResult(median(htmlSamples))}  [${htmlSamples.map(s => formatResult(s)).join(', ')}]`);
+
+        // --- Stage 4: DOM render (innerHTML + events listeners) ---
+        // Assign the pre-built tree directly to _tree, then trigger render
+        // via an attribute change.  This isolates pure rendering cost from
+        // the TraceTree.build() that the traceData setter would repeat.
+        // Batched like other stages to stay above the ~1 ms rounding floor.
+        log('  DOM render: warming up\u2026');
+        const container = document.getElementById('render-target');
+        container.style.maxHeight = '400px';
+
+        for (let w = 0; w < WARMUP; w++) {
+          for (let b = 0; b < batch; b++) {
+            container.innerHTML = '';
+            const el = document.createElement('trace-visualizer');
+            el.setAttribute('full-width', '');
+            el.setAttribute('show-legend', '');
+            container.appendChild(el);
+            el._tree = tree;
+            el.setAttribute('span-height', '30');
+          }
+        }
+        await afterPaint();
+
+        const domSamples = [];
+        for (let s = 0; s < SAMPLES; s++) {
+          const t0 = performance.now();
+          for (let b = 0; b < batch; b++) {
+            container.innerHTML = '';
+            const el = document.createElement('trace-visualizer');
+            el.setAttribute('full-width', '');
+            el.setAttribute('show-legend', '');
+            container.appendChild(el);
+            el._tree = tree;
+            el.setAttribute('span-height', '30');
+          }
+          const t1 = performance.now();
+          domSamples.push((t1 - t0) / batch);
+          log(`  DOM render: sample ${s + 1}/${SAMPLES} = ${formatResult((t1 - t0) / batch)}`);
+        }
+        allResults.domRender.push(median(domSamples));
+        log(`  DOM render (JS): ${formatResult(median(domSamples))}  (median of ${SAMPLES})`);
+
+        // --- Stage 5: DOM render + paint (JS + layout + paint via double-rAF) ---
+        log('  DOM paint: measuring\u2026');
+        const paintSamples = [];
+        for (let s = 0; s < SAMPLES; s++) {
+          container.innerHTML = '';
+          const el = document.createElement('trace-visualizer');
+          el.setAttribute('full-width', '');
+          el.setAttribute('show-legend', '');
+          container.appendChild(el);
+          el._tree = tree;
+
+          const t0 = performance.now();
+          el.setAttribute('span-height', '30');
+          await afterPaint();
+          const t1 = performance.now();
+
+          paintSamples.push(t1 - t0);
+          log(`  DOM paint: sample ${s + 1}/${SAMPLES} = ${formatResult(t1 - t0)}`);
+        }
+        allResults.domPaint.push(median(paintSamples));
+        log(`  DOM paint: ${formatResult(median(paintSamples))}  (median of ${SAMPLES})`);
+
+        // Total = sum of median per stage (using paint for end-to-end accuracy)
+        allResults.total.push(
+          allResults.transform[si] + allResults.treeBuild[si] +
+          allResults.htmlGen[si] + allResults.domPaint[si]
+        );
+        log(`  Total: ${formatResult(allResults.total[si])}`);
+      }
+
+      // Show final render for largest scale
+      {
+        const container = document.getElementById('render-target');
+        container.style.maxHeight = '';
+        container.innerHTML = '';
+        const logs = generateLogs(SCALES.at(-1));
+        const el = document.createElement('trace-visualizer');
+        el.setAttribute('full-width', '');
+        el.setAttribute('show-legend', '');
+        container.appendChild(el);
+        el.logData = { logs, config: TRANSFORM_CONFIG };
+      }
+
+      // Render results table
+      tbody.innerHTML = '';
+      for (const [stage, label] of Object.entries(STAGE_LABELS)) {
+        const tr = document.createElement('tr');
+
+        const tdLabel = document.createElement('td');
+        tdLabel.textContent = label;
+        tr.appendChild(tdLabel);
+
+        for (let si = 0; si < SCALES.length; si++) {
+          const td = document.createElement('td');
+          const ms = allResults[stage][si];
+          const target = TARGETS[stage]?.[si];
+
+          const us = ms * 1000;
+          const formatted = ms < 1
+            ? `${us.toFixed(0)}\u2009\u00b5s`
+            : `${ms.toFixed(2)}\u2009ms`;
+          const badge = target != null
+            ? (ms <= target
+              ? ' <span class="pass">\u2713</span>'
+              : ' <span class="fail">\u2717</span>')
+            : '';
+          td.innerHTML = `${formatted}${badge}`;
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+
+      log('Benchmark complete.');
+      status.textContent = 'Done.';
+      btn.disabled = false;
+    }
+
+    document.getElementById('run-btn').addEventListener('click', runBenchmark);
+  </script>
+</body>
+</html>
