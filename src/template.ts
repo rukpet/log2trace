@@ -368,7 +368,7 @@ export class Template {
               </div>
             </div>
             <div class="${styles.timelineClip}">
-              <div class="${styles.timelineContainer}">
+              <div class="${styles.timelineContainer}" data-role="timeline-container">
                 ${Template.getSpansMarkup(flatSpans, timeRange, config)}
               </div>
             </div>
