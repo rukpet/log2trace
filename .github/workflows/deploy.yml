@@ -39,6 +39,7 @@ jobs:
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/otel-trace.html > _site/otel-trace.html
           cp demo/otel-trace.json _site/otel-trace.json
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/logs-transform.html > _site/logs-transform.html
+          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/benchmark.html > _site/benchmark.html
           cp demo/logs.json _site/logs.json
           cp demo/favicon.svg _site/favicon.svg
           cp dist/index.min.js _site/dist/index.min.js
