@@ -32,7 +32,6 @@ styleSheet.replaceSync(componentCss);
 export class TraceVisualizerElement extends HTMLElement {
   private _tree = new TraceTree([], new Map(), new Map());
   private _programmatic: TraceVisualizerConfig = {};
-  private _parsedSpanKindRules: SpanKindRule[] = [];
   private shadow: ShadowRoot;
   private zoomLevel: number = 1;
   private panOffset: number = 0;
@@ -75,7 +74,6 @@ export class TraceVisualizerElement extends HTMLElement {
   connectedCallback() {
     // Re-parse filter children (may not be available in constructor)
     this.filterController.parseFilterChildren();
-    this.parseSpanKindRuleChildren();
 
     this.setupKeyboardNavigation();
 
@@ -225,7 +223,8 @@ export class TraceVisualizerElement extends HTMLElement {
     set('statusCodeField',       str('status-code-field'));
     // Merge span-kind-rules from attribute and parsed child elements
     const attrRules = json('span-kind-rules') as SpanKindRule[] | undefined;
-    const mergedRules = [...(attrRules || []), ...this._parsedSpanKindRules];
+    const parsedRules = this.parseSpanKindRuleChildren();
+    const mergedRules = [...(attrRules || []), ...parsedRules];
     if (mergedRules.length > 0) {
       set('spanKindRules', mergedRules);
     }
@@ -266,7 +265,7 @@ export class TraceVisualizerElement extends HTMLElement {
    * 1. Simple: <span-kind-rule match-field="text.ClassName" match-value="API" kind="Server"></span-kind-rule>
    * 2. Complex: <span-kind-rule match='{"text.ClassName":"API","text.MethodName":"GetUser"}' kind="Server"></span-kind-rule>
    */
-  private parseSpanKindRuleChildren(): void {
+  private parseSpanKindRuleChildren(): SpanKindRule[] {
     const rules: SpanKindRule[] = [];
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
@@ -296,7 +295,7 @@ export class TraceVisualizerElement extends HTMLElement {
         }
       }
     }
-    this._parsedSpanKindRules = rules;
+    return rules;
   }
 
   // ---------------------------------------------------------------------------
