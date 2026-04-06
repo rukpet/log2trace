@@ -12,12 +12,15 @@
     "build:tsc": "tsc",
     "build:bundle": "node esbuild.config.js",
     "check": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
     "demo:kill": "npx kill-port 3000",
     "demo:server": "node demo/server.js",
     "demo": "run-s demo:kill build demo:server",
     "dev": "run-p watch:* demo:server",
     "watch:tsc": "tsc --watch",
-    "watch:bundle": "node esbuild.config.js --watch"
+    "watch:bundle": "node esbuild.config.js --watch",
+    "prepare": "husky"
   },
   "keywords": [
     "opentelemetry",
@@ -31,16 +34,27 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
     "@vanilla-extract/css": "^1.18.0",
     "@vanilla-extract/esbuild-plugin": "^2.3.21",
     "esbuild": "^0.27.3",
+    "eslint": "^10.2.0",
     "html-minifier-terser": "^7.2.0",
+    "husky": "^9.1.7",
     "lightningcss": "^1.31.1",
+    "lint-staged": "^16.4.0",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.9.3"
   },
   "files": [
     "dist",
     "src"
-  ]
+  ],
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "tsc --noEmit"
+    ]
+  }
 }
