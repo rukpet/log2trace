@@ -7,7 +7,7 @@
  */
 
 import type { FlatSpan } from './trace-tree.ts';
-import type { LocalFilter, ExternalFilter, FilterValue } from './config.ts';
+import type { Filter, FilterValue } from './config.ts';
 import { getField } from './transform.ts';
 
 // ---------------------------------------------------------------------------
@@ -15,7 +15,7 @@ import { getField } from './transform.ts';
 // ---------------------------------------------------------------------------
 
 /** Filter spans by all active local filters (AND logic). */
-export function filterSpans(spans: FlatSpan[], filters: LocalFilter[]): FlatSpan[] {
+export function filterSpans(spans: FlatSpan[], filters: Filter[]): FlatSpan[] {
   const active = filters.filter(f => isActiveValue(f.value));
   if (active.length === 0) return spans;
 
@@ -29,7 +29,7 @@ function isActiveValue(value: FilterValue): boolean {
   return false;
 }
 
-function matchesFilter(flatSpan: FlatSpan, filter: LocalFilter): boolean {
+function matchesFilter(flatSpan: FlatSpan, filter: Filter): boolean {
   const { config, value } = filter;
 
   // Wildcard: search across all span fields + all event attributes
@@ -204,14 +204,14 @@ function resolveEventField(event: { attributes: Array<{ key: string; value: any 
 // ---------------------------------------------------------------------------
 
 /** Check whether all required external filters have a value. */
-export function areRequiredExternalFiltersFilled(filters: ExternalFilter[]): boolean {
+export function areRequiredExternalFiltersFilled(filters: Filter[]): boolean {
   return filters
     .filter(f => f.config.required)
     .every(f => isActiveValue(f.value));
 }
 
 /** Convert external filter values to a flat Record for URL query params. */
-export function buildQueryParams(filters: ExternalFilter[]): Record<string, string> {
+export function buildQueryParams(filters: Filter[]): Record<string, string> {
   const params: Record<string, string> = {};
 
   for (const { config, value } of filters) {

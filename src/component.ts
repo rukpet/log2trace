@@ -14,7 +14,7 @@ import { transformLogs } from './transform.ts';
 import {
   type TraceVisualizerConfig, type TransformConfig, type DisplayConfig,
   type FilterFieldConfig, type FilterFieldType, type FilterSource, type FilterTarget,
-  type FilterValue, type LocalFilter, type ExternalFilter, type FetchCallback,
+  type FilterValue, type Filter, type FetchCallback,
   type SpanKindRule,
   resolveDisplayDefaults,
 } from './config.ts';
@@ -750,8 +750,8 @@ export class TraceVisualizerElement extends HTMLElement {
 
 class FilterBarController {
   private filterConfigs: FilterFieldConfig[] = [];
-  private externalValues = new Map<string, ExternalFilter>();
-  private localValues = new Map<string, LocalFilter>();
+  private externalValues = new Map<string, Filter>();
+  private localValues = new Map<string, Filter>();
   private _cachedTree: TraceTree | null = null;
   private _filteredSpans: FlatSpan[] | null = null;
   private debounceTimers = new Map<string, number>();
@@ -947,8 +947,8 @@ class FilterBarController {
   }
 
   private syncFilterState(): void {
-    const newExternal = new Map<string, ExternalFilter>();
-    const newLocal = new Map<string, LocalFilter>();
+    const newExternal = new Map<string, Filter>();
+    const newLocal = new Map<string, Filter>();
 
     for (const config of this.filterConfigs) {
       const defaultVal = config.type === 'checkbox' ? false : config.type === 'datetime' ? { from: '', to: '' } : '';
