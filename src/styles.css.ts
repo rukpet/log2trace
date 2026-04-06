@@ -758,7 +758,8 @@ export const filterCheckboxField = style({
   display: 'flex',
   alignItems: 'center',
   gap: 6,
-  paddingBottom: 2,
+  paddingTop: 6,
+  paddingBottom: 6,
   alignSelf: 'flex-end',
 });
 
@@ -788,7 +789,7 @@ export const filterDatetimeSeparator = style({
 });
 
 export const filterSearchBtn = style({
-  padding: '5px 16px',
+  padding: '6px 16px',
   border: '1px solid #4A90E2',
   background: '#4A90E2',
   color: 'white',
@@ -808,7 +809,7 @@ export const filterSearchBtn = style({
 });
 
 export const filterClearBtn = style({
-  padding: '5px 12px',
+  padding: '6px 12px',
   border: '1px solid #ccc',
   background: 'white',
   color: '#666',
