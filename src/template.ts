@@ -583,6 +583,8 @@ export class Template {
       ? Template.escapeHtml(filter.placeholder)
       : `${filter.label}...`;
 
+    const widthStyle = filter.width ? ` style="width:${filter.width}px"` : '';
+
     return `
       <div class="${styles.filterField}">
         ${Template.getFilterLabelMarkup(filter, source)}
@@ -592,7 +594,7 @@ export class Template {
                data-filter-field="${filter.field}"
                data-filter-source="${source}"
                data-filter-type="text"
-               data-filter-debounce="${filter.debounce}" />
+               data-filter-debounce="${filter.debounce}"${widthStyle} />
       </div>
     `;
   }
@@ -603,6 +605,7 @@ export class Template {
       .join('');
 
     const placeholder = filter.placeholder || `All ${filter.label.toLowerCase()}`;
+    const widthStyle = filter.width ? ` style="width:${filter.width}px"` : '';
 
     return `
       <div class="${styles.filterField}">
@@ -610,7 +613,7 @@ export class Template {
         <select class="${styles.filterInput} ${styles.filterSelect}"
                 data-filter-field="${filter.field}"
                 data-filter-source="${source}"
-                data-filter-type="dropdown">
+                data-filter-type="dropdown"${widthStyle}>
           <option value="">${Template.escapeHtml(placeholder)}</option>
           ${options}
         </select>
@@ -619,6 +622,8 @@ export class Template {
   }
 
   static getDatetimeFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
+    const widthStyle = filter.width ? ` style=\"width:${filter.width}px\"` : '';
+
     return `
       <div class="${styles.filterField}">
         ${Template.getFilterLabelMarkup(filter, source)}
@@ -628,14 +633,14 @@ export class Template {
                  data-filter-field="${filter.field}"
                  data-filter-source="${source}"
                  data-filter-type="datetime"
-                 data-filter-range="from" />
+                 data-filter-range="from"${widthStyle} />
           <span class="${styles.filterDatetimeSeparator}">to</span>
           <input class="${styles.filterInput}"
                  type="datetime-local"
                  data-filter-field="${filter.field}"
                  data-filter-source="${source}"
                  data-filter-type="datetime"
-                 data-filter-range="to" />
+                 data-filter-range="to"${widthStyle} />
         </div>
       </div>
     `;

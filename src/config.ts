@@ -156,6 +156,7 @@ export interface FilterFieldConfig {
   options: string[];
   placeholder: string;
   debounce: number;
+  width?: number;
 }
 
 export type FilterValue = string | boolean | { from?: string; to?: string };

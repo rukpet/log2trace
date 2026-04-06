@@ -883,14 +883,20 @@ class FilterBarController {
         try { options = JSON.parse(optionsAttr); } catch { /* ignore */ }
       }
 
-      configs.push({
+      const config: FilterFieldConfig = {
         field, label, type, source,
         target: (child.getAttribute('target') as FilterTarget) || 'span',
         required: child.hasAttribute('required'),
         options,
         placeholder: child.getAttribute('placeholder') || '',
         debounce: parseInt(child.getAttribute('debounce') || '300', 10),
-      });
+      };
+
+      if (child.hasAttribute('width')) {
+        config.width = parseInt(child.getAttribute('width')!, 10);
+      }
+
+      configs.push(config);
     }
     this.filterConfigs = configs;
     this.syncFilterState();
