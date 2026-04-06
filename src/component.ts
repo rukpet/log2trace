@@ -15,6 +15,7 @@ import {
   type TraceVisualizerConfig, type TransformConfig, type DisplayConfig,
   type FilterFieldConfig, type FilterFieldType, type FilterSource, type FilterTarget,
   type FilterValue, type LocalFilter, type ExternalFilter, type FetchCallback,
+  type SpanKindRule,
   resolveDisplayDefaults,
 } from './config.ts';
 import { filterSpans, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
@@ -31,6 +32,7 @@ styleSheet.replaceSync(componentCss);
 export class TraceVisualizerElement extends HTMLElement {
   private _tree = new TraceTree([], new Map(), new Map());
   private _programmatic: TraceVisualizerConfig = {};
+  private _parsedSpanKindRules: SpanKindRule[] = [];
   private shadow: ShadowRoot;
   private zoomLevel: number = 1;
   private panOffset: number = 0;
@@ -73,6 +75,7 @@ export class TraceVisualizerElement extends HTMLElement {
   connectedCallback() {
     // Re-parse filter children (may not be available in constructor)
     this.filterController.parseFilterChildren();
+    this.parseSpanKindRuleChildren();
 
     this.setupKeyboardNavigation();
 
@@ -220,7 +223,12 @@ export class TraceVisualizerElement extends HTMLElement {
     set('parentSpanLookupFields', csv('parent-span-lookup-fields'));
     set('spanIdField',           str('span-id-field'));
     set('statusCodeField',       str('status-code-field'));
-    set('spanKindRules',         json('span-kind-rules'));
+    // Merge span-kind-rules from attribute and parsed child elements
+    const attrRules = json('span-kind-rules') as SpanKindRule[] | undefined;
+    const mergedRules = [...(attrRules || []), ...this._parsedSpanKindRules];
+    if (mergedRules.length > 0) {
+      set('spanKindRules', mergedRules);
+    }
     set('defaultSpanKind',       str('default-span-kind'));
     // Display fields
     set('width',                 num('width'));
@@ -250,6 +258,45 @@ export class TraceVisualizerElement extends HTMLElement {
   private resolveConfig(): DisplayConfig {
     const merged = { ...this._attrConfig(), ...this._programmatic };
     return resolveDisplayDefaults(merged);
+  }
+
+  /**
+   * Parse <span-kind-rule> child elements into SpanKindRule objects.
+   * Supports two syntaxes:
+   * 1. Simple: <span-kind-rule match-field="text.ClassName" match-value="API" kind="Server"></span-kind-rule>
+   * 2. Complex: <span-kind-rule match='{"text.ClassName":"API","text.MethodName":"GetUser"}' kind="Server"></span-kind-rule>
+   */
+  private parseSpanKindRuleChildren(): void {
+    const rules: SpanKindRule[] = [];
+    for (let i = 0; i < this.children.length; i++) {
+      const child = this.children[i];
+      if (child.tagName.toLowerCase() !== 'span-kind-rule') continue;
+
+      const kind = child.getAttribute('kind');
+      if (!kind) continue;
+
+      // Try simple syntax first (match-field + match-value)
+      const matchField = child.getAttribute('match-field');
+      const matchValue = child.getAttribute('match-value');
+      if (matchField && matchValue) {
+        rules.push({ match: { [matchField]: matchValue }, kind });
+        continue;
+      }
+
+      // Fall back to complex syntax (match JSON)
+      const matchAttr = child.getAttribute('match');
+      if (matchAttr) {
+        try {
+          const match = JSON.parse(matchAttr);
+          if (typeof match === 'object' && match !== null) {
+            rules.push({ match, kind });
+          }
+        } catch {
+          console.warn('Invalid JSON in span-kind-rule match attribute:', matchAttr);
+        }
+      }
+    }
+    this._parsedSpanKindRules = rules;
   }
 
   // ---------------------------------------------------------------------------
@@ -889,12 +936,9 @@ class FilterBarController {
         required: child.hasAttribute('required'),
         options,
         placeholder: child.getAttribute('placeholder') || '',
-        debounce: parseInt(child.getAttribute('debounce') || '300', 10),
+        debounce: parseInt(child.getAttribute('debounce') || '400', 10),
+        width: parseInt(child.getAttribute('width') || '300', 10)
       };
-
-      if (child.hasAttribute('width')) {
-        config.width = parseInt(child.getAttribute('width')!, 10);
-      }
 
       configs.push(config);
     }
@@ -1051,11 +1095,20 @@ class FilterBarController {
 class TraceFilterElement extends HTMLElement {}
 
 // ---------------------------------------------------------------------------
+// <span-kind-rule> — configuration carrier for span kind rules
+// ---------------------------------------------------------------------------
+
+class SpanKindRuleElement extends HTMLElement {}
+
+// ---------------------------------------------------------------------------
 // Register custom elements
 // ---------------------------------------------------------------------------
 
 if (!customElements.get('trace-filter')) {
   customElements.define('trace-filter', TraceFilterElement);
+}
+if (!customElements.get('span-kind-rule')) {
+  customElements.define('span-kind-rule', SpanKindRuleElement);
 }
 if (!customElements.get('trace-visualizer')) {
   customElements.define('trace-visualizer', TraceVisualizerElement);

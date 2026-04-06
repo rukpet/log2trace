@@ -9,7 +9,7 @@
  *   viewer.traceData = myTraceData;
  */
 
-// Auto-register the component and <trace-filter> element when imported
+// Auto-register the component, <trace-filter>, and <span-kind-rule> elements when imported
 import './component.ts';
 
 export { transformLogs, getField } from './transform.ts';

@@ -143,10 +143,15 @@ const htmlMinifyPlugin = {
               source.slice(s.expression.getStart(sf), s.expression.end)
             );
 
-            // Replace ${...} with stable placeholders, minify, then restore
+            // Create unique, lowercase placeholders to avoid collision with user content
+            // Use timestamp + random for uniqueness
+            const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            const placeholders = exprs.map((_, i) => `___ph_${uniqueId}_${i}___`); // lowercase from start
+
+            // Replace ${...} with unique placeholders, minify, then restore
             let combined = node.head.text;
             spans.forEach((s, i) => {
-              combined += `__HTMLEXPR_${i}__`;
+              combined += placeholders[i];
               combined += s.literal.text;
             });
 
@@ -156,13 +161,11 @@ const htmlMinifyPlugin = {
               removeAttributeQuotes: false,
             });
 
-            // split() with capture group → [head, '0', mid0, '1', mid1, ..., tail]
-            const parts = minified.split(/__HTMLEXPR_(\d+)__/);
-
-            let newTemplate = '`' + parts[0];
-            for (let i = 0; i < spans.length; i++) {
-              newTemplate += '${' + exprs[i] + '}' + parts[i * 2 + 2];
-            }
+            // Restore expressions by replacing each placeholder
+            let newTemplate = '`' + minified;
+            placeholders.forEach((ph, i) => {
+              newTemplate = newTemplate.replace(ph, '${' + exprs[i] + '}');
+            });
             newTemplate += '`';
 
             replacements.push([node.getStart(sf), node.end, newTemplate]);
