@@ -20,7 +20,7 @@ import type { TransformConfig, SpanKindRule } from './config.ts';
 // ---------------------------------------------------------------------------
 
 /** Traverse a dot-separated path on an unknown object. */
-function getField(obj: unknown, path: string): unknown {
+export function getField(obj: unknown, path: string): unknown {
   let current: unknown = obj;
   for (const key of path.split('.')) {
     if (current == null || typeof current !== 'object') return undefined;

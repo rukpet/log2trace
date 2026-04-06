@@ -9,11 +9,12 @@
  *   viewer.traceData = myTraceData;
  */
 
-// Auto-register the component when imported
+// Auto-register the component and <trace-filter> element when imported
 import './component.ts';
 
-export { transformLogs } from './transform.ts';
+export { transformLogs, getField } from './transform.ts';
 export { TraceTree } from './trace-tree.ts';
 export { Template } from './template.ts';
+export { filterSpans } from './filter.ts';
 export { resolveDisplayDefaults } from './config.ts';
-export type { TraceVisualizerConfig, TransformConfig, DisplayConfig } from './config.ts';
+export type { TraceVisualizerConfig, TransformConfig, DisplayConfig, FilterFieldConfig, LocalFilter, ExternalFilter, FetchCallback } from './config.ts';

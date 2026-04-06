@@ -639,3 +639,197 @@ export const tooltipHint = style({
   fontStyle: 'italic',
   textAlign: 'center',
 });
+
+// ---- Filter bar ----
+export const filterBarContainer = style({
+  borderBottom: '2px solid #ddd',
+  marginBottom: 16,
+});
+
+export const filterRow = style({
+  display: 'flex',
+  alignItems: 'flex-end',
+  gap: 16,
+  flexWrap: 'wrap',
+  padding: '12px 20px',
+});
+
+export const filterRowExternal = style({
+  selectors: {
+    [`${filterRow}&`]: {
+      background: '#f0f4ff',
+      borderBottom: '1px solid #d0d8e8',
+    },
+  },
+});
+
+export const filterRowLocal = style({
+  selectors: {
+    [`${filterRow}&`]: {
+      background: '#f0fff4',
+      borderBottom: '1px solid #c8e6c9',
+    },
+  },
+});
+
+export const filterRowLabel = style({
+  fontSize: 12,
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  fontWeight: 600,
+  alignSelf: 'center',
+  whiteSpace: 'nowrap',
+});
+
+export const filterRowLabelExternal = style({
+  selectors: {
+    [`${filterRowLabel}&`]: {
+      color: '#4A90E2',
+    },
+  },
+});
+
+export const filterRowLabelLocal = style({
+  selectors: {
+    [`${filterRowLabel}&`]: {
+      color: '#2ECC71',
+    },
+  },
+});
+
+export const filterField = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+});
+
+export const filterLabel = style({
+  fontSize: 12,
+  fontWeight: 500,
+  whiteSpace: 'nowrap',
+});
+
+export const filterLabelExternal = style({
+  selectors: {
+    [`${filterLabel}&`]: {
+      color: '#4A90E2',
+    },
+  },
+});
+
+export const filterLabelLocal = style({
+  selectors: {
+    [`${filterLabel}&`]: {
+      color: '#2ECC71',
+    },
+  },
+});
+
+export const filterRequiredMarker = style({
+  color: '#c62828',
+  marginLeft: 2,
+});
+
+export const filterInput = style({
+  padding: '6px 10px',
+  border: '1px solid #ccc',
+  borderRadius: 4,
+  fontSize: 13,
+  background: 'white',
+  color: '#333',
+  minWidth: 130,
+  ':focus': {
+    outline: 'none',
+    borderColor: '#4A90E2',
+    boxShadow: '0 0 0 2px rgba(74,144,226,0.2)',
+  },
+});
+
+export const filterSelect = style({
+  selectors: {
+    [`${filterInput}&`]: {
+      cursor: 'pointer',
+      appearance: 'auto',
+    },
+  },
+});
+
+export const filterCheckboxField = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  paddingBottom: 2,
+  alignSelf: 'flex-end',
+});
+
+export const filterCheckbox = style({
+  width: 16,
+  height: 16,
+  cursor: 'pointer',
+  accentColor: '#2ECC71',
+});
+
+export const filterCheckboxLabel = style({
+  fontSize: 13,
+  cursor: 'pointer',
+  userSelect: 'none',
+  fontWeight: 500,
+});
+
+export const filterDatetimeGroup = style({
+  display: 'flex',
+  gap: 6,
+  alignItems: 'center',
+});
+
+export const filterDatetimeSeparator = style({
+  color: '#999',
+  fontSize: 12,
+});
+
+export const filterSearchBtn = style({
+  padding: '5px 16px',
+  border: '1px solid #4A90E2',
+  background: '#4A90E2',
+  color: 'white',
+  borderRadius: 4,
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: 'pointer',
+  alignSelf: 'flex-end',
+  transition: 'all 0.2s',
+  ':hover': {
+    background: '#357abd',
+    borderColor: '#357abd',
+  },
+  ':active': {
+    transform: 'scale(0.97)',
+  },
+});
+
+export const filterClearBtn = style({
+  padding: '5px 12px',
+  border: '1px solid #ccc',
+  background: 'white',
+  color: '#666',
+  borderRadius: 4,
+  fontSize: 12,
+  cursor: 'pointer',
+  alignSelf: 'flex-end',
+  transition: 'all 0.2s',
+  ':hover': {
+    background: '#f5f5f5',
+    borderColor: '#999',
+    color: '#333',
+  },
+  ':active': {
+    transform: 'scale(0.97)',
+  },
+});
+
+export const filterEmptyState = style({
+  padding: 40,
+  textAlign: 'center',
+  color: '#999',
+  fontSize: 14,
+});

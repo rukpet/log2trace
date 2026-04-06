@@ -11,7 +11,7 @@ import { Span, SpanKind, Event } from './opentelemetry/trace.ts';
 import { AnyValue, KeyValue } from './opentelemetry/common.ts';
 import { nanoToMilli } from './time.ts';
 import { TraceTree, type FlatSpan } from './trace-tree.ts';
-import type { DisplayConfig } from './config.ts';
+import type { DisplayConfig, FilterFieldConfig } from './config.ts';
 import * as styles from './styles.css.ts';
 
 export class Template {
@@ -341,26 +341,42 @@ export class Template {
   // Top-level markup
   // ---------------------------------------------------------------------------
 
-  static getTraceMarkup(tree: TraceTree, config: DisplayConfig): string {
-    const flatSpans = tree.flatten();
+  static getTraceMarkup(
+    tree: TraceTree,
+    config: DisplayConfig,
+    filterBarHtml: string = '',
+    filteredSpans: FlatSpan[] | null = null,
+  ): string {
+    const allFlatSpans = tree.flatten();
+    const displaySpans = filteredSpans ?? allFlatSpans;
     const timeRange = tree.getTimeRange();
-    const chartHeight = flatSpans.length * (config.spanHeight + config.spanPadding);
+    const chartHeight = displaySpans.length * (config.spanHeight + config.spanPadding);
     const totalHeight = Math.max(chartHeight + 100, config.height);
     const traceId = tree.roots[0]?.traceId || 'N/A';
 
+    const statsText = filteredSpans
+      ? `<span>Showing ${displaySpans.length} of ${allFlatSpans.length} Spans</span>`
+      : `<span>Total Spans: ${displaySpans.length}</span>`;
+
+    const noMatchHtml = displaySpans.length === 0 && filteredSpans
+      ? `<div class="${styles.filterEmptyState}">No spans match current filters</div>`
+      : '';
+
     return `
       <div class="${styles.traceViewer}" style="background: ${config.backgroundColor};">
+        ${filterBarHtml}
         <div class="${styles.traceHeader}">
           <h3>Trace: ${traceId}</h3>
           <div class="${styles.traceStats}">
-            <span>Total Spans: ${flatSpans.length}</span>
+            ${statsText}
             <span>Duration: ${Template.formatDuration(timeRange.max - timeRange.min)}</span>
           </div>
         </div>
+        ${noMatchHtml || `
         <div class="${styles.traceBody}" style="height: ${totalHeight}px;">
           <div class="${styles.traceChart}">
             <div class="${styles.spanLabelsContainer}">
-              ${Template.getSpanLabelsMarkup(flatSpans, config)}
+              ${Template.getSpanLabelsMarkup(displaySpans, config)}
             </div>
             <div class="${styles.timelineOverlay}">
               <div class="${styles.timeline}">
@@ -369,7 +385,7 @@ export class Template {
             </div>
             <div class="${styles.timelineClip}">
               <div class="${styles.timelineContainer}" data-role="timeline-container">
-                ${Template.getSpansMarkup(flatSpans, timeRange, config)}
+                ${Template.getSpansMarkup(displaySpans, timeRange, config)}
               </div>
             </div>
           </div>
@@ -381,6 +397,18 @@ export class Template {
             <div class="${styles.detailContent}"></div>
           </div>
         </div>
+        `}
+      </div>
+    `;
+  }
+
+  static getFilteredEmptyMarkup(filterBarHtml: string, emptyStateHtml: string, config: DisplayConfig): string {
+    return `
+      <div class="${styles.traceViewer}" style="background: ${config.backgroundColor};">
+        ${filterBarHtml}
+        ${emptyStateHtml || `<div class="${styles.message} ${styles.messageEmpty}">
+          No trace data loaded. Set the <code>data-url</code> attribute or use <code>.traceData</code> property.
+        </div>`}
       </div>
     `;
   }
@@ -467,5 +495,180 @@ export class Template {
       </div>
       <div class="${styles.tooltipHint}">Click for full details</div>
     `;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Filter bar markup
+  // ---------------------------------------------------------------------------
+
+  static getFilterBarMarkup(
+    externalFilters: FilterFieldConfig[],
+    localFilters: FilterFieldConfig[],
+    autoFetch: boolean,
+  ): string {
+    const externalRow = externalFilters.length > 0
+      ? Template.getFilterRowMarkup(externalFilters, 'external', autoFetch)
+      : '';
+
+    const localRow = localFilters.length > 0
+      ? Template.getFilterRowMarkup(localFilters, 'local', false)
+      : '';
+
+    if (!externalRow && !localRow) return '';
+
+    return `<div class="${styles.filterBarContainer}">${externalRow}${localRow}</div>`;
+  }
+
+  static getFilterRowMarkup(
+    filters: FilterFieldConfig[],
+    source: 'external' | 'local',
+    showSearchBtn: boolean,
+  ): string {
+    const rowStyle = source === 'external'
+      ? `${styles.filterRow} ${styles.filterRowExternal}`
+      : `${styles.filterRow} ${styles.filterRowLocal}`;
+
+    const labelStyle = source === 'external'
+      ? `${styles.filterRowLabel} ${styles.filterRowLabelExternal}`
+      : `${styles.filterRowLabel} ${styles.filterRowLabelLocal}`;
+
+    const rowLabel = source === 'external' ? 'Search' : 'Filter';
+
+    const fields = filters
+      .map(f => Template.getFilterFieldMarkup(f, source))
+      .join('');
+
+    const searchBtn = showSearchBtn
+      ? `<button class="${styles.filterSearchBtn}" data-filter-action="search">Search</button>`
+      : '';
+
+    const clearBtn = source === 'local'
+      ? `<button class="${styles.filterClearBtn}" data-filter-action="clear-local">Clear</button>`
+      : '';
+
+    return `
+      <div class="${rowStyle}">
+        <span class="${labelStyle}">${rowLabel}</span>
+        ${fields}
+        ${searchBtn}
+        ${clearBtn}
+      </div>
+    `;
+  }
+
+  static getFilterFieldMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
+    switch (filter.type) {
+      case 'text':      return Template.getTextFilterMarkup(filter, source);
+      case 'dropdown':  return Template.getDropdownFilterMarkup(filter, source);
+      case 'datetime':  return Template.getDatetimeFilterMarkup(filter, source);
+      case 'checkbox':  return Template.getCheckboxFilterMarkup(filter, source);
+      default:          return '';
+    }
+  }
+
+  static getFilterLabelMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
+    const labelStyle = source === 'external'
+      ? `${styles.filterLabel} ${styles.filterLabelExternal}`
+      : `${styles.filterLabel} ${styles.filterLabelLocal}`;
+
+    const required = filter.required
+      ? `<span class="${styles.filterRequiredMarker}">*</span>`
+      : '';
+
+    return `<label class="${labelStyle}">${Template.escapeHtml(filter.label)}${required}</label>`;
+  }
+
+  static getTextFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
+    const placeholder = filter.placeholder
+      ? Template.escapeHtml(filter.placeholder)
+      : `${filter.label}...`;
+
+    return `
+      <div class="${styles.filterField}">
+        ${Template.getFilterLabelMarkup(filter, source)}
+        <input class="${styles.filterInput}"
+               type="text"
+               placeholder="${placeholder}"
+               data-filter-field="${filter.field}"
+               data-filter-source="${source}"
+               data-filter-type="text"
+               data-filter-debounce="${filter.debounce}" />
+      </div>
+    `;
+  }
+
+  static getDropdownFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
+    const options = filter.options
+      .map(opt => `<option value="${Template.escapeHtml(opt)}">${Template.escapeHtml(opt)}</option>`)
+      .join('');
+
+    const placeholder = filter.placeholder || `All ${filter.label.toLowerCase()}`;
+
+    return `
+      <div class="${styles.filterField}">
+        ${Template.getFilterLabelMarkup(filter, source)}
+        <select class="${styles.filterInput} ${styles.filterSelect}"
+                data-filter-field="${filter.field}"
+                data-filter-source="${source}"
+                data-filter-type="dropdown">
+          <option value="">${Template.escapeHtml(placeholder)}</option>
+          ${options}
+        </select>
+      </div>
+    `;
+  }
+
+  static getDatetimeFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
+    return `
+      <div class="${styles.filterField}">
+        ${Template.getFilterLabelMarkup(filter, source)}
+        <div class="${styles.filterDatetimeGroup}">
+          <input class="${styles.filterInput}"
+                 type="datetime-local"
+                 data-filter-field="${filter.field}"
+                 data-filter-source="${source}"
+                 data-filter-type="datetime"
+                 data-filter-range="from" />
+          <span class="${styles.filterDatetimeSeparator}">to</span>
+          <input class="${styles.filterInput}"
+                 type="datetime-local"
+                 data-filter-field="${filter.field}"
+                 data-filter-source="${source}"
+                 data-filter-type="datetime"
+                 data-filter-range="to" />
+        </div>
+      </div>
+    `;
+  }
+
+  static getCheckboxFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
+    const labelStyle = source === 'external'
+      ? `${styles.filterCheckboxLabel} ${styles.filterLabelExternal}`
+      : `${styles.filterCheckboxLabel} ${styles.filterLabelLocal}`;
+
+    return `
+      <div class="${styles.filterCheckboxField}">
+        <input class="${styles.filterCheckbox}"
+               type="checkbox"
+               id="filter-${filter.field}"
+               data-filter-field="${filter.field}"
+               data-filter-source="${source}"
+               data-filter-type="checkbox" />
+        <label class="${labelStyle}" for="filter-${filter.field}">${Template.escapeHtml(filter.label)}</label>
+      </div>
+    `;
+  }
+
+  static getFilterEmptyStateMarkup(type: 'required' | 'loading' | 'no-match'): string {
+    switch (type) {
+      case 'required':
+        return `<div class="${styles.filterEmptyState}">Fill in required fields to load traces</div>`;
+      case 'loading':
+        return `<div class="${styles.filterEmptyState}"><div class="${styles.spinner}"></div><br/>Loading traces...</div>`;
+      case 'no-match':
+        return `<div class="${styles.filterEmptyState}">No spans match current filters</div>`;
+      default:
+        return '';
+    }
   }
 }

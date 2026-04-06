@@ -97,6 +97,10 @@ export interface TraceVisualizerConfig {
 
   /** SpanKind → color map for span bars and legend */
   colorScheme?: Record<string, string>;
+
+  /** Whether external filter changes auto-trigger fetch (default true).
+   *  When false, a "Search" button is rendered. */
+  autoFetch?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -132,6 +136,44 @@ export interface DisplayConfig {
   readonly detailPanelWidth: string;
   readonly colorScheme: Record<string, string>;
 }
+
+// ---------------------------------------------------------------------------
+// Filter types
+// ---------------------------------------------------------------------------
+
+export type FilterFieldType = 'text' | 'dropdown' | 'datetime' | 'checkbox';
+export type FilterSource = 'external' | 'local';
+export type FilterTarget = 'span' | 'log';
+
+/** Parsed representation of a <trace-filter> element's attributes. */
+export interface FilterFieldConfig {
+  field: string;
+  label: string;
+  type: FilterFieldType;
+  source: FilterSource;
+  target: FilterTarget;
+  required: boolean;
+  options: string[];
+  placeholder: string;
+  debounce: number;
+}
+
+export type FilterValue = string | boolean | { from?: string; to?: string };
+
+/** Runtime state of a single active local filter. */
+export interface LocalFilter {
+  config: FilterFieldConfig;
+  value: FilterValue;
+}
+
+/** Runtime state of a single active external filter. */
+export interface ExternalFilter {
+  config: FilterFieldConfig;
+  value: FilterValue;
+}
+
+/** Callback for custom data fetching with external filters. */
+export type FetchCallback = (url: string | undefined, filters: Record<string, string>) => Promise<unknown>;
 
 export function resolveDisplayDefaults(config: TraceVisualizerConfig): DisplayConfig {
   return {
