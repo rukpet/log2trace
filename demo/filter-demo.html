@@ -76,6 +76,35 @@
         width="250"
         placeholder="Filter by class...">
       </trace-filter>
+
+      <!-- Dropdown with auto-populated options from data -->
+      <trace-filter
+        field="serviceName"
+        label="Service"
+        type="dropdown"
+        source="local"
+        target="span"
+        options-source="auto"
+        placeholder="All services">
+      </trace-filter>
+
+      <!-- Dropdown with value/label pairs -->
+      <trace-filter
+        field="spanKind"
+        label="Span Kind"
+        type="dropdown"
+        source="local"
+        target="span"
+        options='[
+          {"value": "0", "label": "Unspecified"},
+          {"value": "1", "label": "Internal"},
+          {"value": "2", "label": "Server"},
+          {"value": "3", "label": "Client"},
+          {"value": "4", "label": "Producer"},
+          {"value": "5", "label": "Consumer"}
+        ]'
+        placeholder="All kinds">
+      </trace-filter>
     </trace-visualizer>
 
     <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">

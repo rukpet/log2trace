@@ -601,7 +601,7 @@ export class Template {
 
   static getDropdownFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
     const options = filter.options
-      .map(opt => `<option value="${Template.escapeHtml(opt)}">${Template.escapeHtml(opt)}</option>`)
+      .map(opt => `<option value="${Template.escapeHtml(opt.value)}">${Template.escapeHtml(opt.label)}</option>`)
       .join('');
 
     const placeholder = filter.placeholder || `All ${filter.label.toLowerCase()}`;

@@ -10,13 +10,13 @@
 import { TraceData } from './opentelemetry/trace.ts';
 import { TraceTree, type FlatSpan } from './trace-tree.ts';
 import { Template } from './template.ts';
-import { transformLogs } from './transform.ts';
+import { transformLogs, getField } from './transform.ts';
 import {
   type TraceVisualizerConfig, type TransformConfig, type DisplayConfig,
   type FilterFieldConfig, type FilterFieldType, type FilterSource, type FilterTarget,
-  type FilterValue, type Filter, type FetchCallback,
+  type FilterValue, type Filter, type FetchCallback, type OptionsSource,
   type SpanKindRule,
-  resolveDisplayDefaults,
+  resolveDisplayDefaults, normalizeOptions,
 } from './config.ts';
 import { filterSpans, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
 import componentCss from 'virtual:component-css';
@@ -772,6 +772,80 @@ class FilterBarController {
   set cachedTree(tree: TraceTree | null) {
     this._cachedTree = tree;
     this._filteredSpans = null;
+    this.populateAutoOptions();
+  }
+
+  /**
+   * For dropdown filters with optionsSource='auto', extract unique values from data.
+   */
+  private populateAutoOptions(): void {
+    const autoFilters = this.filterConfigs.filter(
+      f => f.type === 'dropdown' && f.optionsSource === 'auto'
+    );
+    if (autoFilters.length === 0 || !this._cachedTree) return;
+
+    const flatSpans = this._cachedTree.flatten();
+    for (const filter of autoFilters) {
+      const uniqueValues = new Set<string>();
+
+      for (const flatSpan of flatSpans) {
+        const value = this.resolveFieldValue(flatSpan, filter);
+        if (value !== null && value !== '') {
+          uniqueValues.add(value);
+        }
+      }
+
+      // Sort alphabetically and convert to FilterOption[]
+      const sorted = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b));
+      filter.options = sorted.map(v => ({ value: v, label: v }));
+    }
+  }
+
+  private resolveFieldValue(flatSpan: FlatSpan, filter: FilterFieldConfig): string | null {
+    const { span, serviceName } = flatSpan;
+    const field = filter.field;
+
+    // Handle special built-in fields
+    switch (field) {
+      case 'spanName':
+      case 'name':
+        return span.name;
+      case 'serviceName':
+        return serviceName;
+      case 'spanKind':
+      case 'kind':
+        return String(span.kind ?? '');
+    }
+
+    // Try span attributes
+    if (span.attributes) {
+      const attr = span.attributes.find(a => a.key === field);
+      if (attr) {
+        if (attr.value.stringValue !== undefined) return String(attr.value.stringValue);
+        if (attr.value.intValue !== undefined) return String(attr.value.intValue);
+        if (attr.value.boolValue !== undefined) return String(attr.value.boolValue);
+      }
+    }
+
+    // Try log/event attributes if target is 'log'
+    if (filter.target === 'log' && span.events) {
+      for (const event of span.events) {
+        if (event.attributes) {
+          const attr = event.attributes.find(a => a.key === field);
+          if (attr) {
+            if (attr.value.stringValue !== undefined) return String(attr.value.stringValue);
+            if (attr.value.intValue !== undefined) return String(attr.value.intValue);
+            if (attr.value.boolValue !== undefined) return String(attr.value.boolValue);
+          }
+        }
+      }
+    }
+
+    // Fallback: try getField for nested paths
+    const val = getField(span, field);
+    if (val !== undefined && val !== null) return String(val);
+
+    return null;
   }
 
   hasFilters(): boolean {
@@ -924,17 +998,20 @@ class FilterBarController {
       const source = child.getAttribute('source') as FilterSource | null;
       if (!field || !label || !type || !source) continue;
 
-      let options: string[] = [];
+      let options = [];
       const optionsAttr = child.getAttribute('options');
       if (optionsAttr) {
         try { options = JSON.parse(optionsAttr); } catch { /* ignore */ }
       }
 
+      const optionsSource = (child.getAttribute('options-source') as OptionsSource) || 'static';
+
       const config: FilterFieldConfig = {
         field, label, type, source,
         target: (child.getAttribute('target') as FilterTarget) || 'span',
         required: child.hasAttribute('required'),
-        options,
+        options: normalizeOptions(options),
+        optionsSource,
         placeholder: child.getAttribute('placeholder') || '',
         debounce: parseInt(child.getAttribute('debounce') || '400', 10),
         width: parseInt(child.getAttribute('width') || '300', 10)
@@ -977,7 +1054,7 @@ class FilterBarController {
 
     this.mutationObserver.observe(this.host, {
       childList: true, subtree: true, attributes: true,
-      attributeFilter: ['field', 'label', 'type', 'source', 'target', 'required', 'options', 'placeholder', 'debounce'],
+      attributeFilter: ['field', 'label', 'type', 'source', 'target', 'required', 'options', 'options-source', 'placeholder', 'debounce'],
     });
   }
 

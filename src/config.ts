@@ -144,6 +144,13 @@ export interface DisplayConfig {
 export type FilterFieldType = 'text' | 'dropdown' | 'datetime' | 'checkbox';
 export type FilterSource = 'external' | 'local';
 export type FilterTarget = 'span' | 'log';
+export type OptionsSource = 'static' | 'auto';
+
+/** A dropdown option with value and human-readable label. */
+export interface FilterOption {
+  value: string;
+  label: string;
+}
 
 /** Parsed representation of a <trace-filter> element's attributes. */
 export interface FilterFieldConfig {
@@ -153,10 +160,33 @@ export interface FilterFieldConfig {
   source: FilterSource;
   target: FilterTarget;
   required: boolean;
-  options: string[];
+  /** Dropdown options. Use string[] for simple values or FilterOption[] for value/label pairs. */
+  options: FilterOption[];
+  /** How to populate dropdown options: 'static' (from attribute) or 'auto' (from data). */
+  optionsSource: OptionsSource;
   placeholder: string;
   debounce: number;
   width: number;
+}
+
+/**
+ * Normalize options to FilterOption[].
+ * Accepts: string[], FilterOption[], or mixed array.
+ */
+export function normalizeOptions(raw: unknown): FilterOption[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(item => {
+    if (typeof item === 'string') {
+      return { value: item, label: item };
+    }
+    if (item && typeof item === 'object' && 'value' in item) {
+      return {
+        value: String(item.value),
+        label: String(item.label ?? item.value),
+      };
+    }
+    return { value: String(item), label: String(item) };
+  });
 }
 
 export type FilterValue = string | boolean | { from?: string; to?: string };
