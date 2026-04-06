@@ -17,7 +17,7 @@ const contentTypes = {
 };
 
 // Resolve build date from dist output timestamp
-const distPath = path.join(__dirname, '..', 'dist', 'index.js');
+const distPath = path.join(__dirname, '..', 'dist', 'log2trace.js');
 let buildDate = 'unknown';
 try {
   const mtime = fs.statSync(distPath).mtime;

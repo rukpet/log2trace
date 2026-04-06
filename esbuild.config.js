@@ -195,7 +195,7 @@ const watchPlugin = {
 };
 
 const sharedOptions = {
-  entryPoints: ['src/index.ts'],
+  entryPoints: ['src/log2trace.ts'],
   bundle: true,
   sourcemap: true,
   metafile: true,
@@ -205,7 +205,7 @@ const sharedOptions = {
 const minifiedOptions = {
   ...sharedOptions,
   minify: true,
-  outfile: 'dist/index.min.js',
+  outfile: 'dist/log2trace.min.js',
   plugins: [
     ...makeVanillaExtractPlugins(),
     htmlMinifyPlugin,
@@ -216,7 +216,7 @@ const minifiedOptions = {
 const devOptions = {
   ...sharedOptions,
   minify: false,
-  outfile: 'dist/index.js',
+  outfile: 'dist/log2trace.js',
   plugins: [
     ...makeVanillaExtractPlugins(),
     ...(isWatchMode ? [watchPlugin] : []),
