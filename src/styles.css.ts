@@ -679,6 +679,8 @@ export const filterRowLabel = style({
   fontWeight: 600,
   alignSelf: 'center',
   whiteSpace: 'nowrap',
+  width: 80,
+  flexShrink: 0,
 });
 
 export const filterRowLabelExternal = style({
@@ -737,7 +739,9 @@ export const filterInput = style({
   fontSize: 13,
   background: 'white',
   color: '#333',
-  minWidth: 130,
+  minWidth: 180,
+  height: 29,
+  boxSizing: 'border-box',
   ':focus': {
     outline: 'none',
     borderColor: '#4A90E2',
@@ -758,8 +762,7 @@ export const filterCheckboxField = style({
   display: 'flex',
   alignItems: 'center',
   gap: 6,
-  paddingTop: 6,
-  paddingBottom: 6,
+  height: 29,
   alignSelf: 'flex-end',
 });
 
@@ -799,6 +802,9 @@ export const filterSearchBtn = style({
   cursor: 'pointer',
   alignSelf: 'flex-end',
   transition: 'all 0.2s',
+  height: 29,
+  display: 'flex',
+  alignItems: 'center',
   ':hover': {
     background: '#357abd',
     borderColor: '#357abd',
@@ -818,6 +824,9 @@ export const filterClearBtn = style({
   cursor: 'pointer',
   alignSelf: 'flex-end',
   transition: 'all 0.2s',
+  height: 29,
+  display: 'flex',
+  alignItems: 'center',
   ':hover': {
     background: '#f5f5f5',
     borderColor: '#999',
