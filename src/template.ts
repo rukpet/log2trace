@@ -35,8 +35,9 @@ export class Template {
     return `${(ms / 60000).toFixed(2)}min`;
   }
 
-  static escapeHtml(str: string): string {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  static escapeHtml(str: unknown): string {
+    if (typeof str !== 'string') str = String(str ?? '');
+    return (str as string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   static extractAnyValue(value: AnyValue): string {
