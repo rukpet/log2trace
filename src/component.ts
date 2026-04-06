@@ -11,7 +11,13 @@ import { TraceData } from './opentelemetry/trace.ts';
 import { TraceTree, type FlatSpan } from './trace-tree.ts';
 import { Template } from './template.ts';
 import { transformLogs } from './transform.ts';
-import { type TraceVisualizerConfig, type TransformConfig, type DisplayConfig, resolveDisplayDefaults } from './config.ts';
+import {
+  type TraceVisualizerConfig, type TransformConfig, type DisplayConfig,
+  type FilterFieldConfig, type FilterFieldType, type FilterSource, type FilterTarget,
+  type FilterValue, type LocalFilter, type ExternalFilter, type FetchCallback,
+  resolveDisplayDefaults,
+} from './config.ts';
+import { filterSpans, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
 import componentCss from 'virtual:component-css';
 import * as styles from './styles.css.ts';
 
@@ -33,11 +39,13 @@ export class TraceVisualizerElement extends HTMLElement {
   private panStartOffset: number = 0;
   private resizeObserver: ResizeObserver;
   private selectedSpanIndex: number = -1;
+  private filterController!: FilterBarController;
 
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
     this.shadow.adoptedStyleSheets = [styleSheet];
+    this.filterController = new FilterBarController(this);
     this.resizeObserver = new ResizeObserver(() => {
       this.clampPanOffset();
       this.recalculateTimelineTicks();
@@ -57,13 +65,23 @@ export class TraceVisualizerElement extends HTMLElement {
       // Display
       'width', 'height', 'background-color', 'span-height', 'span-padding',
       'show-legend', 'full-width', 'detail-panel-width', 'color-scheme',
+      // Filter
+      'auto-fetch',
     ];
   }
 
   connectedCallback() {
-    this.render();
+    // Re-parse filter children (may not be available in constructor)
+    this.filterController.parseFilterChildren();
+
     this.setupKeyboardNavigation();
 
+    if (this.filterController.hasExternalFilters()) {
+      this.render();
+      return;
+    }
+
+    this.render();
     const dataUrl = this.getAttribute('data-url');
     if (dataUrl) {
       const merged = this.config;
@@ -78,6 +96,7 @@ export class TraceVisualizerElement extends HTMLElement {
   disconnectedCallback() {
     this.resizeObserver.disconnect();
     this.removeKeyboardNavigation();
+    this.filterController.destroy();
   }
 
   attributeChangedCallback(_name: string, oldValue: string, newValue: string) {
@@ -91,6 +110,7 @@ export class TraceVisualizerElement extends HTMLElement {
    */
   set traceData(data: TraceData) {
     this._tree = TraceTree.build(data);
+    this.filterController.cachedTree = this._tree;
     this.render();
   }
 
@@ -104,6 +124,15 @@ export class TraceVisualizerElement extends HTMLElement {
    */
   set logData(input: { logs: unknown[]; config: TransformConfig }) {
     this.traceData = transformLogs(input.logs, input.config);
+  }
+
+  /** Custom fetch callback for external filter queries. */
+  set fetchCallback(cb: FetchCallback | null) {
+    this.filterController.fetchCallback = cb;
+  }
+
+  get fetchCallback(): FetchCallback | null {
+    return this.filterController.fetchCallback;
   }
 
   /**
@@ -203,6 +232,8 @@ export class TraceVisualizerElement extends HTMLElement {
     set('fullWidth',             bool('full-width'));
     set('detailPanelWidth',      str('detail-panel-width'));
     set('colorScheme',           json('color-scheme'));
+    // Filter
+    set('autoFetch',             bool('auto-fetch'));
 
     return config;
   }
@@ -230,27 +261,56 @@ export class TraceVisualizerElement extends HTMLElement {
     // 'full-width' is a public API class applied to the host element from outside
     this.classList.toggle('full-width', config.fullWidth);
 
-    if (this._tree.roots.length === 0) {
-      this.shadow.innerHTML = Template.getEmptyMarkup();
+    const fc = this.filterController;
+    const hasFilters = fc.hasFilters();
+
+    const filterBarHtml = hasFilters ? fc.renderFilterBar() : '';
+
+    if (hasFilters) {
+      const emptyState = fc.getFilterEmptyStateMarkup();
+      if (emptyState) {
+        this.shadow.innerHTML = Template.getFilteredEmptyMarkup(filterBarHtml, emptyState, config);
+        fc.attachFilterListeners(this.shadow);
+        return;
+      }
+    }
+
+    const filteredSpans = hasFilters ? fc.getFilteredSpans() : null;
+    const tree = fc.cachedTree ?? this._tree;
+
+    if (tree.roots.length === 0) {
+      if (hasFilters) {
+        this.shadow.innerHTML = Template.getFilteredEmptyMarkup(filterBarHtml, '', config);
+        fc.attachFilterListeners(this.shadow);
+      } else {
+        this.shadow.innerHTML = Template.getEmptyMarkup();
+      }
       return;
     }
 
     try {
-      this.shadow.innerHTML = Template.getTraceMarkup(this._tree, config);
+      this.shadow.innerHTML = Template.getTraceMarkup(tree, config, filterBarHtml, filteredSpans);
 
-      // Create persistent tooltip element
       const tooltip = document.createElement('div');
       tooltip.className = styles.spanTooltip;
       tooltip.style.display = 'none';
       this.shadow.appendChild(tooltip);
 
-      this.attachEventListeners(this._tree);
+      if (hasFilters) fc.attachFilterListeners(this.shadow);
+
+      this.attachEventListeners(tree);
       this.attachZoomPanListeners();
       this.observeTimelineResize();
       this.recalculateTimelineTicks();
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Rendering failed');
     }
+  }
+
+  /** Called by FilterBarController to re-render with current filter state. */
+  _rerender(): void {
+    this.filterController.saveFocusState(this.shadow);
+    this.render();
   }
 
   private observeTimelineResize(): void {
@@ -266,7 +326,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const timelineOverlay = this.shadow.querySelector(`.${styles.timelineOverlay} .${styles.timeline}`) as HTMLElement;
     if (!timelineContainer || !timelineOverlay) return;
 
-    const timeRange = this._tree.getTimeRange();
+    const timeRange = (this.filterController.cachedTree ?? this._tree).getTimeRange();
     const containerWidth = timelineContainer.clientWidth;
     timelineOverlay.innerHTML = Template.getTimelineOverlayTicksMarkup(
       timeRange, containerWidth, this.zoomLevel, this.panOffset
@@ -418,7 +478,7 @@ export class TraceVisualizerElement extends HTMLElement {
     // Update timeline overlay ticks (outside scaled container)
     const timelineOverlay = this.shadow.querySelector(`.${styles.timelineOverlay} .${styles.timeline}`) as HTMLElement;
     if (timelineOverlay && timelineContainer) {
-      const timeRange = this._tree.getTimeRange();
+      const timeRange = (this.filterController.cachedTree ?? this._tree).getTimeRange();
       const containerWidth = timelineContainer.clientWidth;
       timelineOverlay.innerHTML = Template.getTimelineOverlayTicksMarkup(
         timeRange, containerWidth, this.zoomLevel, this.panOffset
@@ -637,7 +697,360 @@ export class TraceVisualizerElement extends HTMLElement {
 
 }
 
-// Register the custom element
+// ---------------------------------------------------------------------------
+// FilterBarController
+// ---------------------------------------------------------------------------
+
+class FilterBarController {
+  private filterConfigs: FilterFieldConfig[] = [];
+  private externalValues = new Map<string, ExternalFilter>();
+  private localValues = new Map<string, LocalFilter>();
+  private _cachedTree: TraceTree | null = null;
+  private _filteredSpans: FlatSpan[] | null = null;
+  private debounceTimers = new Map<string, number>();
+  private mutationObserver: MutationObserver | null = null;
+  private _fetchCallback: FetchCallback | null = null;
+  private _fetchInProgress = false;
+  private _focusedField: { field: string; source: string; range?: string; cursorPos?: number } | null = null;
+
+  constructor(private host: TraceVisualizerElement) {
+    this.parseFilterChildren();
+    this.setupMutationObserver();
+  }
+
+  get fetchCallback(): FetchCallback | null { return this._fetchCallback; }
+  set fetchCallback(cb: FetchCallback | null) { this._fetchCallback = cb; }
+
+  get cachedTree(): TraceTree | null { return this._cachedTree; }
+  set cachedTree(tree: TraceTree | null) {
+    this._cachedTree = tree;
+    this._filteredSpans = null;
+  }
+
+  hasFilters(): boolean {
+    return this.filterConfigs.length > 0;
+  }
+
+  hasExternalFilters(): boolean {
+    return this.filterConfigs.some(f => f.source === 'external');
+  }
+
+  hasRequiredUnfilled(): boolean {
+    const externals = Array.from(this.externalValues.values());
+    return externals.some(f => f.config.required) && !areRequiredExternalFiltersFilled(externals);
+  }
+
+  renderFilterBar(): string {
+    const externals = this.filterConfigs.filter(f => f.source === 'external');
+    const locals = this.filterConfigs.filter(f => f.source === 'local');
+    const autoFetch = this.host.config.autoFetch !== false;
+    return Template.getFilterBarMarkup(externals, locals, !autoFetch);
+  }
+
+  getFilteredSpans(): FlatSpan[] | null {
+    if (!this._cachedTree) return null;
+    if (this._filteredSpans) return this._filteredSpans;
+
+    const flatSpans = this._cachedTree.flatten();
+    const activeLocalFilters = Array.from(this.localValues.values());
+    this._filteredSpans = filterSpans(flatSpans, activeLocalFilters);
+    return this._filteredSpans;
+  }
+
+  getFilterEmptyStateMarkup(): string {
+    if (this._fetchInProgress) return Template.getFilterEmptyStateMarkup('loading');
+    if (this.hasRequiredUnfilled()) return Template.getFilterEmptyStateMarkup('required');
+
+    const filtered = this.getFilteredSpans();
+    if (filtered && filtered.length === 0 && this._cachedTree && this._cachedTree.roots.length > 0) {
+      return Template.getFilterEmptyStateMarkup('no-match');
+    }
+    return '';
+  }
+
+  attachFilterListeners(shadowRoot: ShadowRoot): void {
+    if (this._focusedField) {
+      const { field, source, range, cursorPos } = this._focusedField;
+      const selector = range
+        ? `[data-filter-field="${field}"][data-filter-source="${source}"][data-filter-range="${range}"]`
+        : `[data-filter-field="${field}"][data-filter-source="${source}"]`;
+      const el = shadowRoot.querySelector<HTMLInputElement | HTMLSelectElement>(selector);
+      if (el) {
+        el.focus();
+        if (cursorPos !== undefined && 'setSelectionRange' in el) {
+          (el as HTMLInputElement).setSelectionRange(cursorPos, cursorPos);
+        }
+      }
+      this._focusedField = null;
+    }
+
+    shadowRoot.querySelectorAll<HTMLInputElement>('input[data-filter-type="text"]').forEach(input => {
+      const field = input.dataset.filterField!;
+      const source = input.dataset.filterSource as FilterSource;
+      const debounceMs = parseInt(input.dataset.filterDebounce || '300', 10);
+      const stored = this.getStoredValue(field, source);
+      if (typeof stored === 'string') input.value = stored;
+
+      input.addEventListener('input', () => {
+        this.clearDebounce(field);
+        const timerId = window.setTimeout(() => {
+          this.handleFilterChange(field, source, input.value);
+        }, debounceMs);
+        this.debounceTimers.set(field, timerId);
+      });
+    });
+
+    shadowRoot.querySelectorAll<HTMLSelectElement>('select[data-filter-type="dropdown"]').forEach(select => {
+      const field = select.dataset.filterField!;
+      const source = select.dataset.filterSource as FilterSource;
+      const stored = this.getStoredValue(field, source);
+      if (typeof stored === 'string') select.value = stored;
+
+      select.addEventListener('change', () => {
+        this.handleFilterChange(field, source, select.value);
+      });
+    });
+
+    shadowRoot.querySelectorAll<HTMLInputElement>('input[data-filter-type="checkbox"]').forEach(input => {
+      const field = input.dataset.filterField!;
+      const source = input.dataset.filterSource as FilterSource;
+      const stored = this.getStoredValue(field, source);
+      if (typeof stored === 'boolean') input.checked = stored;
+
+      input.addEventListener('change', () => {
+        this.handleFilterChange(field, source, input.checked);
+      });
+    });
+
+    shadowRoot.querySelectorAll<HTMLInputElement>('input[data-filter-type="datetime"]').forEach(input => {
+      const field = input.dataset.filterField!;
+      const source = input.dataset.filterSource as FilterSource;
+      const range = input.dataset.filterRange as 'from' | 'to';
+      const stored = this.getStoredValue(field, source);
+      if (typeof stored === 'object' && stored !== null) {
+        const dtValue = stored as { from?: string; to?: string };
+        input.value = (range === 'from' ? dtValue.from : dtValue.to) || '';
+      }
+
+      input.addEventListener('change', () => {
+        this.handleDatetimeChange(field, source, range, input.value);
+      });
+    });
+
+    shadowRoot.querySelector<HTMLButtonElement>('[data-filter-action="search"]')
+      ?.addEventListener('click', () => this.triggerExternalFetch());
+
+    shadowRoot.querySelector<HTMLButtonElement>('[data-filter-action="clear-local"]')
+      ?.addEventListener('click', () => this.clearLocalFilters());
+  }
+
+  saveFocusState(shadowRoot: ShadowRoot): void {
+    const active = shadowRoot.activeElement as HTMLElement | null;
+    if (!active || !active.dataset?.filterField) {
+      this._focusedField = null;
+      return;
+    }
+    this._focusedField = {
+      field: active.dataset.filterField,
+      source: active.dataset.filterSource || '',
+      range: active.dataset.filterRange,
+      cursorPos: 'selectionStart' in active ? (active as HTMLInputElement).selectionStart ?? undefined : undefined,
+    };
+  }
+
+  destroy(): void {
+    this.mutationObserver?.disconnect();
+    this.mutationObserver = null;
+    for (const timerId of this.debounceTimers.values()) clearTimeout(timerId);
+    this.debounceTimers.clear();
+  }
+
+  parseFilterChildren(): void {
+    const configs: FilterFieldConfig[] = [];
+    for (let i = 0; i < this.host.children.length; i++) {
+      const child = this.host.children[i];
+      if (child.tagName.toLowerCase() !== 'trace-filter') continue;
+
+      const field = child.getAttribute('field');
+      const label = child.getAttribute('label');
+      const type = child.getAttribute('type') as FilterFieldType | null;
+      const source = child.getAttribute('source') as FilterSource | null;
+      if (!field || !label || !type || !source) continue;
+
+      let options: string[] = [];
+      const optionsAttr = child.getAttribute('options');
+      if (optionsAttr) {
+        try { options = JSON.parse(optionsAttr); } catch { /* ignore */ }
+      }
+
+      configs.push({
+        field, label, type, source,
+        target: (child.getAttribute('target') as FilterTarget) || 'span',
+        required: child.hasAttribute('required'),
+        options,
+        placeholder: child.getAttribute('placeholder') || '',
+        debounce: parseInt(child.getAttribute('debounce') || '300', 10),
+      });
+    }
+    this.filterConfigs = configs;
+    this.syncFilterState();
+  }
+
+  private syncFilterState(): void {
+    const newExternal = new Map<string, ExternalFilter>();
+    const newLocal = new Map<string, LocalFilter>();
+
+    for (const config of this.filterConfigs) {
+      const defaultVal = config.type === 'checkbox' ? false : config.type === 'datetime' ? { from: '', to: '' } : '';
+      if (config.source === 'external') {
+        newExternal.set(config.field, { config, value: this.externalValues.get(config.field)?.value ?? defaultVal });
+      } else {
+        newLocal.set(config.field, { config, value: this.localValues.get(config.field)?.value ?? defaultVal });
+      }
+    }
+    this.externalValues = newExternal;
+    this.localValues = newLocal;
+  }
+
+  private setupMutationObserver(): void {
+    this.mutationObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'childList' ||
+            (m.type === 'attributes' && m.target instanceof HTMLElement &&
+             m.target.tagName.toLowerCase() === 'trace-filter')) {
+          this.parseFilterChildren();
+          this.host._rerender();
+          return;
+        }
+      }
+    });
+
+    this.mutationObserver.observe(this.host, {
+      childList: true, subtree: true, attributes: true,
+      attributeFilter: ['field', 'label', 'type', 'source', 'target', 'required', 'options', 'placeholder', 'debounce'],
+    });
+  }
+
+  private handleFilterChange(field: string, source: FilterSource, value: FilterValue): void {
+    if (source === 'external') {
+      const filter = this.externalValues.get(field);
+      if (filter) { filter.value = value; this.externalValues.set(field, filter); }
+    } else {
+      const filter = this.localValues.get(field);
+      if (filter) { filter.value = value; this.localValues.set(field, filter); this._filteredSpans = null; }
+    }
+
+    const allFilters: Record<string, FilterValue> = {};
+    for (const [k, v] of this.externalValues) allFilters[k] = v.value;
+    for (const [k, v] of this.localValues) allFilters[k] = v.value;
+
+    this.host.dispatchEvent(new CustomEvent('filter-changed', {
+      detail: { field, source, value, allFilters },
+      bubbles: true, composed: true,
+    }));
+
+    if (source === 'external') {
+      if (this.host.config.autoFetch !== false) this.triggerExternalFetch();
+    } else {
+      this.host._rerender();
+    }
+  }
+
+  private handleDatetimeChange(field: string, source: FilterSource, range: 'from' | 'to', value: string): void {
+    const map = source === 'external' ? this.externalValues : this.localValues;
+    const filter = map.get(field);
+    if (!filter) return;
+
+    let current = filter.value;
+    if (typeof current !== 'object' || current === null) current = { from: '', to: '' };
+    const dtValue = current as { from?: string; to?: string };
+    if (range === 'from') dtValue.from = value; else dtValue.to = value;
+    this.handleFilterChange(field, source, dtValue);
+  }
+
+  private clearLocalFilters(): void {
+    for (const [, filter] of this.localValues) {
+      filter.value = filter.config.type === 'checkbox' ? false
+        : filter.config.type === 'datetime' ? { from: '', to: '' } : '';
+    }
+    this._filteredSpans = null;
+    this.host._rerender();
+  }
+
+  async triggerExternalFetch(): Promise<void> {
+    const externals = Array.from(this.externalValues.values());
+
+    if (!areRequiredExternalFiltersFilled(externals)) {
+      this._cachedTree = null;
+      this._filteredSpans = null;
+      this.host._rerender();
+      return;
+    }
+
+    const params = buildQueryParams(externals);
+    const url = this.host.getAttribute('data-url') || undefined;
+
+    this._fetchInProgress = true;
+    this.host._rerender();
+
+    try {
+      let data: unknown;
+      if (this._fetchCallback) {
+        data = await this._fetchCallback(url, params);
+      } else if (url) {
+        const queryString = new URLSearchParams(params).toString();
+        const fetchUrl = queryString ? `${url}?${queryString}` : url;
+        const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
+        data = await response.json();
+      } else {
+        return;
+      }
+
+      const config = this.host.config;
+      if (this.isTransformReady(config)) {
+        const traceData = transformLogs(data as unknown[], config as TransformConfig);
+        this._cachedTree = TraceTree.build(traceData);
+      } else {
+        this._cachedTree = TraceTree.build(data as any);
+      }
+      this._filteredSpans = null;
+    } catch {
+      this._cachedTree = null;
+      this._filteredSpans = null;
+    } finally {
+      this._fetchInProgress = false;
+      this.host._rerender();
+    }
+  }
+
+  private isTransformReady(config: TraceVisualizerConfig): boolean {
+    return !!(config.traceIdField && config.spanNameField && config.serviceNameField && config.timestampField);
+  }
+
+  private getStoredValue(field: string, source: FilterSource): FilterValue | undefined {
+    return (source === 'external' ? this.externalValues : this.localValues).get(field)?.value;
+  }
+
+  private clearDebounce(field: string): void {
+    const existing = this.debounceTimers.get(field);
+    if (existing !== undefined) { clearTimeout(existing); this.debounceTimers.delete(field); }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// <trace-filter> — configuration carrier, no Shadow DOM, no rendering
+// ---------------------------------------------------------------------------
+
+class TraceFilterElement extends HTMLElement {}
+
+// ---------------------------------------------------------------------------
+// Register custom elements
+// ---------------------------------------------------------------------------
+
+if (!customElements.get('trace-filter')) {
+  customElements.define('trace-filter', TraceFilterElement);
+}
 if (!customElements.get('trace-visualizer')) {
   customElements.define('trace-visualizer', TraceVisualizerElement);
 }

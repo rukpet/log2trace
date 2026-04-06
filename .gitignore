@@ -1,3 +1,5 @@
 node_modules/
 dist/
 .claude
+.superpowers
+docs/superpowers

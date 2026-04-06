@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filter Demo</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Filter Demo</h1>
+      <p>Demonstrates local filtering on log-transformed data.</p>
+    </header>
+
+    <h2>Local Filters (logs.json)</h2>
+    <trace-visualizer
+      data-url="./logs.json"
+      trace-id-field="text.BTMID"
+      span-group-fields="text.Application,text.Action"
+      span-name-field="text.Action"
+      service-name-field="text.Application"
+      timestamp-field="text.CreateDate"
+      status-code-field="text.Code"
+      parent-span-lookup-fields="text.InitiatingApplication"
+      span-kind-rules='[
+        {"match":{"text.ClassName":"API"},"kind":"Server"},
+        {"match":{"text.MethodName":"LogOutgoingDomainRequest"},"kind":"Client"},
+        {"match":{"text.MethodName":"LogReceivedDomainResponse"},"kind":"Client"},
+        {"match":{"text.ClassName":"HttpUtilSync"},"kind":"Client"},
+        {"match":{"text.MethodName":"UnaryServerHandler"},"kind":"Server"},
+        {"match":{"text.ClassName":"LoggingInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"ServerLoggingInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"LoggerInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"<ProcessConsumeResult>d__27"},"kind":"Consumer"},
+        {"match":{"text.ClassName":"<ProcessConsumeResult>d__26"},"kind":"Consumer"},
+        {"match":{"text.ClassName":"DomainServiceMessageInspector"},"kind":"Internal"}
+      ]'
+      full-width
+      show-legend
+    >
+      <trace-filter
+        field="*"
+        label="Search"
+        type="text"
+        source="local"
+        placeholder="Search all fields...">
+      </trace-filter>
+
+      <trace-filter
+        field="spanName"
+        label="Operation"
+        type="text"
+        source="local"
+        target="span"
+        placeholder="Search operations...">
+      </trace-filter>
+
+      <trace-filter
+        field="hasError"
+        label="Errors Only"
+        type="checkbox"
+        source="local"
+        target="span">
+      </trace-filter>
+
+      <trace-filter
+        field="text.ClassName"
+        label="Class Name"
+        type="text"
+        source="local"
+        target="log"
+        placeholder="Filter by class...">
+      </trace-filter>
+    </trace-visualizer>
+
+    <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">
+      Built on <time>__BUILD_DATE__</time> &middot;
+      <a href="./">&larr; Back to demos</a>
+    </footer>
+  </div>
+
+  <script type="module">
+    import './dist/index.min.js';
+
+    // Log filter-changed events
+    document.querySelector('trace-visualizer').addEventListener('filter-changed', (e) => {
+      console.log('filter-changed:', e.detail);
+    });
+  </script>
+</body>
+</html>
