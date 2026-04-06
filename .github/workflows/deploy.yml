@@ -40,10 +40,11 @@ jobs:
           cp demo/otel-trace.json _site/otel-trace.json
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/logs-transform.html > _site/logs-transform.html
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/benchmark.html > _site/benchmark.html
+          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/filter-demo.html > _site/filter-demo.html
           cp demo/logs.json _site/logs.json
           cp demo/favicon.svg _site/favicon.svg
-          cp dist/index.min.js _site/dist/index.min.js
-          cp dist/index.min.js.map _site/dist/index.min.js.map
+          cp dist/log2trace.min.js _site/dist/log2trace.min.js
+          cp dist/log2trace.min.js.map _site/dist/log2trace.min.js.map
 
       - uses: actions/upload-pages-artifact@v3
         with:
