@@ -161,14 +161,8 @@ export interface FilterFieldConfig {
 
 export type FilterValue = string | boolean | { from?: string; to?: string };
 
-/** Runtime state of a single active local filter. */
-export interface LocalFilter {
-  config: FilterFieldConfig;
-  value: FilterValue;
-}
-
-/** Runtime state of a single active external filter. */
-export interface ExternalFilter {
+/** Runtime state of a single active filter (local or external). */
+export interface Filter {
   config: FilterFieldConfig;
   value: FilterValue;
 }

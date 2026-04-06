@@ -17,4 +17,4 @@ export { TraceTree } from './trace-tree.ts';
 export { Template } from './template.ts';
 export { filterSpans } from './filter.ts';
 export { resolveDisplayDefaults } from './config.ts';
-export type { TraceVisualizerConfig, TransformConfig, DisplayConfig, FilterFieldConfig, LocalFilter, ExternalFilter, FetchCallback } from './config.ts';
+export type { TraceVisualizerConfig, TransformConfig, DisplayConfig, FilterFieldConfig, Filter, FetchCallback } from './config.ts';
