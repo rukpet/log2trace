@@ -7,7 +7,9 @@
  */
 
 import type { FlatSpan } from './trace-tree.ts';
-import type { Filter, FilterValue } from './config.ts';
+import type { Filter, FilterValue, FieldValue } from './config.ts';
+import type { AnyValue } from './opentelemetry/common.ts';
+import type { Event } from './opentelemetry/trace.ts';
 import { getField } from './transform.ts';
 
 // ---------------------------------------------------------------------------
@@ -80,12 +82,12 @@ function matchesWildcard(flatSpan: FlatSpan, type: string, value: FilterValue): 
   return false;
 }
 
-function extractAttrString(value: any): string | null {
+function extractAttrString(value: AnyValue): string | undefined {
   if (value.stringValue !== undefined) return String(value.stringValue);
   if (value.intValue !== undefined) return String(value.intValue);
   if (value.doubleValue !== undefined) return String(value.doubleValue);
   if (value.boolValue !== undefined) return String(value.boolValue);
-  return null;
+  return undefined;
 }
 
 function matchesSpanFilter(
@@ -129,7 +131,7 @@ function matchesSpanFilter(
   }
 }
 
-function resolveSpanField(flatSpan: FlatSpan, field: string): unknown {
+function resolveSpanField(flatSpan: FlatSpan, field: string): FieldValue {
   const { span, serviceName } = flatSpan;
 
   switch (field) {
@@ -184,10 +186,10 @@ function matchesLogFilter(
   });
 }
 
-function resolveEventField(event: { attributes: Array<{ key: string; value: any }> }, field: string): unknown {
+function resolveEventField(event: Event, field: string): FieldValue {
   // Try direct attribute match
   if (event.attributes) {
-    const attr = event.attributes.find((a: any) => a.key === field);
+    const attr = event.attributes.find(a => a.key === field);
     if (attr) {
       if (attr.value.stringValue !== undefined) return attr.value.stringValue;
       if (attr.value.intValue !== undefined) return String(attr.value.intValue);

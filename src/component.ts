@@ -15,7 +15,7 @@ import {
   type TraceVisualizerConfig, type TransformConfig, type DisplayConfig,
   type FilterFieldConfig, type FilterFieldType, type FilterSource, type FilterTarget,
   type FilterValue, type Filter, type FetchCallback, type OptionsSource,
-  type SpanKindRule,
+  type SpanKindRule, type LogEntry,
   resolveDisplayDefaults, normalizeOptions,
 } from './config.ts';
 import { filterSpans, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
@@ -123,7 +123,7 @@ export class TraceVisualizerElement extends HTMLElement {
    * Set raw log data with transform configuration.
    * Convenience wrapper: transforms logs internally and renders the result.
    */
-  set logData(input: { logs: unknown[]; config: TransformConfig }) {
+  set logData(input: { logs: LogEntry[]; config: TransformConfig }) {
     this.traceData = transformLogs(input.logs, input.config);
   }
 
@@ -152,7 +152,7 @@ export class TraceVisualizerElement extends HTMLElement {
   async loadTraceData(url: string): Promise<void> {
     try {
       this.shadow.innerHTML = Template.getLoadingMarkup();
-      this.traceData = await this.fetchJson(url);
+      this.traceData = await this.fetchJson<TraceData>(url);
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Failed to load trace data');
     }
@@ -162,19 +162,19 @@ export class TraceVisualizerElement extends HTMLElement {
   async loadAndTransform(url: string, config: TransformConfig): Promise<void> {
     try {
       this.shadow.innerHTML = Template.getLoadingMarkup();
-      const logs = await this.fetchJson(url);
+      const logs = await this.fetchJson<LogEntry[]>(url);
       this.traceData = transformLogs(logs, config);
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Failed to load trace data');
     }
   }
 
-  private async fetchJson(url: string): Promise<any> {
+  private async fetchJson<T>(url: string): Promise<T> {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to load: ${response.statusText}`);
     }
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   // ---------------------------------------------------------------------------
@@ -789,7 +789,7 @@ class FilterBarController {
 
       for (const flatSpan of flatSpans) {
         const value = this.resolveFieldValue(flatSpan, filter);
-        if (value !== null && value !== '') {
+        if (value !== undefined && value !== '') {
           uniqueValues.add(value);
         }
       }
@@ -800,7 +800,7 @@ class FilterBarController {
     }
   }
 
-  private resolveFieldValue(flatSpan: FlatSpan, filter: FilterFieldConfig): string | null {
+  private resolveFieldValue(flatSpan: FlatSpan, filter: FilterFieldConfig): string | undefined {
     const { span, serviceName } = flatSpan;
     const field = filter.field;
 
@@ -842,9 +842,9 @@ class FilterBarController {
 
     // Fallback: try getField for nested paths
     const val = getField(span, field);
-    if (val !== undefined && val !== null) return String(val);
+    if (val !== undefined) return String(val);
 
-    return null;
+    return undefined;
   }
 
   hasFilters(): boolean {
@@ -1120,7 +1120,7 @@ class FilterBarController {
     this.host._rerender();
 
     try {
-      let data: unknown;
+      let data: TraceData | LogEntry[];
       if (this._fetchCallback) {
         data = await this._fetchCallback(url, params);
       } else if (url) {
@@ -1128,17 +1128,17 @@ class FilterBarController {
         const fetchUrl = queryString ? `${url}?${queryString}` : url;
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
-        data = await response.json();
+        data = await response.json() as TraceData | LogEntry[];
       } else {
         return;
       }
 
       const config = this.host.config;
       if (this.isTransformReady(config)) {
-        const traceData = transformLogs(data as unknown[], config as TransformConfig);
+        const traceData = transformLogs(data as LogEntry[], config as TransformConfig);
         this._cachedTree = TraceTree.build(traceData);
       } else {
-        this._cachedTree = TraceTree.build(data as any);
+        this._cachedTree = TraceTree.build(data as TraceData);
       }
       this._filteredSpans = null;
     } catch {
