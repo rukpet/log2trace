@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log to Trace Viewer Demo</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+    }
+    .demo-links {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .demo-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s;
+    }
+    .demo-card:hover {
+      border-color: #0066cc;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .demo-card h2 {
+      margin-top: 0;
+      color: #0066cc;
+    }
+    .demo-card p {
+      margin-bottom: 0;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Log to Trace Viewer Demo</h1>
+      <p>Choose a demo to view:</p>
+    </header>
+
+    <div class="demo-links">
+      <a href="./otel-trace.html" class="demo-card">
+        <h2>OTel Trace Data Demo</h2>
+        <p>View OpenTelemetry trace data from otel-trace.json</p>
+      </a>
+
+      <a href="./logs-transform.html" class="demo-card">
+        <h2>Log Transform Demo</h2>
+        <p>Transform and visualize logs from logs.json</p>
+      </a>
+
+      <a href="./filter-demo.html" class="demo-card">
+        <h2>Filter Demo</h2>
+        <p>Local filtering on log-transformed data with text, checkbox, and log-field filters</p>
+      </a>
+
+      <a href="./benchmark.html" class="demo-card">
+        <h2>Performance Benchmark</h2>
+        <p>Measure each pipeline stage against targets at 100–10K log scales</p>
+      </a>
+    </div>
+
+    <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">
+      Built on <time>__BUILD_DATE__</time>
+    </footer>
+  </div>
+</body>
+</html>

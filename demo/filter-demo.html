@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filter Demo</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Filter Demo</h1>
+      <p>Demonstrates local filtering on log-transformed data.</p>
+    </header>
+
+    <h2>Local Filters (logs.json)</h2>
+    <trace-visualizer
+      data-url="./logs.json"
+      trace-id-field="text.BTMID"
+      span-group-fields="text.Application,text.Action"
+      span-name-field="text.Action"
+      service-name-field="text.Application"
+      timestamp-field="text.CreateDate"
+      status-code-field="text.Code"
+      parent-span-lookup-fields="text.InitiatingApplication"
+      full-width
+      show-legend
+    >
+      <!-- Span Kind Rules (declarative syntax) -->
+      <span-kind-rule match-field="text.ClassName" match-value="API" kind="Server"></span-kind-rule>
+      <span-kind-rule match-field="text.MethodName" match-value="LogOutgoingDomainRequest" kind="Client"></span-kind-rule>
+      <span-kind-rule match-field="text.MethodName" match-value="LogReceivedDomainResponse" kind="Client"></span-kind-rule>
+      <span-kind-rule match-field="text.ClassName" match-value="HttpUtilSync" kind="Client"></span-kind-rule>
+      <span-kind-rule match-field="text.MethodName" match-value="UnaryServerHandler" kind="Server"></span-kind-rule>
+      <span-kind-rule match-field="text.ClassName" match-value="LoggingInterceptor" kind="Server"></span-kind-rule>
+      <span-kind-rule match-field="text.ClassName" match-value="ServerLoggingInterceptor" kind="Server"></span-kind-rule>
+      <span-kind-rule match-field="text.ClassName" match-value="LoggerInterceptor" kind="Server"></span-kind-rule>
+      <span-kind-rule match-field="text.ClassName" match-value="<ProcessConsumeResult>d__27" kind="Consumer"></span-kind-rule>
+      <span-kind-rule match-field="text.ClassName" match-value="<ProcessConsumeResult>d__26" kind="Consumer"></span-kind-rule>
+      <span-kind-rule match-field="text.ClassName" match-value="DomainServiceMessageInspector" kind="Internal"></span-kind-rule>
+
+      <!-- Filters -->
+      <trace-filter
+        field="*"
+        label="Search"
+        type="text"
+        source="local"
+        width="300"
+        placeholder="Search all fields...">
+      </trace-filter>
+
+      <trace-filter
+        field="spanName"
+        label="Operation"
+        type="text"
+        source="local"
+        target="span"
+        width="250"
+        placeholder="Search operations...">
+      </trace-filter>
+
+      <trace-filter
+        field="hasError"
+        label="Errors Only"
+        type="checkbox"
+        source="local"
+        target="span">
+      </trace-filter>
+
+      <trace-filter
+        field="text.ClassName"
+        label="Class Name"
+        type="text"
+        source="local"
+        target="log"
+        width="250"
+        placeholder="Filter by class...">
+      </trace-filter>
+
+      <!-- Dropdown with auto-populated options from data -->
+      <trace-filter
+        field="serviceName"
+        label="Service"
+        type="dropdown"
+        source="local"
+        target="span"
+        options-source="auto"
+        placeholder="All services">
+      </trace-filter>
+
+      <!-- Dropdown with value/label pairs -->
+      <trace-filter
+        field="spanKind"
+        label="Span Kind"
+        type="dropdown"
+        source="local"
+        target="span"
+        options='[
+          {"value": "0", "label": "Unspecified"},
+          {"value": "1", "label": "Internal"},
+          {"value": "2", "label": "Server"},
+          {"value": "3", "label": "Client"},
+          {"value": "4", "label": "Producer"},
+          {"value": "5", "label": "Consumer"}
+        ]'
+        placeholder="All kinds">
+      </trace-filter>
+    </trace-visualizer>
+
+    <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">
+      Built on <time>__BUILD_DATE__</time> &middot;
+      <a href="./">&larr; Back to demos</a>
+    </footer>
+  </div>
+
+  <script type="module">
+    import './dist/log2trace.min.js';
+
+    // Log filter-changed events
+    document.querySelector('trace-visualizer').addEventListener('filter-changed', (e) => {
+      console.log('filter-changed:', e.detail);
+    });
+  </script>
+</body>
+</html>

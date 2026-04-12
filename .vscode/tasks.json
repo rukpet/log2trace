@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "demo",
+			"problemMatcher": [],
+			"label": "npm: demo",
+			"detail": "npm run build && node demo/server.js",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}

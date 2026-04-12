@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Transform Demo</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <style>
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Log Transform Demo</h1>
+    </header>
+
+    <h2>Log Transform (logs.json)</h2>
+    <trace-visualizer
+      data-url="./logs.json"
+      trace-id-field="text.BTMID"
+      span-group-fields="text.Application,text.Action"
+      span-name-field="text.Action"
+      service-name-field="text.Application"
+      timestamp-field="text.CreateDate"
+      status-code-field="text.Code"
+      parent-span-lookup-fields="text.InitiatingApplication"
+      span-kind-rules='[
+        {"match":{"text.ClassName":"API"},"kind":"Server"},
+        {"match":{"text.MethodName":"LogOutgoingDomainRequest"},"kind":"Client"},
+        {"match":{"text.MethodName":"LogReceivedDomainResponse"},"kind":"Client"},
+        {"match":{"text.ClassName":"HttpUtilSync"},"kind":"Client"},
+        {"match":{"text.MethodName":"UnaryServerHandler"},"kind":"Server"},
+        {"match":{"text.ClassName":"LoggingInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"ServerLoggingInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"LoggerInterceptor"},"kind":"Server"},
+        {"match":{"text.ClassName":"<ProcessConsumeResult>d__27"},"kind":"Consumer"},
+        {"match":{"text.ClassName":"<ProcessConsumeResult>d__26"},"kind":"Consumer"},
+        {"match":{"text.ClassName":"DomainServiceMessageInspector"},"kind":"Internal"}
+      ]'
+      full-width
+      show-legend
+    ></trace-visualizer>
+
+    <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">
+      Built on <time>__BUILD_DATE__</time> &middot;
+      <a href="./">&larr; Back to demos</a>
+    </footer>
+  </div>
+
+  <script type="module">
+    import './dist/log2trace.min.js';
+  </script>
+</body>
+</html>
