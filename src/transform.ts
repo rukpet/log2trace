@@ -13,20 +13,22 @@ import {
   Event,
 } from './opentelemetry/trace.ts';
 import { KeyValue } from './opentelemetry/common.ts';
-import type { TransformConfig, SpanKindRule } from './config.ts';
+import type { TransformConfig, SpanKindRule, LogEntry, FieldValue } from './config.ts';
 
 // ---------------------------------------------------------------------------
 // Internal utilities
 // ---------------------------------------------------------------------------
 
-/** Traverse a dot-separated path on an unknown object. */
-export function getField(obj: unknown, path: string): unknown {
-  let current: unknown = obj;
+/** Traverse a dot-separated path on an object (log entry, span, event, etc.). */
+export function getField(obj: object, path: string): FieldValue {
+  let current: object | FieldValue = obj;
   for (const key of path.split('.')) {
     if (current == null || typeof current !== 'object') return undefined;
-    current = (current as Record<string, unknown>)[key];
+    current = (current as Record<string, FieldValue | object>)[key];
   }
-  return current;
+  if (current == null) return undefined;
+  if (typeof current === 'object') return String(current);
+  return current as FieldValue;
 }
 
 /** DJB2 hash → 32-bit unsigned integer. */
@@ -53,7 +55,7 @@ function makeSpanId(input: string): string {
 }
 
 /** Convert a timestamp value to nanoseconds (bigint). */
-function parseTimestampNano(value: unknown): bigint {
+function parseTimestampNano(value: FieldValue): bigint {
   if (typeof value === 'bigint') return value;
 
   if (typeof value === 'number') {
@@ -97,7 +99,7 @@ function parseTimestampNano(value: unknown): bigint {
 }
 
 /** Convert a log object into an OTel Event. */
-function logToEvent(log: unknown, config: TransformConfig): Event {
+function logToEvent(log: LogEntry, config: TransformConfig): Event {
   const ts = parseTimestampNano(getField(log, config.timestampField));
   const name = String(getField(log, config.spanNameField) ?? 'log');
   const attributes: KeyValue[] = [];
@@ -109,7 +111,7 @@ function logToEvent(log: unknown, config: TransformConfig): Event {
 }
 
 /** Recursively flatten an object into KeyValue attributes with dot-notation keys. */
-function flattenToAttributes(obj: unknown, prefix: string, out: KeyValue[]): void {
+function flattenToAttributes(obj: LogEntry | FieldValue, prefix: string, out: KeyValue[]): void {
   if (obj == null) return;
   if (typeof obj !== 'object') {
     const key = prefix || 'value';
@@ -125,12 +127,12 @@ function flattenToAttributes(obj: unknown, prefix: string, out: KeyValue[]): voi
     }
     return;
   }
-  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+  for (const [k, v] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${k}` : k;
     if (v != null && typeof v === 'object' && !Array.isArray(v)) {
-      flattenToAttributes(v, fullKey, out);
+      flattenToAttributes(v as LogEntry, fullKey, out);
     } else if (v != null) {
-      flattenToAttributes(v, fullKey, out);
+      flattenToAttributes(v as FieldValue, fullKey, out);
     }
   }
 }
@@ -150,7 +152,7 @@ function parseSpanKind(value: string): SpanKind {
 }
 
 /** Evaluate spanKindRules against a group of logs. First matching rule wins. */
-function resolveSpanKind(logs: unknown[], rules: SpanKindRule[], fallback: SpanKind = SpanKind.Unspecified): SpanKind {
+function resolveSpanKind(logs: LogEntry[], rules: SpanKindRule[], fallback: SpanKind = SpanKind.Unspecified): SpanKind {
   for (const rule of rules) {
     const entries = Object.entries(rule.match);
     for (const log of logs) {
@@ -180,7 +182,7 @@ function mode(values: string[]): string {
 // Main transform
 // ---------------------------------------------------------------------------
 
-export function transformLogs(logs: unknown[], config: TransformConfig): TraceData {
+export function transformLogs(logs: LogEntry[], config: TransformConfig): TraceData {
   if (logs.length === 0) return { resourceSpans: [] };
 
   const groupFields: string[] = config.spanGroupFields
@@ -192,7 +194,7 @@ export function transformLogs(logs: unknown[], config: TransformConfig): TraceDa
     : [];
 
   // Phase 1: group logs by trace ID
-  const traceGroups = new Map<string, unknown[]>();
+  const traceGroups = new Map<string, LogEntry[]>();
   for (const log of logs) {
     const traceKey = String(getField(log, config.traceIdField) ?? 'unknown-trace');
     let group = traceGroups.get(traceKey);
@@ -207,7 +209,7 @@ export function transformLogs(logs: unknown[], config: TransformConfig): TraceDa
     const traceId = makeTraceId(traceKey);
 
     // Phase 2: group logs into spans
-    const spanGroups = new Map<string, unknown[]>();
+    const spanGroups = new Map<string, LogEntry[]>();
 
     if (groupFields.length > 0) {
       for (const log of traceLogs) {
@@ -231,7 +233,7 @@ export function transformLogs(logs: unknown[], config: TransformConfig): TraceDa
 
     // Phase 3: build Span objects
     // When lookupFields are configured, collect metadata for Phase 3.5
-    const spanEntries: { span: Span; keyParts: string[]; startNano: bigint; endNano: bigint; groupLogs: unknown[] }[] = [];
+    const spanEntries: { span: Span; keyParts: string[]; startNano: bigint; endNano: bigint; groupLogs: LogEntry[] }[] = [];
 
     for (const [compositeKey, groupLogs] of spanGroups) {
       const spanId = makeSpanId(traceKey + '\x00' + compositeKey);

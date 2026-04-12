@@ -4,11 +4,17 @@
  * Covers both log-to-trace transformation and visual display.
  */
 
-import { SpanKind } from './opentelemetry/trace.ts';
+import { SpanKind, type TraceData } from './opentelemetry/trace.ts';
 
 // ---------------------------------------------------------------------------
 // Config interface
 // ---------------------------------------------------------------------------
+
+/** A single arbitrary log record whose shape is defined by the user's data. */
+export type LogEntry = Record<string, unknown>;
+
+/** A value extracted from a log/span field via dot-path traversal. */
+export type FieldValue = string | number | boolean | undefined;
 
 /** A rule mapping log field values to a SpanKind. */
 export interface SpanKindRule {
@@ -173,19 +179,15 @@ export interface FilterFieldConfig {
  * Normalize options to FilterOption[].
  * Accepts: string[], FilterOption[], or mixed array.
  */
-export function normalizeOptions(raw: unknown): FilterOption[] {
-  if (!Array.isArray(raw)) return [];
+export function normalizeOptions(raw: (string | FilterOption)[]): FilterOption[] {
   return raw.map(item => {
     if (typeof item === 'string') {
       return { value: item, label: item };
     }
-    if (item && typeof item === 'object' && 'value' in item) {
-      return {
-        value: String(item.value),
-        label: String(item.label ?? item.value),
-      };
-    }
-    return { value: String(item), label: String(item) };
+    return {
+      value: String(item.value),
+      label: String(item.label ?? item.value),
+    };
   });
 }
 
@@ -198,7 +200,7 @@ export interface Filter {
 }
 
 /** Callback for custom data fetching with external filters. */
-export type FetchCallback = (url: string | undefined, filters: Record<string, string>) => Promise<unknown>;
+export type FetchCallback = (url: string | undefined, filters: Record<string, string>) => Promise<TraceData | LogEntry[]>;
 
 export function resolveDisplayDefaults(config: TraceVisualizerConfig): DisplayConfig {
   return {

@@ -35,8 +35,8 @@ export class Template {
     return `${(ms / 60000).toFixed(2)}min`;
   }
 
-  static escapeHtml(str: unknown): string {
-    const s = typeof str === 'string' ? str : String(str ?? '');
+  static escapeHtml(str: string | number | boolean): string {
+    const s = typeof str === 'string' ? str : String(str);
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
