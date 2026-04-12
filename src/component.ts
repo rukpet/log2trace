@@ -905,8 +905,7 @@ class FilterBarController {
     }
 
     shadowRoot.querySelectorAll<HTMLInputElement>('input[data-filter-type="text"]').forEach(input => {
-      const field = input.dataset.filterField!;
-      const source = input.dataset.filterSource as FilterSource;
+      const { field, source } = this.getFilterDataset(input);
       const debounceMs = parseInt(input.dataset.filterDebounce || '300', 10);
       const stored = this.getStoredValue(field, source);
       if (typeof stored === 'string') input.value = stored;
@@ -921,8 +920,7 @@ class FilterBarController {
     });
 
     shadowRoot.querySelectorAll<HTMLSelectElement>('select[data-filter-type="dropdown"]').forEach(select => {
-      const field = select.dataset.filterField!;
-      const source = select.dataset.filterSource as FilterSource;
+      const { field, source } = this.getFilterDataset(select);
       const stored = this.getStoredValue(field, source);
       if (typeof stored === 'string') select.value = stored;
 
@@ -932,8 +930,7 @@ class FilterBarController {
     });
 
     shadowRoot.querySelectorAll<HTMLInputElement>('input[data-filter-type="checkbox"]').forEach(input => {
-      const field = input.dataset.filterField!;
-      const source = input.dataset.filterSource as FilterSource;
+      const { field, source } = this.getFilterDataset(input);
       const stored = this.getStoredValue(field, source);
       if (typeof stored === 'boolean') input.checked = stored;
 
@@ -943,8 +940,7 @@ class FilterBarController {
     });
 
     shadowRoot.querySelectorAll<HTMLInputElement>('input[data-filter-type="datetime"]').forEach(input => {
-      const field = input.dataset.filterField!;
-      const source = input.dataset.filterSource as FilterSource;
+      const { field, source } = this.getFilterDataset(input);
       const range = input.dataset.filterRange as 'from' | 'to';
       const stored = this.getStoredValue(field, source);
       if (typeof stored === 'object' && stored !== null) {
@@ -1152,6 +1148,15 @@ class FilterBarController {
 
   private isTransformReady(config: TraceVisualizerConfig): boolean {
     return !!(config.traceIdField && config.spanNameField && config.serviceNameField && config.timestampField);
+  }
+
+  private getFilterDataset(el: HTMLElement): { field: string; source: FilterSource } {
+    const field = el.dataset.filterField;
+    const source = el.dataset.filterSource;
+    if (!field || !source) {
+      throw new Error('Filter element missing data-filter-field or data-filter-source');
+    }
+    return { field, source: source as FilterSource };
   }
 
   private getStoredValue(field: string, source: FilterSource): FilterValue | undefined {
