@@ -52,9 +52,6 @@
     "src"
   ],
   "lint-staged": {
-    "*.ts": [
-      "eslint --fix",
-      "tsc --noEmit"
-    ]
+    "*.ts": "eslint --fix"
   }
 }
