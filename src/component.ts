@@ -137,15 +137,40 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   /**
-   * Set configuration programmatically (flat: transform + display fields)
+   * Set configuration programmatically (flat: transform + display fields).
+   *
+   * **Behavior:** Shallow-merges into programmatic config. Repeated calls accumulate:
+   * ```js
+   * el.config = { width: 500 };
+   * el.config = { height: 300 };
+   * // Both width and height are now set programmatically
+   * ```
+   *
+   * **To unset a field** and fall back to its HTML attribute value, pass `undefined`:
+   * ```js
+   * el.config = { width: undefined };  // Remove override, use width attribute
+   * ```
+   *
+   * **Priority:** Programmatic config takes precedence over HTML attributes.
    */
   set config(config: TraceVisualizerConfig) {
-    this._programmatic = { ...this._programmatic, ...config };
+    for (const key of Object.keys(config) as Array<keyof TraceVisualizerConfig>) {
+      if (config[key] === undefined) {
+        // Unset override — fall back to HTML attribute
+        delete this._programmatic[key];
+      } else {
+        (this._programmatic as Record<string, unknown>)[key] = config[key];
+      }
+    }
     this.render();
   }
 
+  /**
+   * Get the current merged configuration (HTML attributes + programmatic overrides).
+   * Programmatic values take precedence over HTML attributes.
+   */
   get config(): TraceVisualizerConfig {
-    return { ...this._attrConfig(), ...this._programmatic };
+    return this._mergedConfig();
   }
 
   /** Load pre-formatted OTel TraceData from URL. */
@@ -254,9 +279,17 @@ export class TraceVisualizerElement extends HTMLElement {
     ].every(Boolean);
   }
 
+  private _mergedConfig(): TraceVisualizerConfig {
+    const config = { ...this._attrConfig(), ...this._programmatic };
+    // Normalize spanGroupFields to always be string[] (or undefined)
+    if (config.spanGroupFields && typeof config.spanGroupFields === 'string') {
+      config.spanGroupFields = [config.spanGroupFields];
+    }
+    return config;
+  }
+
   private resolveConfig(): DisplayConfig {
-    const merged = { ...this._attrConfig(), ...this._programmatic };
-    return resolveDisplayDefaults(merged);
+    return resolveDisplayDefaults(this._mergedConfig());
   }
 
   /**
