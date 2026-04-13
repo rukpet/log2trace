@@ -83,13 +83,12 @@ export class TraceVisualizerElement extends HTMLElement {
     }
 
     this.render();
-    const dataUrl = this.getAttribute('data-url');
-    if (dataUrl) {
-      const merged = this.config;
+    const merged = this.config;
+    if (merged.dataUrl) {
       if (this.isTransformReady(merged)) {
-        this.loadAndTransform(dataUrl, merged);
+        this.loadAndTransform(merged.dataUrl, merged);
       } else {
-        this.loadTraceData(dataUrl);
+        this.loadTraceData(merged.dataUrl);
       }
     }
   }
@@ -1143,7 +1142,7 @@ class FilterBarController {
     }
 
     const params = buildQueryParams(externals);
-    const url = this.host.getAttribute('data-url') || undefined;
+    const url = this.host.config.dataUrl;
 
     this._fetchInProgress = true;
     this.host._rerender();
