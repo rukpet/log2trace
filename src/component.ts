@@ -77,18 +77,15 @@ export class TraceVisualizerElement extends HTMLElement {
 
     this.setupKeyboardNavigation();
 
-    if (this.filterController.hasExternalFilters()) {
-      this.render();
-      return;
-    }
-
     this.render();
-    const merged = this.config;
-    if (merged.dataUrl) {
-      if (this.isTransformReady(merged)) {
-        this.loadAndTransform(merged.dataUrl, merged);
-      } else {
-        this.loadTraceData(merged.dataUrl);
+    if (!this.filterController.hasExternalFilters()) {
+      const merged = this.config;
+      if (merged.dataUrl) {
+        if (this.isTransformReady(merged)) {
+          this.loadAndTransform(merged.dataUrl, merged);
+        } else {
+          this.loadTraceData(merged.dataUrl);
+        }
       }
     }
   }
