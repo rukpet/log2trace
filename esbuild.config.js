@@ -145,7 +145,7 @@ const htmlMinifyPlugin = {
 
             // Create unique, lowercase placeholders to avoid collision with user content
             // Use timestamp + random for uniqueness
-            const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            const uniqueId = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
             const placeholders = exprs.map((_, i) => `___ph_${uniqueId}_${i}___`); // lowercase from start
 
             // Replace ${...} with unique placeholders, minify, then restore

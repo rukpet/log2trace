@@ -314,6 +314,7 @@ export class TraceVisualizerElement extends HTMLElement {
       placeholder: el.getAttribute('placeholder') || '',
       debounce: parseInt(el.getAttribute('debounce') || '400', 10),
       width: parseInt(el.getAttribute('width') || '300', 10),
+      autoRange: el.hasAttribute('auto-range'),
     };
   }
 
@@ -825,25 +826,58 @@ class FilterBarController {
    * For dropdown filters with optionsSource='auto', extract unique values from data.
    */
   private populateAutoOptions(): void {
-    const autoFilters = this.filterConfigs.filter(
+    if (!this._cachedTree) return;
+    const flatSpans = this._cachedTree.flatten();
+
+    const autoDropdowns = this.filterConfigs.filter(
       f => f.type === 'dropdown' && f.optionsSource === 'auto'
     );
-    if (autoFilters.length === 0 || !this._cachedTree) return;
-
-    const flatSpans = this._cachedTree.flatten();
-    for (const filter of autoFilters) {
+    for (const filter of autoDropdowns) {
       const uniqueValues = new Set<string>();
-
       for (const flatSpan of flatSpans) {
         const value = this.resolveFieldValue(flatSpan, filter);
-        if (value !== undefined && value !== '') {
-          uniqueValues.add(value);
-        }
+        if (value !== undefined && value !== '') uniqueValues.add(value);
       }
-
-      // Sort alphabetically and convert to FilterOption[]
       const sorted = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b));
       filter.options = sorted.map(v => ({ value: v, label: v }));
+    }
+
+    this.populateAutoRange(flatSpans);
+  }
+
+  private populateAutoRange(flatSpans: FlatSpan[]): void {
+    const autoRangeFilters = this.filterConfigs.filter(
+      f => f.type === 'datetime-range' && f.autoRange
+    );
+    if (autoRangeFilters.length === 0 || flatSpans.length === 0) return;
+
+    let minNano = BigInt(flatSpans[0].span.startTimeUnixNano);
+    let maxNano = minNano;
+    for (const { span } of flatSpans) {
+      const nano = BigInt(span.startTimeUnixNano);
+      if (nano < minNano) minNano = nano;
+      if (nano > maxNano) maxNano = nano;
+    }
+
+    const toLocal = (nano: bigint): string => {
+      const d = new Date(Number(nano / 1_000_000n));
+      const p = (n: number) => n.toString().padStart(2, '0');
+      const ms = d.getMilliseconds().toString().padStart(3, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.${ms}`;
+    };
+
+    const from = toLocal(minNano);
+    const to = toLocal(maxNano);
+
+    for (const filter of autoRangeFilters) {
+      const map = filter.source === 'external' ? this.externalValues : this.localValues;
+      const existing = map.get(filter.field);
+      if (!existing) continue;
+      const v = existing.value as { from?: string; to?: string };
+      if (!v.from && !v.to) {
+        existing.value = { from, to };
+        this._filteredSpans = null;
+      }
     }
   }
 
@@ -986,7 +1020,7 @@ class FilterBarController {
       });
     });
 
-    shadowRoot.querySelectorAll<HTMLInputElement>('input[data-filter-type="datetime"]').forEach(input => {
+    shadowRoot.querySelectorAll<HTMLInputElement>('input[data-filter-type="datetime-range"]').forEach(input => {
       const { field, source } = this.getFilterDataset(input);
       const range = input.dataset.filterRange as 'from' | 'to';
       const stored = this.getStoredValue(field, source);
@@ -1031,7 +1065,7 @@ class FilterBarController {
     const newLocal = new Map<string, Filter>();
 
     for (const config of this.filterConfigs) {
-      const defaultVal = config.type === 'checkbox' ? false : config.type === 'datetime' ? { from: '', to: '' } : '';
+      const defaultVal = config.type === 'checkbox' ? false : config.type === 'datetime-range' ? { from: '', to: '' } : '';
       if (config.source === 'external') {
         newExternal.set(config.field, { config, value: this.externalValues.get(config.field)?.value ?? defaultVal });
       } else {
@@ -1082,7 +1116,7 @@ class FilterBarController {
   private clearLocalFilters(): void {
     for (const [, filter] of this.localValues) {
       filter.value = filter.config.type === 'checkbox' ? false
-        : filter.config.type === 'datetime' ? { from: '', to: '' } : '';
+        : filter.config.type === 'datetime-range' ? { from: '', to: '' } : '';
     }
     this._filteredSpans = null;
     this.host._rerender();

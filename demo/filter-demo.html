@@ -105,6 +105,15 @@
         ]'
         placeholder="All kinds">
       </trace-filter>
+
+      <trace-filter
+        field="startTime"
+        label="Datetime Range"
+        type="datetime-range"
+        source="local"
+        target="span"
+        auto-range>
+      </trace-filter>
     </trace-visualizer>
 
     <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">
