@@ -18,6 +18,7 @@
     "build": "run-p build:*",
     "build:tsc": "tsc",
     "build:bundle": "node esbuild.config.js",
+    "build:docs": "typedoc",
     "check": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
@@ -27,6 +28,7 @@
     "dev": "run-p watch:* demo:server",
     "watch:tsc": "tsc --watch",
     "watch:bundle": "node esbuild.config.js --watch",
+    "watch:docs": "typedoc --watch",
     "prepare": "husky"
   },
   "keywords": [
