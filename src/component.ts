@@ -808,6 +808,7 @@ class FilterBarController {
   applyConfigs(configs: FilterFieldConfig[]): void {
     this.filterConfigs = configs;
     this.syncFilterState();
+    this.populateAutoOptions();
   }
 
   get fetchCallback(): FetchCallback | null { return this._fetchCallback; }
