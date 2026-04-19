@@ -150,7 +150,7 @@ export interface DisplayConfig {
 // Filter types
 // ---------------------------------------------------------------------------
 
-export type FilterFieldType = 'text' | 'dropdown' | 'datetime' | 'checkbox';
+export type FilterFieldType = 'text' | 'dropdown' | 'datetime-range' | 'checkbox';
 export type FilterSource = 'external' | 'local';
 export type FilterTarget = 'span' | 'log';
 export type OptionsSource = 'static' | 'auto';
@@ -176,6 +176,8 @@ export interface FilterFieldConfig {
   placeholder: string;
   debounce: number;
   width: number;
+  /** When true, the from/to values are auto-computed from data min/max span timestamps on load. */
+  autoRange: boolean;
 }
 
 /**

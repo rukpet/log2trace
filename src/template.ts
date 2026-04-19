@@ -561,7 +561,7 @@ export class Template {
     switch (filter.type) {
       case 'text':      return Template.getTextFilterMarkup(filter, source);
       case 'dropdown':  return Template.getDropdownFilterMarkup(filter, source);
-      case 'datetime':  return Template.getDatetimeFilterMarkup(filter, source);
+      case 'datetime-range':  return Template.getDatetimeFilterMarkup(filter, source);
       case 'checkbox':  return Template.getCheckboxFilterMarkup(filter, source);
       default:          return '';
     }
@@ -633,14 +633,14 @@ export class Template {
                  type="datetime-local"
                  data-filter-field="${filter.field}"
                  data-filter-source="${source}"
-                 data-filter-type="datetime"
+                 data-filter-type="datetime-range"
                  data-filter-range="from"${widthStyle} />
           <span class="${styles.filterDatetimeSeparator}">to</span>
           <input class="${styles.filterInput}"
                  type="datetime-local"
                  data-filter-field="${filter.field}"
                  data-filter-source="${source}"
-                 data-filter-type="datetime"
+                 data-filter-type="datetime-range"
                  data-filter-range="to"${widthStyle} />
         </div>
       </div>
