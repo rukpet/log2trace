@@ -27,6 +27,7 @@ export function filterSpans(spans: FlatSpan[], filters: Filter[]): FlatSpan[] {
 function isActiveValue(value: FilterValue): boolean {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') return value.length > 0;
+  if (Array.isArray(value)) return value.length > 0;
   if (typeof value === 'object' && value !== null) return !!(value.from || value.to);
   return false;
 }
@@ -126,6 +127,9 @@ function matchesSpanFilter(
       return true;
     }
 
+    case 'multiselect':
+      return Array.isArray(value) && value.includes(String(resolved));
+
     default:
       return true;
   }
@@ -180,6 +184,8 @@ function matchesLogFilter(
         return typeof value === 'string' && String(resolved) === value;
       case 'checkbox':
         return value ? !!resolved : true;
+      case 'multiselect':
+        return Array.isArray(value) && value.includes(String(resolved));
       default:
         return true;
     }
@@ -213,18 +219,20 @@ export function areRequiredExternalFiltersFilled(filters: Filter[]): boolean {
 }
 
 /** Convert external filter values to a flat Record for URL query params. */
-export function buildQueryParams(filters: Filter[]): Record<string, string> {
-  const params: Record<string, string> = {};
+export function buildQueryParams(filters: Filter[]): Record<string, string | string[]> {
+  const params: Record<string, string | string[]> = {};
 
   for (const { config, value } of filters) {
     if (!isActiveValue(value)) continue;
 
-    if (config.type === 'datetime-range' && typeof value === 'object' && value !== null) {
+    if (config.type === 'datetime-range' && typeof value === 'object' && value !== null && !Array.isArray(value)) {
       const { from, to } = value as { from?: string; to?: string };
       if (from) params[`${config.field}From`] = from;
       if (to) params[`${config.field}To`] = to;
     } else if (config.type === 'checkbox') {
       if (value) params[config.field] = 'true';
+    } else if (config.type === 'multiselect' && Array.isArray(value)) {
+      params[config.field] = value;
     } else if (typeof value === 'string') {
       params[config.field] = value;
     }

@@ -843,3 +843,84 @@ export const filterEmptyState = style({
   color: '#999',
   fontSize: 14,
 });
+
+export const filterMultiselectWrapper = style({
+  position: 'relative',
+  display: 'inline-block',
+});
+
+export const filterMultiselectTrigger = style({
+  padding: '6px 28px 6px 10px',
+  border: '1px solid #ccc',
+  borderRadius: 4,
+  fontSize: 13,
+  background: 'white',
+  color: '#333',
+  minWidth: 180,
+  height: 29,
+  boxSizing: 'border-box',
+  cursor: 'pointer',
+  textAlign: 'left',
+  position: 'relative',
+  userSelect: 'none',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  ':hover': { borderColor: '#999' },
+  '::after': {
+    content: '"\\25BC"',
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    fontSize: 9,
+    color: '#666',
+    pointerEvents: 'none',
+  },
+});
+
+export const filterMultiselectTriggerActive = style({
+  borderColor: '#4A90E2',
+  boxShadow: '0 0 0 2px rgba(74,144,226,0.2)',
+});
+
+export const filterMultiselectPanel = style({
+  display: 'none',
+  position: 'absolute',
+  top: '100%',
+  left: 0,
+  marginTop: 2,
+  background: 'white',
+  border: '1px solid #ccc',
+  borderRadius: 4,
+  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  zIndex: 200,
+  minWidth: '100%',
+  maxHeight: 220,
+  overflowY: 'auto',
+  padding: '4px 0',
+});
+
+export const filterMultiselectPanelOpen = style({
+  display: 'block',
+});
+
+export const filterMultiselectItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '5px 12px',
+  cursor: 'pointer',
+  fontSize: 13,
+  color: '#333',
+  userSelect: 'none',
+  ':hover': { background: '#f0f4ff' },
+});
+
+export const filterMultiselectCheckbox = style({
+  width: 14,
+  height: 14,
+  cursor: 'pointer',
+  accentColor: '#4A90E2',
+  flexShrink: 0,
+});

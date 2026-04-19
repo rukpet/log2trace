@@ -114,6 +114,33 @@
         target="span"
         auto-range>
       </trace-filter>
+
+      <trace-filter
+        field="serviceName"
+        label="Services"
+        type="multiselect"
+        source="local"
+        target="span"
+        options-source="auto"
+        width="200">
+      </trace-filter>
+
+      <trace-filter
+        field="spanKind"
+        label="Kind (multi)"
+        type="multiselect"
+        source="local"
+        target="span"
+        options='[
+          {"value": "0", "label": "Unspecified"},
+          {"value": "1", "label": "Internal"},
+          {"value": "2", "label": "Server"},
+          {"value": "3", "label": "Client"},
+          {"value": "4", "label": "Producer"},
+          {"value": "5", "label": "Consumer"}
+        ]'
+        width="200">
+      </trace-filter>
     </trace-visualizer>
 
     <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">
