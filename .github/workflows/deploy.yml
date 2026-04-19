@@ -45,6 +45,7 @@ jobs:
           cp demo/favicon.svg _site/favicon.svg
           cp dist/log2trace.min.js _site/dist/log2trace.min.js
           cp dist/log2trace.min.js.map _site/dist/log2trace.min.js.map
+          cp -r docs _site/api
 
       - uses: actions/upload-pages-artifact@v3
         with:

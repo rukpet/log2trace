@@ -1,0 +1,17 @@
+{
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "out": "docs",
+  "name": "log2trace-ui",
+  "includeVersion": true,
+  "readme": "README.md",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "searchInComments": true,
+  "categoryOrder": ["*"],
+  "navigationLinks": {
+    "GitHub": "https://github.com/rukpet/log2trace"
+  },
+  "tsconfig": "tsconfig.json"
+}
