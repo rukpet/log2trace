@@ -111,7 +111,7 @@ function matchesSpanFilter(
       if (field === 'hasError') return flatSpan.span.status?.code === 2;
       return !!resolved;
 
-    case 'datetime': {
+    case 'datetime-range': {
       if (typeof value !== 'object' || value === null) return true;
       const startMs = Number(BigInt(flatSpan.span.startTimeUnixNano) / 1_000_000n);
       const { from, to } = value as { from?: string; to?: string };
@@ -219,7 +219,7 @@ export function buildQueryParams(filters: Filter[]): Record<string, string> {
   for (const { config, value } of filters) {
     if (!isActiveValue(value)) continue;
 
-    if (config.type === 'datetime' && typeof value === 'object' && value !== null) {
+    if (config.type === 'datetime-range' && typeof value === 'object' && value !== null) {
       const { from, to } = value as { from?: string; to?: string };
       if (from) params[`${config.field}From`] = from;
       if (to) params[`${config.field}To`] = to;
