@@ -26,22 +26,21 @@
       timestamp-field="text.CreateDate"
       status-code-field="text.Code"
       parent-span-lookup-fields="text.InitiatingApplication"
-      span-kind-rules='[
-        {"match":{"text.ClassName":"API"},"kind":"Server"},
-        {"match":{"text.MethodName":"LogOutgoingDomainRequest"},"kind":"Client"},
-        {"match":{"text.MethodName":"LogReceivedDomainResponse"},"kind":"Client"},
-        {"match":{"text.ClassName":"HttpUtilSync"},"kind":"Client"},
-        {"match":{"text.MethodName":"UnaryServerHandler"},"kind":"Server"},
-        {"match":{"text.ClassName":"LoggingInterceptor"},"kind":"Server"},
-        {"match":{"text.ClassName":"ServerLoggingInterceptor"},"kind":"Server"},
-        {"match":{"text.ClassName":"LoggerInterceptor"},"kind":"Server"},
-        {"match":{"text.ClassName":"<ProcessConsumeResult>d__27"},"kind":"Consumer"},
-        {"match":{"text.ClassName":"<ProcessConsumeResult>d__26"},"kind":"Consumer"},
-        {"match":{"text.ClassName":"DomainServiceMessageInspector"},"kind":"Internal"}
-      ]'
       full-width
       show-legend
-    ></trace-visualizer>
+    >
+      <span-kind-rule kind="Server"   match-field="text.ClassName"  match-value="API"></span-kind-rule>
+      <span-kind-rule kind="Client"   match-field="text.MethodName" match-value="LogOutgoingDomainRequest"></span-kind-rule>
+      <span-kind-rule kind="Client"   match-field="text.MethodName" match-value="LogReceivedDomainResponse"></span-kind-rule>
+      <span-kind-rule kind="Client"   match-field="text.ClassName"  match-value="HttpUtilSync"></span-kind-rule>
+      <span-kind-rule kind="Server"   match-field="text.MethodName" match-value="UnaryServerHandler"></span-kind-rule>
+      <span-kind-rule kind="Server"   match-field="text.ClassName"  match-value="LoggingInterceptor"></span-kind-rule>
+      <span-kind-rule kind="Server"   match-field="text.ClassName"  match-value="ServerLoggingInterceptor"></span-kind-rule>
+      <span-kind-rule kind="Server"   match-field="text.ClassName"  match-value="LoggerInterceptor"></span-kind-rule>
+      <span-kind-rule kind="Consumer" match-field="text.ClassName"  match-value="&lt;ProcessConsumeResult&gt;d__27"></span-kind-rule>
+      <span-kind-rule kind="Consumer" match-field="text.ClassName"  match-value="&lt;ProcessConsumeResult&gt;d__26"></span-kind-rule>
+      <span-kind-rule kind="Internal" match-field="text.ClassName"  match-value="DomainServiceMessageInspector"></span-kind-rule>
+    </trace-visualizer>
 
     <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">
       Built on <time>__BUILD_DATE__</time> &middot;

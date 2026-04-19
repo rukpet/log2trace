@@ -15,7 +15,7 @@ import {
   type TraceVisualizerConfig, type TransformConfig, type DisplayConfig,
   type FilterFieldConfig, type FilterFieldType, type FilterSource, type FilterTarget,
   type FilterValue, type Filter, type FetchCallback, type OptionsSource,
-  type SpanKindRule, type LogEntry,
+  type FilterOption, type SpanKindRule, type LogEntry,
   resolveDisplayDefaults, normalizeOptions,
 } from './config.ts';
 import { filterSpans, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
@@ -62,7 +62,7 @@ export class TraceVisualizerElement extends HTMLElement {
       // Transform
       'trace-id-field', 'span-group-fields', 'span-name-field', 'service-name-field',
       'timestamp-field', 'end-time-field', 'parent-span-id-field', 'parent-span-lookup-fields',
-      'span-id-field', 'status-code-field', 'span-kind-rules', 'default-span-kind',
+      'span-id-field', 'status-code-field', 'default-span-kind',
       // Display
       'width', 'height', 'background-color', 'span-height', 'span-padding',
       'show-legend', 'full-width', 'detail-panel-width', 'color-scheme',
@@ -72,9 +72,6 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   connectedCallback() {
-    // Re-parse filter children (may not be available in constructor)
-    this.filterController.parseFilterChildren();
-
     this.setupKeyboardNavigation();
 
     this.render();
@@ -242,13 +239,28 @@ export class TraceVisualizerElement extends HTMLElement {
     set('parentSpanLookupFields', csv('parent-span-lookup-fields'));
     set('spanIdField',           str('span-id-field'));
     set('statusCodeField',       str('status-code-field'));
-    // Merge span-kind-rules from attribute and parsed child elements
-    const attrRules = json('span-kind-rules') as SpanKindRule[] | undefined;
-    const parsedRules = this.parseSpanKindRuleChildren();
-    const mergedRules = [...(attrRules || []), ...parsedRules];
-    if (mergedRules.length > 0) {
-      set('spanKindRules', mergedRules);
+    // Child elements: <span-kind-rule> and <trace-filter>
+    const spanKindRules: SpanKindRule[] = [];
+    const filterConfigs: FilterFieldConfig[] = [];
+
+    for (let i = 0; i < this.children.length; i++) {
+      const child = this.children[i];
+      const tag = child.tagName.toLowerCase();
+
+      if (tag === 'span-kind-rule') {
+        const rule = this._parseSpanKindRuleElement(child);
+        if (rule) spanKindRules.push(rule);
+      }
+
+      if (tag === 'trace-filter') {
+        const fc = this._parseFilterElement(child);
+        if (fc) filterConfigs.push(fc);
+      }
     }
+
+    const mergedRules = spanKindRules;
+    if (mergedRules.length > 0) set('spanKindRules', mergedRules);
+    if (filterConfigs.length > 0) set('filterConfigs', filterConfigs);
     set('defaultSpanKind',       str('default-span-kind'));
     // Display fields
     set('width',                 num('width'));
@@ -264,6 +276,45 @@ export class TraceVisualizerElement extends HTMLElement {
     set('autoFetch',             bool('auto-fetch'));
 
     return config;
+  }
+
+  private _parseSpanKindRuleElement(el: Element): SpanKindRule | null {
+    const kind = el.getAttribute('kind');
+    if (!kind) return null;
+    const matchField = el.getAttribute('match-field');
+    const matchValue = el.getAttribute('match-value');
+    if (matchField && matchValue) return { match: { [matchField]: matchValue }, kind };
+    const matchAttr = el.getAttribute('match');
+    if (matchAttr) {
+      try {
+        const match = JSON.parse(matchAttr);
+        if (typeof match === 'object' && match !== null) return { match, kind };
+      } catch {
+        console.warn('Invalid JSON in span-kind-rule match attribute:', matchAttr);
+      }
+    }
+    return null;
+  }
+
+  private _parseFilterElement(el: Element): FilterFieldConfig | null {
+    const field = el.getAttribute('field');
+    const label = el.getAttribute('label');
+    const type = el.getAttribute('type') as FilterFieldType | null;
+    const source = el.getAttribute('source') as FilterSource | null;
+    if (!field || !label || !type || !source) return null;
+    let options: (string | FilterOption)[] = [];
+    const optionsAttr = el.getAttribute('options');
+    if (optionsAttr) { try { options = JSON.parse(optionsAttr); } catch { /* ignore */ } }
+    return {
+      field, label, type, source,
+      target: (el.getAttribute('target') as FilterTarget) || 'span',
+      required: el.hasAttribute('required'),
+      options: normalizeOptions(options),
+      optionsSource: (el.getAttribute('options-source') as OptionsSource) || 'static',
+      placeholder: el.getAttribute('placeholder') || '',
+      debounce: parseInt(el.getAttribute('debounce') || '400', 10),
+      width: parseInt(el.getAttribute('width') || '300', 10),
+    };
   }
 
   private isTransformReady(config: TraceVisualizerConfig): config is TransformConfig {
@@ -288,55 +339,20 @@ export class TraceVisualizerElement extends HTMLElement {
     return resolveDisplayDefaults(this._mergedConfig());
   }
 
-  /**
-   * Parse <span-kind-rule> child elements into SpanKindRule objects.
-   * Supports two syntaxes:
-   * 1. Simple: <span-kind-rule match-field="text.ClassName" match-value="API" kind="Server"></span-kind-rule>
-   * 2. Complex: <span-kind-rule match='{"text.ClassName":"API","text.MethodName":"GetUser"}' kind="Server"></span-kind-rule>
-   */
-  private parseSpanKindRuleChildren(): SpanKindRule[] {
-    const rules: SpanKindRule[] = [];
-    for (let i = 0; i < this.children.length; i++) {
-      const child = this.children[i];
-      if (child.tagName.toLowerCase() !== 'span-kind-rule') continue;
 
-      const kind = child.getAttribute('kind');
-      if (!kind) continue;
-
-      // Try simple syntax first (match-field + match-value)
-      const matchField = child.getAttribute('match-field');
-      const matchValue = child.getAttribute('match-value');
-      if (matchField && matchValue) {
-        rules.push({ match: { [matchField]: matchValue }, kind });
-        continue;
-      }
-
-      // Fall back to complex syntax (match JSON)
-      const matchAttr = child.getAttribute('match');
-      if (matchAttr) {
-        try {
-          const match = JSON.parse(matchAttr);
-          if (typeof match === 'object' && match !== null) {
-            rules.push({ match, kind });
-          }
-        } catch {
-          console.warn('Invalid JSON in span-kind-rule match attribute:', matchAttr);
-        }
-      }
-    }
-    return rules;
-  }
 
   // ---------------------------------------------------------------------------
   // Rendering
   // ---------------------------------------------------------------------------
 
   private render(): void {
-    const config = this.resolveConfig();
+    const mergedConfig = this._mergedConfig();
+    const config = resolveDisplayDefaults(mergedConfig);
     // 'full-width' is a public API class applied to the host element from outside
     this.classList.toggle('full-width', config.fullWidth);
 
     const fc = this.filterController;
+    fc.applyConfigs(mergedConfig.filterConfigs ?? []);
     const hasFilters = fc.hasFilters();
 
     const filterBarHtml = hasFilters ? fc.renderFilterBar() : '';
@@ -783,14 +799,15 @@ class FilterBarController {
   private _cachedTree: TraceTree | null = null;
   private _filteredSpans: FlatSpan[] | null = null;
   private debounceTimers = new Map<string, number>();
-  private mutationObserver: MutationObserver | null = null;
   private _fetchCallback: FetchCallback | null = null;
   private _fetchInProgress = false;
   private _focusedField: { field: string; source: string; range?: string; cursorPos?: number } | null = null;
 
-  constructor(private host: TraceVisualizerElement) {
-    this.parseFilterChildren();
-    this.setupMutationObserver();
+  constructor(private host: TraceVisualizerElement) {}
+
+  applyConfigs(configs: FilterFieldConfig[]): void {
+    this.filterConfigs = configs;
+    this.syncFilterState();
   }
 
   get fetchCallback(): FetchCallback | null { return this._fetchCallback; }
@@ -1004,47 +1021,8 @@ class FilterBarController {
   }
 
   destroy(): void {
-    this.mutationObserver?.disconnect();
-    this.mutationObserver = null;
     for (const timerId of this.debounceTimers.values()) clearTimeout(timerId);
     this.debounceTimers.clear();
-  }
-
-  parseFilterChildren(): void {
-    const configs: FilterFieldConfig[] = [];
-    for (let i = 0; i < this.host.children.length; i++) {
-      const child = this.host.children[i];
-      if (child.tagName.toLowerCase() !== 'trace-filter') continue;
-
-      const field = child.getAttribute('field');
-      const label = child.getAttribute('label');
-      const type = child.getAttribute('type') as FilterFieldType | null;
-      const source = child.getAttribute('source') as FilterSource | null;
-      if (!field || !label || !type || !source) continue;
-
-      let options = [];
-      const optionsAttr = child.getAttribute('options');
-      if (optionsAttr) {
-        try { options = JSON.parse(optionsAttr); } catch { /* ignore */ }
-      }
-
-      const optionsSource = (child.getAttribute('options-source') as OptionsSource) || 'static';
-
-      const config: FilterFieldConfig = {
-        field, label, type, source,
-        target: (child.getAttribute('target') as FilterTarget) || 'span',
-        required: child.hasAttribute('required'),
-        options: normalizeOptions(options),
-        optionsSource,
-        placeholder: child.getAttribute('placeholder') || '',
-        debounce: parseInt(child.getAttribute('debounce') || '400', 10),
-        width: parseInt(child.getAttribute('width') || '300', 10)
-      };
-
-      configs.push(config);
-    }
-    this.filterConfigs = configs;
-    this.syncFilterState();
   }
 
   private syncFilterState(): void {
@@ -1061,25 +1039,6 @@ class FilterBarController {
     }
     this.externalValues = newExternal;
     this.localValues = newLocal;
-  }
-
-  private setupMutationObserver(): void {
-    this.mutationObserver = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        if (m.type === 'childList' ||
-            (m.type === 'attributes' && m.target instanceof HTMLElement &&
-             m.target.tagName.toLowerCase() === 'trace-filter')) {
-          this.parseFilterChildren();
-          this.host._rerender();
-          return;
-        }
-      }
-    });
-
-    this.mutationObserver.observe(this.host, {
-      childList: true, subtree: true, attributes: true,
-      attributeFilter: ['field', 'label', 'type', 'source', 'target', 'required', 'options', 'options-source', 'placeholder', 'debounce'],
-    });
   }
 
   private handleFilterChange(field: string, source: FilterSource, value: FilterValue): void {
@@ -1202,24 +1161,73 @@ class FilterBarController {
 // <trace-filter> — configuration carrier, no Shadow DOM, no rendering
 // ---------------------------------------------------------------------------
 
-class TraceFilterElement extends HTMLElement {}
+class TraceFilterElement extends HTMLElement {
+  private _host: TraceVisualizerElement | null = null;
+
+  static get observedAttributes() {
+    return [
+      'field', 'label', 'type', 'source', 'target', 'required',
+      'options', 'options-source', 'placeholder', 'debounce', 'width',
+    ];
+  }
+
+  private _notify(): void { this._host?._rerender(); }
+
+  connectedCallback(): void {
+    const el = this.closest('trace-visualizer');
+    this._host = el instanceof TraceVisualizerElement ? el : null;
+    if (!this._host && el) {
+      customElements.whenDefined('trace-visualizer').then(() => {
+        this._host = this.closest<TraceVisualizerElement>('trace-visualizer');
+        this._notify();
+      });
+      return;
+    }
+    this._notify();
+  }
+  disconnectedCallback(): void { this._notify(); this._host = null; }
+  attributeChangedCallback(): void { this._notify(); }
+}
 
 // ---------------------------------------------------------------------------
 // <span-kind-rule> — configuration carrier for span kind rules
 // ---------------------------------------------------------------------------
 
-class SpanKindRuleElement extends HTMLElement {}
+class SpanKindRuleElement extends HTMLElement {
+  private _host: TraceVisualizerElement | null = null;
+
+  static get observedAttributes() {
+    return ['kind', 'match-field', 'match-value', 'match'];
+  }
+
+  private _notify(): void { this._host?._rerender(); }
+
+  connectedCallback(): void {
+    const el = this.closest('trace-visualizer');
+    this._host = el instanceof TraceVisualizerElement ? el : null;
+    if (!this._host && el) {
+      customElements.whenDefined('trace-visualizer').then(() => {
+        this._host = this.closest<TraceVisualizerElement>('trace-visualizer');
+        this._notify();
+      });
+      return;
+    }
+    this._notify();
+  }
+  disconnectedCallback(): void { this._notify(); this._host = null; }
+  attributeChangedCallback(): void { this._notify(); }
+}
 
 // ---------------------------------------------------------------------------
 // Register custom elements
 // ---------------------------------------------------------------------------
 
+if (!customElements.get('trace-visualizer')) {
+  customElements.define('trace-visualizer', TraceVisualizerElement);
+}
 if (!customElements.get('trace-filter')) {
   customElements.define('trace-filter', TraceFilterElement);
 }
 if (!customElements.get('span-kind-rule')) {
   customElements.define('span-kind-rule', SpanKindRuleElement);
-}
-if (!customElements.get('trace-visualizer')) {
-  customElements.define('trace-visualizer', TraceVisualizerElement);
 }

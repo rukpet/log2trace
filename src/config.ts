@@ -107,6 +107,9 @@ export interface TraceVisualizerConfig {
   /** Whether external filter changes auto-trigger fetch (default true).
    *  When false, a "Search" button is rendered. */
   autoFetch?: boolean;
+
+  /** Filter field definitions. Can be set programmatically or via <trace-filter> child elements. */
+  filterConfigs?: FilterFieldConfig[];
 }
 
 // ---------------------------------------------------------------------------
