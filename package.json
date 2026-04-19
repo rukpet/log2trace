@@ -1,10 +1,17 @@
 {
-  "name": "log2trace-viewer",
-  "version": "1.0.0",
-  "description": "An interactive visualization library for OpenTelemetry trace data",
+  "name": "log2trace-ui",
+  "version": "1.0.0-RC1",
+  "description": "Zero-dependency Web Component that renders OpenTelemetry traces as an interactive waterfall timeline, with built-in log-to-trace transformation.",
   "main": "dist/log2trace.js",
+  "module": "dist/log2trace.js",
   "types": "dist/log2trace.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/log2trace.js",
+      "types": "./dist/log2trace.d.ts"
+    }
+  },
   "scripts": {
     "clean": "npx rimraf dist",
     "prebuild": "npm run clean",
@@ -31,8 +38,16 @@
     "waterfall",
     "timeline"
   ],
-  "author": "",
+  "author": "Dmytro Ohorodniichuk",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rukpet/log2trace.git"
+  },
+  "homepage": "https://rukpet.github.io/log2trace/",
+  "bugs": {
+    "url": "https://github.com/rukpet/log2trace/issues"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
@@ -49,7 +64,9 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "README.md",
+    "LICENSE"
   ],
   "lint-staged": {
     "*.ts": "eslint --fix"
