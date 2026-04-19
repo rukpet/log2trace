@@ -562,8 +562,9 @@ export class Template {
       case 'text':      return Template.getTextFilterMarkup(filter, source);
       case 'dropdown':  return Template.getDropdownFilterMarkup(filter, source);
       case 'datetime-range':  return Template.getDatetimeFilterMarkup(filter, source);
-      case 'checkbox':  return Template.getCheckboxFilterMarkup(filter, source);
-      default:          return '';
+      case 'checkbox':     return Template.getCheckboxFilterMarkup(filter, source);
+      case 'multiselect':  return Template.getMultiselectFilterMarkup(filter, source);
+      default:             return '';
     }
   }
 
@@ -661,6 +662,38 @@ export class Template {
                data-filter-source="${source}"
                data-filter-type="checkbox" />
         <label class="${labelStyle}" for="filter-${filter.field}">${Template.escapeHtml(filter.label)}</label>
+      </div>
+    `;
+  }
+
+  static getMultiselectFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
+    const widthStyle = filter.width ? ` style="width:${filter.width}px"` : '';
+
+    const optionItems = filter.options.map(opt => `
+      <label class="${styles.filterMultiselectItem}">
+        <input class="${styles.filterMultiselectCheckbox}"
+               type="checkbox"
+               value="${Template.escapeHtml(opt.value)}"
+               data-filter-option="${Template.escapeHtml(opt.value)}" />
+        ${Template.escapeHtml(opt.label)}
+      </label>
+    `).join('');
+
+    return `
+      <div class="${styles.filterField}">
+        ${Template.getFilterLabelMarkup(filter, source)}
+        <div class="${styles.filterMultiselectWrapper}"
+             data-filter-field="${filter.field}"
+             data-filter-source="${source}"
+             data-filter-type="multiselect"${widthStyle}>
+          <button class="${styles.filterMultiselectTrigger}"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false">All</button>
+          <div class="${styles.filterMultiselectPanel}" role="listbox">
+            ${optionItems}
+          </div>
+        </div>
       </div>
     `;
   }

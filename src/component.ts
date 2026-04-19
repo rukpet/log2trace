@@ -803,6 +803,8 @@ class FilterBarController {
   private _fetchCallback: FetchCallback | null = null;
   private _fetchInProgress = false;
   private _focusedField: { field: string; source: string; range?: string; cursorPos?: number } | null = null;
+  private _openMultiselectField: string | null = null;
+  private _clickOutsideAbort: AbortController | null = null;
 
   constructor(private host: TraceVisualizerElement) {}
 
@@ -830,7 +832,7 @@ class FilterBarController {
     const flatSpans = this._cachedTree.flatten();
 
     const autoDropdowns = this.filterConfigs.filter(
-      f => f.type === 'dropdown' && f.optionsSource === 'auto'
+      f => (f.type === 'dropdown' || f.type === 'multiselect') && f.optionsSource === 'auto'
     );
     for (const filter of autoDropdowns) {
       const uniqueValues = new Set<string>();
@@ -1034,6 +1036,74 @@ class FilterBarController {
       });
     });
 
+    this._clickOutsideAbort?.abort();
+    this._clickOutsideAbort = new AbortController();
+
+    shadowRoot.querySelectorAll<HTMLElement>('[data-filter-type="multiselect"]').forEach(wrapper => {
+      const { field, source } = this.getFilterDataset(wrapper);
+      const panel = wrapper.querySelector<HTMLElement>(`.${styles.filterMultiselectPanel}`);
+      const trigger = wrapper.querySelector<HTMLButtonElement>('button');
+      if (!panel || !trigger) return;
+
+      const stored = this.getStoredValue(field, source);
+      const selectedValues: string[] = Array.isArray(stored) ? stored : [];
+      wrapper.querySelectorAll<HTMLInputElement>('input[data-filter-option]').forEach(cb => {
+        cb.checked = selectedValues.includes(cb.value);
+      });
+      trigger.textContent = selectedValues.length === 0 ? 'All' : `${selectedValues.length} selected`;
+
+      if (this._openMultiselectField === field) {
+        panel.classList.add(styles.filterMultiselectPanelOpen);
+        trigger.classList.add(styles.filterMultiselectTriggerActive);
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = panel.classList.contains(styles.filterMultiselectPanelOpen);
+        shadowRoot.querySelectorAll<HTMLElement>(`.${styles.filterMultiselectPanel}`).forEach(p => p.classList.remove(styles.filterMultiselectPanelOpen));
+        shadowRoot.querySelectorAll<HTMLButtonElement>(`.${styles.filterMultiselectTrigger}`).forEach(b => {
+          b.classList.remove(styles.filterMultiselectTriggerActive);
+          b.setAttribute('aria-expanded', 'false');
+        });
+        if (!isOpen) {
+          panel.classList.add(styles.filterMultiselectPanelOpen);
+          trigger.classList.add(styles.filterMultiselectTriggerActive);
+          trigger.setAttribute('aria-expanded', 'true');
+        }
+      });
+
+      wrapper.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          panel.classList.remove(styles.filterMultiselectPanelOpen);
+          trigger.classList.remove(styles.filterMultiselectTriggerActive);
+          trigger.setAttribute('aria-expanded', 'false');
+          trigger.focus();
+        }
+      });
+
+      wrapper.querySelectorAll<HTMLInputElement>('input[data-filter-option]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const checked = Array.from(
+            wrapper.querySelectorAll<HTMLInputElement>('input[data-filter-option]:checked')
+          ).map(el => el.value);
+          trigger.textContent = checked.length === 0 ? 'All' : `${checked.length} selected`;
+          this.handleFilterChange(field, source, checked);
+        });
+      });
+    });
+
+    shadowRoot.addEventListener('click', (e) => {
+      const target = e.target as Element;
+      if (!target.closest('[data-filter-type="multiselect"]')) {
+        shadowRoot.querySelectorAll<HTMLElement>(`.${styles.filterMultiselectPanel}`).forEach(p => p.classList.remove(styles.filterMultiselectPanelOpen));
+        shadowRoot.querySelectorAll<HTMLButtonElement>(`.${styles.filterMultiselectTrigger}`).forEach(b => {
+          b.classList.remove(styles.filterMultiselectTriggerActive);
+          b.setAttribute('aria-expanded', 'false');
+        });
+      }
+    }, { capture: true, signal: this._clickOutsideAbort.signal });
+
     shadowRoot.querySelector<HTMLButtonElement>('[data-filter-action="search"]')
       ?.addEventListener('click', () => this.triggerExternalFetch());
 
@@ -1045,19 +1115,28 @@ class FilterBarController {
     const active = shadowRoot.activeElement as HTMLElement | null;
     if (!active || !active.dataset?.filterField) {
       this._focusedField = null;
-      return;
+    } else {
+      this._focusedField = {
+        field: active.dataset.filterField,
+        source: active.dataset.filterSource || '',
+        range: active.dataset.filterRange,
+        cursorPos: 'selectionStart' in active ? (active as HTMLInputElement).selectionStart ?? undefined : undefined,
+      };
     }
-    this._focusedField = {
-      field: active.dataset.filterField,
-      source: active.dataset.filterSource || '',
-      range: active.dataset.filterRange,
-      cursorPos: 'selectionStart' in active ? (active as HTMLInputElement).selectionStart ?? undefined : undefined,
-    };
+
+    const openPanel = shadowRoot.querySelector<HTMLElement>(`.${styles.filterMultiselectPanelOpen}`);
+    if (openPanel) {
+      const wrapper = openPanel.closest<HTMLElement>('[data-filter-type="multiselect"]');
+      this._openMultiselectField = wrapper?.dataset.filterField ?? null;
+    } else {
+      this._openMultiselectField = null;
+    }
   }
 
   destroy(): void {
     for (const timerId of this.debounceTimers.values()) clearTimeout(timerId);
     this.debounceTimers.clear();
+    this._clickOutsideAbort?.abort();
   }
 
   private syncFilterState(): void {
@@ -1065,7 +1144,10 @@ class FilterBarController {
     const newLocal = new Map<string, Filter>();
 
     for (const config of this.filterConfigs) {
-      const defaultVal = config.type === 'checkbox' ? false : config.type === 'datetime-range' ? { from: '', to: '' } : '';
+      const defaultVal: FilterValue = config.type === 'checkbox' ? false
+        : config.type === 'datetime-range' ? { from: '', to: '' }
+        : config.type === 'multiselect' ? []
+        : '';
       if (config.source === 'external') {
         newExternal.set(config.field, { config, value: this.externalValues.get(config.field)?.value ?? defaultVal });
       } else {
@@ -1116,7 +1198,9 @@ class FilterBarController {
   private clearLocalFilters(): void {
     for (const [, filter] of this.localValues) {
       filter.value = filter.config.type === 'checkbox' ? false
-        : filter.config.type === 'datetime-range' ? { from: '', to: '' } : '';
+        : filter.config.type === 'datetime-range' ? { from: '', to: '' }
+        : filter.config.type === 'multiselect' ? []
+        : '';
     }
     this._filteredSpans = null;
     this.host._rerender();
@@ -1143,7 +1227,15 @@ class FilterBarController {
       if (this._fetchCallback) {
         data = await this._fetchCallback(url, params);
       } else if (url) {
-        const queryString = new URLSearchParams(params).toString();
+        const urlParams = new URLSearchParams();
+        for (const [key, val] of Object.entries(params)) {
+          if (Array.isArray(val)) {
+            for (const v of val) urlParams.append(key, v);
+          } else {
+            urlParams.set(key, val);
+          }
+        }
+        const queryString = urlParams.toString();
         const fetchUrl = queryString ? `${url}?${queryString}` : url;
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
