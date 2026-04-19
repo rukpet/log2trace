@@ -150,7 +150,7 @@ export interface DisplayConfig {
 // Filter types
 // ---------------------------------------------------------------------------
 
-export type FilterFieldType = 'text' | 'dropdown' | 'datetime-range' | 'checkbox';
+export type FilterFieldType = 'text' | 'dropdown' | 'datetime-range' | 'checkbox' | 'multiselect';
 export type FilterSource = 'external' | 'local';
 export type FilterTarget = 'span' | 'log';
 export type OptionsSource = 'static' | 'auto';
@@ -196,7 +196,7 @@ export function normalizeOptions(raw: (string | FilterOption)[]): FilterOption[]
   });
 }
 
-export type FilterValue = string | boolean | { from?: string; to?: string };
+export type FilterValue = string | boolean | { from?: string; to?: string } | string[];
 
 /** Runtime state of a single active filter (local or external). */
 export interface Filter {
@@ -205,7 +205,7 @@ export interface Filter {
 }
 
 /** Callback for custom data fetching with external filters. */
-export type FetchCallback = (url: string | undefined, filters: Record<string, string>) => Promise<TraceData | LogEntry[]>;
+export type FetchCallback = (url: string | undefined, filters: Record<string, string | string[]>) => Promise<TraceData | LogEntry[]>;
 
 export function resolveDisplayDefaults(config: TraceVisualizerConfig): DisplayConfig {
   return {
