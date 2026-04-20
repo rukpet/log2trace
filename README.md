@@ -49,10 +49,11 @@ Add the element to any HTML page and point it at your log data:
 
 Each attribute is a dot-path into your log records (e.g. `text.Application`, `resource.attributes.host` for nested fields). The component groups logs into traces, builds a span hierarchy from parent references, and renders the result as a zoomable, pannable waterfall.
 
-You can also configure the component and feed data programmatically via the JavaScript API — see the [API Reference](https://rukpet.github.io/log2trace/api/).
+You can also configure the component and feed data programmatically via the JavaScript API — see the [Interactive Demo Guide](https://rukpet.github.io/log2trace/demo/guide.html) for live examples, or the [API Reference](https://rukpet.github.io/log2trace/api/) for full type documentation.
 
 ## Documentation
 
+- [Interactive Demo Guide](https://rukpet.github.io/log2trace/demo/guide.html) — step-by-step examples covering every configurable feature, from a one-liner to a full advanced setup
 - [API Reference](https://rukpet.github.io/log2trace/api/) — TypeDoc documentation for `TraceVisualizerConfig`, `TransformConfig`, and all exported types
 - [Source code](https://github.com/rukpet/log2trace)
 
