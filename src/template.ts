@@ -14,12 +14,32 @@ import { TraceTree, type FlatSpan } from './trace-tree.ts';
 import type { DisplayConfig, FilterFieldConfig } from './config.ts';
 import * as styles from './styles.css.ts';
 
+/**
+ * Static factory of HTML strings used by `<trace-visualizer>`.
+ *
+ * Every method returns a self-contained HTML fragment built with template
+ * literals — there is no DOM manipulation here. The component sets these
+ * strings on its shadow root's `innerHTML`. All CSS class names come from
+ * `styles.css.ts` so vanilla-extract can compile them; raw class strings
+ * are never used.
+ *
+ * Most methods are low-level fragments composed by other methods on this
+ * class and are marked `@internal` to keep the generated docs focused.
+ * The handful of higher-level entry points worth calling directly are:
+ *
+ * - {@link Template.getTraceMarkup} — the full waterfall view.
+ * - {@link Template.getSpanDetailMarkup} — the right-hand detail panel
+ *   for a single span.
+ * - {@link Template.getLoadingMarkup}, {@link Template.getEmptyMarkup},
+ *   {@link Template.getErrorMarkup} — placeholder states.
+ */
 export class Template {
 
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
 
+  /** @internal */
   static getStatusIcon(statusCode: number): string {
     switch (statusCode) {
       case 1: return '&#10003;'; // OK
@@ -28,6 +48,7 @@ export class Template {
     }
   }
 
+  /** @internal */
   static formatDuration(ms: number): string {
     if (ms < 1) return `${(ms * 1000).toFixed(0)}&micro;s`;
     if (ms < 1000) return `${ms.toFixed(2)}ms`;
@@ -35,11 +56,13 @@ export class Template {
     return `${(ms / 60000).toFixed(2)}min`;
   }
 
+  /** @internal */
   static escapeHtml(str: string | number | boolean): string {
     const s = typeof str === 'string' ? str : String(str);
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  /** @internal */
   static extractAnyValue(value: AnyValue): string {
     if (value.stringValue !== undefined) return value.stringValue;
     if (value.intValue !== undefined) return String(value.intValue);
@@ -51,6 +74,7 @@ export class Template {
     return '';
   }
 
+  /** @internal */
   static formatAbsoluteTime(nanoStr: string): string {
     const ms = nanoToMilli(nanoStr);
     const d = new Date(ms);
@@ -58,6 +82,7 @@ export class Template {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
   }
 
+  /** @internal */
   static getAttrTableMarkup(attrs: KeyValue[]): string {
     if (!attrs || attrs.length === 0) return '<em style="color:#999;font-size:12px">No attributes</em>';
     const rows = attrs.map(kv => {
@@ -67,6 +92,17 @@ export class Template {
     return `<table class="${styles.detailAttrTable}">${rows}</table>`;
   }
 
+  /**
+   * Build the HTML for the right-hand detail panel of a single span.
+   *
+   * The panel shows three collapsible sections — overview (service,
+   * status, kind, duration, IDs), attributes (filtered to exclude
+   * `log2trace.*` housekeeping keys), and per-event detail. Empty
+   * sections are omitted.
+   *
+   * @param flatSpan - The span and its denormalized service name from {@link TraceTree.flatten}.
+   * @returns A self-contained HTML fragment ready to insert into the detail-panel slot.
+   */
   static getSpanDetailMarkup({ span, serviceName }: FlatSpan): string {
     const esc = Template.escapeHtml;
     const startMs = nanoToMilli(span.startTimeUnixNano);
@@ -172,6 +208,7 @@ export class Template {
     return overview + attributes + events;
   }
 
+  /** @internal */
   static calculateTickCount(containerWidth?: number): number {
     const width = containerWidth || 600;
     const minTickSpacing = 120;
@@ -182,6 +219,7 @@ export class Template {
   // Leaf markup
   // ---------------------------------------------------------------------------
 
+  /** @internal */
   static getEventsMarkup(span: Span): string {
     if (!span.events || span.events.length === 0) return '';
 
@@ -200,6 +238,7 @@ export class Template {
     }).join('');
   }
 
+  /** @internal */
   static getLegendMarkup(config: DisplayConfig): string {
     const items = Object.entries(config.colorScheme)
       .filter(([kindValue]) => Number(kindValue) !== SpanKind.Unspecified)
@@ -217,6 +256,7 @@ export class Template {
     return `<div class="${styles.legend}">${items}</div>`;
   }
 
+  /** @internal */
   static getTimelineTicksMarkup(timeRange: { min: number; max: number }, ticks: number): string {
     const duration = timeRange.max - timeRange.min;
     const tickElements: string[] = [];
@@ -235,6 +275,7 @@ export class Template {
     return tickElements.join('');
   }
 
+  /** @internal */
   static getTimelineOverlayTicksMarkup(
     timeRange: { min: number; max: number },
     containerWidth: number,
@@ -267,6 +308,7 @@ export class Template {
   // Composite markup
   // ---------------------------------------------------------------------------
 
+  /** @internal */
   static getTimelineMarkup(timeRange: { min: number; max: number }): string {
     return `
       <div class="${styles.timeline}">
@@ -275,6 +317,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getSpanMarkup(
     span: Span,
     index: number,
@@ -308,6 +351,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getSpansMarkup(
     flatSpans: FlatSpan[],
     timeRange: { min: number; max: number },
@@ -318,6 +362,7 @@ export class Template {
     ).join('');
   }
 
+  /** @internal */
   static getSpanLabelsMarkup(
     flatSpans: FlatSpan[],
     config: DisplayConfig
@@ -342,6 +387,22 @@ export class Template {
   // Top-level markup
   // ---------------------------------------------------------------------------
 
+  /**
+   * Build the complete waterfall markup for a trace.
+   *
+   * Composes the timeline, span labels, span bars, optional legend,
+   * optional filter bar, and zoom controls into a single fragment. The
+   * component sets the result on its shadow root.
+   *
+   * @param tree - The trace tree to render, typically from {@link TraceTree.build}.
+   * @param config - Resolved display config from `resolveDisplayDefaults` (from `config.ts`).
+   * @param filterBarHtml - Optional pre-rendered filter bar markup
+   *   (produced by the internal filter helpers); pass empty string when
+   *   no filters are configured.
+   * @param filteredSpans - When local filters are active, the already
+   *   filtered span list to render in place of `tree.flatten()`.
+   * @returns A self-contained HTML fragment for the full visualization.
+   */
   static getTraceMarkup(
     tree: TraceTree,
     config: DisplayConfig,
@@ -403,6 +464,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getFilteredEmptyMarkup(filterBarHtml: string, emptyStateHtml: string, config: DisplayConfig): string {
     return `
       <div class="${styles.traceViewer}" style="background: ${config.backgroundColor};">
@@ -414,6 +476,11 @@ export class Template {
     `;
   }
 
+  /**
+   * Markup for the placeholder shown while data is being fetched.
+   *
+   * @returns A self-contained HTML fragment with a loading indicator.
+   */
   static getLoadingMarkup(): string {
     return `
       <div class="${styles.traceViewer}">
@@ -425,6 +492,11 @@ export class Template {
     `;
   }
 
+  /**
+   * Markup for the empty state shown when no trace data is available.
+   *
+   * @returns A self-contained HTML fragment with the empty-state message.
+   */
   static getEmptyMarkup(): string {
     return `
       <div class="${styles.traceViewer}">
@@ -435,6 +507,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getZoomControlsMarkup(config: DisplayConfig): string {
     return `
       ${config.showLegend ? Template.getLegendMarkup(config) : ''}
@@ -445,6 +518,12 @@ export class Template {
     `;
   }
 
+  /**
+   * Markup for the error placeholder shown when a fetch or parse fails.
+   *
+   * @param message - Pre-formatted human-readable error description.
+   * @returns A self-contained HTML fragment with the error text rendered safely.
+   */
   static getErrorMarkup(message: string): string {
     return `
       <div class="${styles.traceViewer}">
@@ -455,6 +534,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getTooltipMarkup({ span, serviceName }: FlatSpan): string {
     const duration = nanoToMilli(span.endTimeUnixNano) - nanoToMilli(span.startTimeUnixNano);
     const kindLabel = SpanKind[span.kind] || 'Unknown';
@@ -502,6 +582,7 @@ export class Template {
   // Filter bar markup
   // ---------------------------------------------------------------------------
 
+  /** @internal */
   static getFilterBarMarkup(
     externalFilters: FilterFieldConfig[],
     localFilters: FilterFieldConfig[],
@@ -520,6 +601,7 @@ export class Template {
     return `<div class="${styles.filterBarContainer}">${externalRow}${localRow}</div>`;
   }
 
+  /** @internal */
   static getFilterRowMarkup(
     filters: FilterFieldConfig[],
     source: 'external' | 'local',
@@ -557,6 +639,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getFilterFieldMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
     switch (filter.type) {
       case 'text':      return Template.getTextFilterMarkup(filter, source);
@@ -568,6 +651,7 @@ export class Template {
     }
   }
 
+  /** @internal */
   static getFilterLabelMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
     const labelStyle = source === 'external'
       ? `${styles.filterLabel} ${styles.filterLabelExternal}`
@@ -580,6 +664,7 @@ export class Template {
     return `<label class="${labelStyle}">${Template.escapeHtml(filter.label)}${required}</label>`;
   }
 
+  /** @internal */
   static getTextFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
     const placeholder = filter.placeholder
       ? Template.escapeHtml(filter.placeholder)
@@ -601,6 +686,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getDropdownFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
     const options = filter.options
       .map(opt => `<option value="${Template.escapeHtml(opt.value)}">${Template.escapeHtml(opt.label)}</option>`)
@@ -623,6 +709,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getDatetimeFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
     const widthStyle = filter.width ? ` style=\"width:${filter.width}px\"` : '';
 
@@ -648,6 +735,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getCheckboxFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
     const labelStyle = source === 'external'
       ? `${styles.filterCheckboxLabel} ${styles.filterLabelExternal}`
@@ -666,6 +754,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getMultiselectFilterMarkup(filter: FilterFieldConfig, source: 'external' | 'local'): string {
     const widthStyle = filter.width ? ` style="width:${filter.width}px"` : '';
 
@@ -698,6 +787,7 @@ export class Template {
     `;
   }
 
+  /** @internal */
   static getFilterEmptyStateMarkup(type: 'required' | 'loading' | 'no-match'): string {
     switch (type) {
       case 'required':

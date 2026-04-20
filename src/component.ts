@@ -26,8 +26,45 @@ const styleSheet = new CSSStyleSheet();
 styleSheet.replaceSync(componentCss);
 
 /**
- * Custom Web Component for trace visualization
- * Usage: <trace-visualizer></trace-visualizer>
+ * Custom element backing the `<trace-visualizer>` tag.
+ *
+ * Renders an OpenTelemetry-style waterfall inside a Shadow DOM and owns
+ * the supporting interactions: zoom and pan, keyboard navigation, the
+ * detail side-panel, and the optional filter bar (`<trace-filter>` and
+ * `<span-kind-rule>` children).
+ *
+ * Data can be supplied three ways:
+ *
+ * - Declaratively via the `data-url` attribute, optionally combined with
+ *   transform attributes (`trace-id-field`, `timestamp-field`, etc.) to
+ *   load and transform raw logs in one step.
+ * - Programmatically via the {@link TraceVisualizerElement.traceData}
+ *   setter when you already have OTel-shaped data.
+ * - Programmatically via {@link TraceVisualizerElement.logData} when you
+ *   have raw logs and want the component to run {@link transformLogs}.
+ *
+ * Display, transform, and filter options are unified under
+ * {@link TraceVisualizerConfig}; they can be set per-attribute or in
+ * bulk via the {@link TraceVisualizerElement.config} setter.
+ *
+ * @example
+ * ```html
+ * <trace-visualizer data-url="./trace.json" show-legend></trace-visualizer>
+ * ```
+ *
+ * @example
+ * ```ts
+ * const el = document.querySelector('trace-visualizer');
+ * el.logData = {
+ *   logs: myLogs,
+ *   config: {
+ *     traceIdField: 'text.BTMID',
+ *     spanNameField: 'text.Action',
+ *     serviceNameField: 'text.MachineName',
+ *     timestampField: 'text.Timestamp',
+ *   },
+ * };
+ * ```
  */
 export class TraceVisualizerElement extends HTMLElement {
   private _tree = new TraceTree([], new Map(), new Map());
@@ -100,7 +137,13 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   /**
-   * Set trace data programmatically
+   * Replace the rendered trace with a new pre-built {@link TraceData} payload.
+   *
+   * Triggers an immediate re-render and resets the cached tree used for
+   * local filtering. Use this when you fetch trace data yourself or
+   * already have OTel-shaped output from another source.
+   *
+   * @param data - OTel trace data, typically from {@link transformLogs}.
    */
   set traceData(data: TraceData) {
     this._tree = TraceTree.build(data);
@@ -108,43 +151,69 @@ export class TraceVisualizerElement extends HTMLElement {
     this.render();
   }
 
+  /**
+   * Read the currently rendered tree.
+   *
+   * Returns an empty `TraceTree` before any data has been supplied, so
+   * callers do not need a null check.
+   */
   get traceData(): TraceTree {
     return this._tree;
   }
 
   /**
-   * Set raw log data with transform configuration.
-   * Convenience wrapper: transforms logs internally and renders the result.
+   * Convenience setter for raw logs plus a transform config.
+   *
+   * Equivalent to calling `transformLogs(logs, config)` and assigning
+   * the result to {@link TraceVisualizerElement.traceData}. Useful when
+   * the consumer holds logs in memory and does not need to keep the
+   * intermediate {@link TraceData} representation around.
+   *
+   * @param input - The raw logs and the {@link TransformConfig} that
+   *   describes how to map them onto spans.
    */
   set logData(input: { logs: LogEntry[]; config: TransformConfig }) {
     this.traceData = transformLogs(input.logs, input.config);
   }
 
-  /** Custom fetch callback for external filter queries. */
+  /**
+   * Install or remove a custom data-fetching callback.
+   *
+   * When set, the callback replaces the component's built-in `fetch(url)`
+   * call for both initial loads and external-filter refetches. Pass
+   * `null` to restore the built-in behaviour. See {@link FetchCallback}
+   * for the contract.
+   */
   set fetchCallback(cb: FetchCallback | null) {
     this.filterController.fetchCallback = cb;
   }
 
+  /** The currently installed {@link FetchCallback}, or `null` when using built-in `fetch`. */
   get fetchCallback(): FetchCallback | null {
     return this.filterController.fetchCallback;
   }
 
   /**
-   * Set configuration programmatically (flat: transform + display fields).
+   * Apply a partial {@link TraceVisualizerConfig} programmatically.
    *
-   * **Behavior:** Shallow-merges into programmatic config. Repeated calls accumulate:
-   * ```js
+   * The assignment shallow-merges into an internal "programmatic" config
+   * layer that takes precedence over HTML attributes; repeated calls
+   * accumulate fields rather than replacing the whole config:
+   *
+   * ```ts
    * el.config = { width: 500 };
    * el.config = { height: 300 };
-   * // Both width and height are now set programmatically
+   * // Both width and height are now overridden
    * ```
    *
-   * **To unset a field** and fall back to its HTML attribute value, pass `undefined`:
-   * ```js
-   * el.config = { width: undefined };  // Remove override, use width attribute
+   * Pass `undefined` for a field to clear that override and let the
+   * matching HTML attribute take over again:
+   *
+   * ```ts
+   * el.config = { width: undefined };  // fall back to the `width` attribute
    * ```
    *
-   * **Priority:** Programmatic config takes precedence over HTML attributes.
+   * @param config - Partial config to merge in. Any subset of fields is allowed.
    */
   set config(config: TraceVisualizerConfig) {
     for (const key of Object.keys(config) as Array<keyof TraceVisualizerConfig>) {
@@ -159,14 +228,29 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   /**
-   * Get the current merged configuration (HTML attributes + programmatic overrides).
-   * Programmatic values take precedence over HTML attributes.
+   * Read the merged effective configuration.
+   *
+   * Combines values parsed from HTML attributes with the programmatic
+   * overrides set via the {@link TraceVisualizerElement.config} setter.
+   * Programmatic values win on conflict.
+   *
+   * @returns A fresh {@link TraceVisualizerConfig} snapshot — mutating
+   *   the result does not affect the component.
    */
   get config(): TraceVisualizerConfig {
     return this._mergedConfig();
   }
 
-  /** Load pre-formatted OTel TraceData from URL. */
+  /**
+   * Fetch a JSON file containing pre-built OTel {@link TraceData} and render it.
+   *
+   * On error the shadow DOM is replaced with an error placeholder
+   * instead of throwing. Use this when the URL serves data already in
+   * OTel shape; for raw logs use {@link TraceVisualizerElement.loadAndTransform}.
+   *
+   * @param url - Absolute or relative URL of the JSON resource.
+   * @returns A promise that resolves once the data has been parsed and rendered.
+   */
   async loadTraceData(url: string): Promise<void> {
     try {
       this.shadow.innerHTML = Template.getLoadingMarkup();
@@ -176,7 +260,20 @@ export class TraceVisualizerElement extends HTMLElement {
     }
   }
 
-  /** Load raw logs from URL and transform them into TraceData. */
+  /**
+   * Fetch a JSON array of raw logs, transform it, and render the result.
+   *
+   * Internally fetches the URL, runs {@link transformLogs} with the
+   * supplied {@link TransformConfig}, then assigns the resulting
+   * {@link TraceData}. On error the shadow DOM shows an error placeholder
+   * rather than throwing.
+   *
+   * @param url - Absolute or relative URL of the JSON resource.
+   * @param config - Field-mapping configuration. Must include the four
+   *   required transform fields (`traceIdField`, `spanNameField`,
+   *   `serviceNameField`, `timestampField`).
+   * @returns A promise that resolves once the data has been transformed and rendered.
+   */
   async loadAndTransform(url: string, config: TransformConfig): Promise<void> {
     try {
       this.shadow.innerHTML = Template.getLoadingMarkup();

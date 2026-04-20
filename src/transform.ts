@@ -19,7 +19,19 @@ import type { TransformConfig, SpanKindRule, LogEntry, FieldValue } from './conf
 // Internal utilities
 // ---------------------------------------------------------------------------
 
-/** Traverse a dot-separated path on an object (log entry, span, event, etc.). */
+/**
+ * Traverse a dot-separated path on a nested object and return the leaf value.
+ *
+ * Used throughout the transform and filter layers to read user-configured
+ * field paths like `"text.MachineName"` or `"resource.attributes.host"`
+ * out of arbitrary log records. Missing intermediate keys yield `undefined`
+ * rather than throwing, and non-primitive leaves are stringified so the
+ * result always fits the {@link FieldValue} shape.
+ *
+ * @param obj - Object to traverse (typically a log entry, span, or event).
+ * @param path - Dot-separated path. Empty segments are not handled specially.
+ * @returns The resolved value, or `undefined` if any segment is missing.
+ */
 export function getField(obj: object, path: string): FieldValue {
   let current: object | FieldValue = obj;
   for (const key of path.split('.')) {
@@ -182,6 +194,54 @@ function mode(values: string[]): string {
 // Main transform
 // ---------------------------------------------------------------------------
 
+/**
+ * Convert an array of arbitrary log records into OpenTelemetry-shaped {@link TraceData}.
+ *
+ * This is the entry point of the log-to-trace pipeline that the
+ * `<trace-visualizer>` component uses internally when given raw logs
+ * via the `logData` setter. It is also exported for callers that want
+ * to perform the transformation up-front.
+ *
+ * The transform runs in five phases:
+ *
+ * 1. **Group by trace** — bucket logs by `config.traceIdField`.
+ * 2. **Group into spans** — within each trace, bucket logs by
+ *    `config.spanGroupFields` (composite key) or, if absent, treat each
+ *    log as its own span keyed by `config.spanIdField`.
+ * 3. **Build spans** — derive name (mode of `spanNameField`), start/end
+ *    timestamps from `timestampField` / `endTimeField`, status from
+ *    `statusCodeField`, kind from `spanKindRules` / `defaultSpanKind`,
+ *    and one OTel `Event` per source log.
+ * 4. **Resolve parents** — when `parentSpanLookupFields` is set, link
+ *    spans whose lookup values match another span's leading composite-key
+ *    components, preferring an encompassing parent and falling back to
+ *    the latest span starting before the child.
+ * 5. **Group by service** — bucket the resulting spans into
+ *    {@link ResourceSpans} keyed by `serviceNameField`.
+ *
+ * Trace and span IDs are deterministic (DJB2-derived hex), so re-running
+ * the transform on the same input yields identical IDs.
+ *
+ * @param logs - The raw log records to transform. May be empty.
+ * @param config - Field-mapping configuration. The four fields
+ *   `traceIdField`, `spanNameField`, `serviceNameField`, and
+ *   `timestampField` are required by the type.
+ * @returns OTel `TraceData` ready for `TraceTree.build` (from `trace-tree.ts`)
+ *   or for passing to the `traceData` setter on `<trace-visualizer>`.
+ *
+ * @example
+ * ```ts
+ * import { transformLogs } from 'log2trace-ui';
+ *
+ * const trace = transformLogs(myLogs, {
+ *   traceIdField: 'text.BTMID',
+ *   spanGroupFields: ['text.InitiatingApplication', 'text.Action'],
+ *   spanNameField: 'text.Action',
+ *   serviceNameField: 'text.MachineName',
+ *   timestampField: 'text.Timestamp',
+ * });
+ * ```
+ */
 export function transformLogs(logs: LogEntry[], config: TransformConfig): TraceData {
   if (logs.length === 0) return { resourceSpans: [] };
 
