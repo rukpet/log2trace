@@ -34,8 +34,8 @@ const server = http.createServer((req, res) => {
 
   // Map paths to actual file locations
   let actualPath;
-  if (filePath.startsWith('/dist/')) {
-    // Serve dist files from parent directory
+  if (filePath.startsWith('/dist/') || filePath.startsWith('/docs/')) {
+    // Serve dist and docs files from parent directory
     actualPath = path.join(__dirname, '..', filePath);
   } else {
     // Serve demo files from current directory

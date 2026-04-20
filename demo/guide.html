@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>log2trace-ui — Comprehensive Demo Guide</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 15px;
+      color: #1a1a2e;
+      background: #f7f8fc;
+      display: flex;
+    }
+
+    /* ── Sidebar TOC ─────────────────────────────────────────── */
+    #toc {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 230px;
+      min-width: 230px;
+      overflow-y: auto;
+      background: #1a1a2e;
+      color: #c8ccd4;
+      padding: 1.25rem 0;
+      font-size: 0.82rem;
+    }
+
+    #toc h3 {
+      color: #fff;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0 1rem 0.75rem;
+      border-bottom: 1px solid #2d2d4e;
+      margin-bottom: 0.5rem;
+    }
+
+    #toc a {
+      display: block;
+      padding: 0.3rem 1rem;
+      color: #9499a8;
+      text-decoration: none;
+      line-height: 1.4;
+      border-left: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    #toc a:hover { color: #e0e4f0; }
+    #toc a.active { color: #7c9fff; border-left-color: #7c9fff; background: rgba(124,159,255,0.08); }
+
+    #toc .toc-group { margin-top: 0.5rem; }
+    #toc .toc-group-label {
+      display: block;
+      padding: 0.5rem 1rem 0.2rem;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5a5f72;
+    }
+
+    /* ── Main content ────────────────────────────────────────── */
+    main {
+      flex: 1;
+      min-width: 0;
+      padding: 2rem 2.5rem 4rem;
+      max-width: 1100px;
+    }
+
+    /* ── Page header ─────────────────────────────────────────── */
+    .page-header {
+      margin-bottom: 3rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid #e2e4ef;
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .page-header .subtitle {
+      margin-top: 0.5rem;
+      color: #555;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #eef1ff;
+      color: #4a5bcc;
+      border: 1px solid #c7ceee;
+      border-radius: 4px;
+      padding: 0.15em 0.5em;
+      font-size: 0.78em;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+
+    /* ── Sections ────────────────────────────────────────────── */
+    section {
+      margin-bottom: 4rem;
+      scroll-margin-top: 1.5rem;
+    }
+
+    section h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    section h2 .ex-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2em;
+      height: 2em;
+      background: #4a5bcc;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.75em;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    section p.desc {
+      color: #444;
+      line-height: 1.65;
+      margin-bottom: 1rem;
+      max-width: 760px;
+    }
+
+    /* ── Code blocks ─────────────────────────────────────────── */
+    .code-block {
+      position: relative;
+      margin-bottom: 1.25rem;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .code-label {
+      background: #0f111a;
+      color: #666e7a;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.4rem 1rem;
+      border-bottom: 1px solid #1e2030;
+    }
+
+    .code-block pre[class*="language-"] {
+      margin: 0;
+      border-radius: 0;
+      max-height: 420px;
+      overflow: auto;
+      font-size: 0.82rem;
+    }
+
+    /* ── Live result wrapper ─────────────────────────────────── */
+    .result-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-box {
+      border: 1px solid #dde0ed;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .result-box trace-visualizer {
+      display: block;
+    }
+
+    /* ── Info / callout boxes ────────────────────────────────── */
+    .callout {
+      background: #f0f4ff;
+      border-left: 4px solid #4a5bcc;
+      border-radius: 4px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .callout.warn { background: #fff8e6; border-color: #e0a020; }
+    .callout.success { background: #edfaf3; border-color: #2dba6e; }
+
+    .callout strong { font-weight: 700; }
+
+    /* ── Keyboard shortcut table ─────────────────────────────── */
+    .kbd-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin-bottom: 1rem; }
+    .kbd-table th { text-align: left; padding: 0.4rem 0.75rem; background: #f0f2fa; color: #333; border: 1px solid #e0e3ef; }
+    .kbd-table td { padding: 0.4rem 0.75rem; border: 1px solid #e0e3ef; }
+    .kbd-table kbd {
+      background: #eee;
+      border: 1px solid #bbb;
+      border-radius: 3px;
+      padding: 0.1em 0.35em;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+
+    /* ── Output pre (for event / transform demos) ────────────── */
+    .output-pre {
+      background: #0f111a;
+      color: #c9d1d9;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.8rem;
+      min-height: 3.5rem;
+      max-height: 220px;
+      overflow: auto;
+      white-space: pre-wrap;
+      margin-top: 0.75rem;
+    }
+
+    /* ── Button ──────────────────────────────────────────────── */
+    .demo-btn {
+      display: inline-block;
+      padding: 0.5rem 1.1rem;
+      background: #4a5bcc;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 0.75rem;
+    }
+    .demo-btn:hover { background: #3a4bbc; }
+
+    /* ── Intro install snippet ───────────────────────────────── */
+    .install-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 700px) { .install-grid { grid-template-columns: 1fr; } }
+
+    /* ── Divider ─────────────────────────────────────────────── */
+    .section-divider {
+      border: none;
+      border-top: 1px solid #e2e4ef;
+      margin: 0 0 3rem;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    footer {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e2e4ef;
+      color: #999;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    footer a { color: #4a5bcc; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     SIDEBAR TABLE OF CONTENTS
+════════════════════════════════════════════════════════════ -->
+<nav id="toc" aria-label="Table of contents">
+  <h3>log2trace-ui Guide</h3>
+
+  <div class="toc-group">
+    <span class="toc-group-label">Getting Started</span>
+    <a href="#intro">Introduction</a>
+    <a href="#ex-1">1. Minimal OTel trace</a>
+    <a href="#ex-2">2. traceData setter</a>
+  </div>
+
+  <div class="toc-group">
+    <span class="toc-group-label">Log Transformation</span>
+    <a href="#ex-3">3. logData via HTML attrs</a>
+    <a href="#ex-4">4. logData via JS setter</a>
+  </div>
+
+  <div class="toc-group">
+    <span class="toc-group-label">Display Options</span>
+    <a href="#ex-5">5. Span size &amp; legend</a>
+    <a href="#ex-6">6. Color scheme</a>
+    <a href="#ex-7">7. Width &amp; height</a>
+  </div>
+
+  <div class="toc-group">
+    <span class="toc-group-label">Filters</span>
+    <a href="#ex-8">8. Text filter</a>
+    <a href="#ex-9">9. Dropdown filter</a>
+    <a href="#ex-10">10. Checkbox filter</a>
+    <a href="#ex-11">11. Datetime-range</a>
+    <a href="#ex-12">12. Multiselect filter</a>
+    <a href="#ex-13">13. Wildcard search</a>
+    <a href="#ex-14">14. All filters combined</a>
+    <a href="#ex-15">15. External + fetchCallback</a>
+  </div>
+
+  <div class="toc-group">
+    <span class="toc-group-label">Classification</span>
+    <a href="#ex-16">16. Span-kind rules</a>
+  </div>
+
+  <div class="toc-group">
+    <span class="toc-group-label">Events &amp; Interaction</span>
+    <a href="#ex-17">17. span-selected event</a>
+    <a href="#ex-18">18. filter-changed event</a>
+    <a href="#ex-19">19. Keyboard navigation</a>
+  </div>
+
+  <div class="toc-group">
+    <span class="toc-group-label">Programmatic API</span>
+    <a href="#ex-20">20. loadTraceData() method</a>
+    <a href="#ex-21">21. Empty &amp; error states</a>
+    <a href="#ex-22">22. transformLogs() util</a>
+  </div>
+
+  <div class="toc-group">
+    <span class="toc-group-label">Advanced</span>
+    <a href="#ex-23">23. Full advanced setup</a>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════════════ -->
+<main>
+
+  <!-- ── Page header ───────────────────────────────────────── -->
+  <div class="page-header" id="intro">
+    <h1>log2trace-ui &mdash; Comprehensive Demo Guide</h1>
+    <p class="subtitle">
+      <span class="badge">v1.0.0-RC1</span>&ensp;
+      A zero-dependency Web Component that transforms distributed-system log records into
+      interactive OpenTelemetry trace waterfalls — entirely client-side.
+      Every configurable aspect of the library is demonstrated below, from the
+      simplest one-liner to a fully wired-up advanced setup.
+    </p>
+
+    <br>
+
+    <p class="desc">
+      <strong>Installation — two options:</strong>
+    </p>
+    <div class="install-grid">
+      <div class="code-block">
+        <div class="code-label">HTML &lt;script&gt; tag</div>
+        <pre class="language-html"><code class="language-html">&lt;script type="module" src="./log2trace.min.js"&gt;&lt;/script&gt;</code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-label">ES module import</div>
+        <pre class="language-javascript"><code class="language-javascript">import 'log2trace-ui'; // registers custom elements</code></pre>
+      </div>
+    </div>
+    <p class="desc">
+      After loading, three custom HTML elements are available globally:
+      <code>&lt;trace-visualizer&gt;</code>,
+      <code>&lt;trace-filter&gt;</code>, and
+      <code>&lt;span-kind-rule&gt;</code>.
+    </p>
+  </div>
+
+  <hr class="section-divider">
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 1 — Minimal OTel trace
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-1">
+    <h2><span class="ex-num">1</span>Minimal OTel trace from URL</h2>
+    <p class="desc">
+      The simplest possible usage: point <code>data-url</code> at a pre-built
+      <a href="https://opentelemetry.io/docs/specs/otlp/" target="_blank">OTLP JSON</a> file.
+      The component fetches it, parses the OTel structure, and renders the waterfall.
+      <code>full-width</code> stretches it to fill the container.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer
+  data-url="./otel-trace.json"
+  full-width&gt;
+&lt;/trace-visualizer&gt;
+
+&lt;script type="module" src="./dist/log2trace.min.js"&gt;&lt;/script&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result</div>
+    <div class="result-box">
+      <trace-visualizer id="ex1" data-url="./otel-trace.json" full-width></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 2 — traceData setter
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-2">
+    <h2><span class="ex-num">2</span>Direct <code>traceData</code> setter</h2>
+    <p class="desc">
+      Instead of a URL fetch, assign a <code>TraceData</code> object directly to the
+      <code>.traceData</code> property. Useful when your data is already in memory or
+      comes from a non-HTTP source. The OTel structure uses nanosecond timestamps as strings.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript</div>
+      <pre><code class="language-javascript">const el = document.querySelector('#ex2');
+
+el.traceData = {
+  resourceSpans: [
+    {
+      resource: { attributes: [{ key: 'service.name', value: { stringValue: 'frontend' } }] },
+      scopeSpans: [{
+        scope: { name: 'my-tracer' },
+        spans: [
+          {
+            traceId: 'aaaa', spanId: 's1', name: 'HTTP GET /home',
+            kind: 2, // Server
+            startTimeUnixNano: '1700000000000000000',
+            endTimeUnixNano:   '1700000000250000000',
+            status: { code: 1 }
+          }
+        ]
+      }]
+    },
+    {
+      resource: { attributes: [{ key: 'service.name', value: { stringValue: 'backend' } }] },
+      scopeSpans: [{
+        scope: { name: 'my-tracer' },
+        spans: [
+          {
+            traceId: 'aaaa', spanId: 's2', parentSpanId: 's1', name: 'db.query users',
+            kind: 3, // Client
+            startTimeUnixNano: '1700000000050000000',
+            endTimeUnixNano:   '1700000000210000000',
+            status: { code: 1 }
+          },
+          {
+            traceId: 'aaaa', spanId: 's3', parentSpanId: 's1', name: 'cache.get session',
+            kind: 1, // Internal
+            startTimeUnixNano: '1700000000010000000',
+            endTimeUnixNano:   '1700000000040000000',
+            status: { code: 1 }
+          }
+        ]
+      }]
+    }
+  ]
+};</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result</div>
+    <div class="result-box">
+      <trace-visualizer id="ex2" full-width show-legend></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 3 — Log transformation via HTML attributes
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-3">
+    <h2><span class="ex-num">3</span>Log transformation — HTML attributes</h2>
+    <p class="desc">
+      Your logs can stay in their native format. Declare field mappings as HTML attributes and the
+      component applies <code>transformLogs()</code> internally. Dot-path notation
+      (<code>text.action</code>) traverses nested objects.
+    </p>
+
+    <div class="callout">
+      <strong>Required transform attributes:</strong>
+      <code>trace-id-field</code>, <code>span-name-field</code>,
+      <code>service-name-field</code>, <code>timestamp-field</code>.
+      All others are optional enhancements.
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">HTML + JavaScript</div>
+      <pre><code class="language-html">&lt;trace-visualizer id="ex3" full-width
+  trace-id-field="requestId"
+  span-name-field="action"
+  service-name-field="service"
+  timestamp-field="timestamp"&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript — assign logs array</div>
+      <pre><code class="language-javascript">// Logs are arbitrary objects — no schema required
+document.querySelector('#ex3').logData = {
+  logs: SIMPLE_LOGS,           // defined at page level (see data section below)
+  config: {
+    traceIdField:    'requestId',
+    spanNameField:   'action',
+    serviceNameField:'service',
+    timestampField:  'timestamp',
+  }
+};</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result</div>
+    <div class="result-box">
+      <trace-visualizer id="ex3" full-width></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 4 — Log transformation via JS config setter
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-4">
+    <h2><span class="ex-num">4</span>Log transformation — JS <code>.logData</code> setter</h2>
+    <p class="desc">
+      The <code>.logData</code> setter accepts <code>{ logs, config }</code> directly —
+      no HTML attributes needed. The <code>config</code> object mirrors all
+      <code>TraceVisualizerConfig</code> transform fields.
+      Use this when building dynamic UIs or when config comes from an API.
+    </p>
+    <p class="desc">
+      This example also demonstrates <code>spanGroupFields</code> — grouping multiple log
+      entries into a single span when they share the same service + action combination.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript</div>
+      <pre><code class="language-javascript">document.querySelector('#ex4').logData = {
+  logs: SIMPLE_LOGS,
+  config: {
+    traceIdField:     'requestId',
+    spanGroupFields:  ['service', 'action'],  // group logs by service + action
+    spanNameField:    'action',
+    serviceNameField: 'service',
+    timestampField:   'timestamp',
+    endTimeField:     'endTimestamp',         // optional explicit end time
+    statusCodeField:  'statusCode',           // non-zero → error status
+  }
+};</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result</div>
+    <div class="result-box">
+      <trace-visualizer id="ex4" full-width show-legend></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 5 — Display options
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-5">
+    <h2><span class="ex-num">5</span>Display options</h2>
+    <p class="desc">
+      Control visual appearance: row height, padding, background color, legend visibility,
+      and the detail panel width. All can be set as HTML attributes or via the <code>.config</code>
+      setter.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer
+  full-width
+  show-legend
+  span-height="40"
+  span-padding="8"
+  background-color="#f8f9ff"
+  detail-panel-width="35%"&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result</div>
+    <div class="result-box">
+      <trace-visualizer id="ex5" full-width show-legend
+        span-height="40"
+        span-padding="8"
+        background-color="#f8f9ff"
+        detail-panel-width="35%">
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 6 — Color scheme
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-6">
+    <h2><span class="ex-num">6</span>Custom color scheme</h2>
+    <p class="desc">
+      Map each <code>SpanKind</code> numeric value to a CSS hex color via the
+      <code>color-scheme</code> attribute (JSON string) or the <code>colorScheme</code>
+      config property. Keys correspond to: <code>0</code> Unspecified, <code>1</code> Internal,
+      <code>2</code> Server, <code>3</code> Client, <code>4</code> Producer, <code>5</code> Consumer.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer
+  full-width show-legend
+  color-scheme='{
+    "0": "#b0bec5",
+    "1": "#7e57c2",
+    "2": "#26a69a",
+    "3": "#ef5350",
+    "4": "#ff7043",
+    "5": "#ab47bc"
+  }'&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result</div>
+    <div class="result-box">
+      <trace-visualizer id="ex6" full-width show-legend
+        color-scheme='{"0":"#b0bec5","1":"#7e57c2","2":"#26a69a","3":"#ef5350","4":"#ff7043","5":"#ab47bc"}'>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 7 — Width & height
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-7">
+    <h2><span class="ex-num">7</span>Explicit <code>width</code> &amp; <code>height</code> sizing</h2>
+    <p class="desc">
+      By default the component fits its content (<code>width=0</code>, <code>height=0</code>).
+      Set explicit pixel dimensions to constrain it, or use <code>full-width</code> to stretch
+      horizontally. When <code>height</code> is set, the timeline area becomes scrollable.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML — fixed 700×250 px</div>
+      <pre><code class="language-html">&lt;trace-visualizer width="700" height="250"&gt;&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — fixed 700&times;250 px</div>
+    <div class="result-box">
+      <trace-visualizer id="ex7a" width="700" height="250"></trace-visualizer>
+    </div>
+
+    <br>
+
+    <div class="code-block">
+      <div class="code-label">HTML — full-width, height auto</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — full-width</div>
+    <div class="result-box">
+      <trace-visualizer id="ex7b" full-width></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 8 — Text filter
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-8">
+    <h2><span class="ex-num">8</span>Text filter <code>(local)</code></h2>
+    <p class="desc">
+      Add a <code>&lt;trace-filter type="text" source="local"&gt;</code> child element to render
+      a text input above the timeline. <code>source="local"</code> means filtering is applied
+      client-side — no server round-trip. Try typing a service or action name.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+  &lt;trace-filter
+    field="spanName"
+    label="Operation"
+    type="text"
+    source="local"
+    placeholder="Filter by operation name..."
+    width="280"
+    debounce="300"&gt;
+  &lt;/trace-filter&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — try filtering</div>
+    <div class="result-box">
+      <trace-visualizer id="ex8" full-width>
+        <trace-filter field="spanName" label="Operation" type="text" source="local"
+          placeholder="Filter by operation name..." width="280" debounce="300">
+        </trace-filter>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 9 — Dropdown filter
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-9">
+    <h2><span class="ex-num">9</span>Dropdown filter — auto &amp; static options</h2>
+    <p class="desc">
+      <code>options-source="auto"</code> derives dropdown choices from the loaded data automatically.
+      Alternatively, provide a static JSON array via the <code>options</code> attribute — either
+      plain strings or <code>{"value","label"}</code> objects.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+  &lt;!-- Auto-populated from data --&gt;
+  &lt;trace-filter
+    field="serviceName"
+    label="Service"
+    type="dropdown"
+    source="local"
+    options-source="auto"
+    placeholder="All services"&gt;
+  &lt;/trace-filter&gt;
+
+  &lt;!-- Static options with value/label pairs --&gt;
+  &lt;trace-filter
+    field="spanKind"
+    label="Span Kind"
+    type="dropdown"
+    source="local"
+    options='[
+      {"value":"1","label":"Internal"},
+      {"value":"2","label":"Server"},
+      {"value":"3","label":"Client"}
+    ]'
+    placeholder="All kinds"&gt;
+  &lt;/trace-filter&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result</div>
+    <div class="result-box">
+      <trace-visualizer id="ex9" full-width>
+        <trace-filter field="serviceName" label="Service" type="dropdown" source="local"
+          options-source="auto" placeholder="All services">
+        </trace-filter>
+        <trace-filter field="spanKind" label="Span Kind" type="dropdown" source="local"
+          options='[{"value":"1","label":"Internal"},{"value":"2","label":"Server"},{"value":"3","label":"Client"}]'
+          placeholder="All kinds">
+        </trace-filter>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 10 — Checkbox filter
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-10">
+    <h2><span class="ex-num">10</span>Checkbox filter — errors only</h2>
+    <p class="desc">
+      The special field <code>"hasError"</code> filters to spans whose status code is Error (2).
+      Use it with <code>type="checkbox"</code> to give users a one-click "show errors only" toggle.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+  &lt;trace-filter
+    field="hasError"
+    label="Errors Only"
+    type="checkbox"
+    source="local"&gt;
+  &lt;/trace-filter&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — check the box to filter to errors</div>
+    <div class="result-box">
+      <trace-visualizer id="ex10" full-width>
+        <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local">
+        </trace-filter>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 11 — Datetime-range filter
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-11">
+    <h2><span class="ex-num">11</span>Datetime-range filter</h2>
+    <p class="desc">
+      Renders two datetime inputs (From / To). The <code>auto-range</code> attribute
+      pre-fills min/max from the loaded data. The filter value is an object
+      <code>{ from?: string, to?: string }</code> with ISO 8601 strings.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+  &lt;trace-filter
+    field="startTime"
+    label="Time Range"
+    type="datetime-range"
+    source="local"
+    auto-range&gt;
+  &lt;/trace-filter&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — adjust date range to filter spans</div>
+    <div class="result-box">
+      <trace-visualizer id="ex11" full-width>
+        <trace-filter field="startTime" label="Time Range" type="datetime-range"
+          source="local" auto-range>
+        </trace-filter>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 12 — Multiselect filter
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-12">
+    <h2><span class="ex-num">12</span>Multiselect filter</h2>
+    <p class="desc">
+      Like <code>dropdown</code> but allows selecting multiple values simultaneously.
+      The filter value is a <code>string[]</code>. Use <code>options-source="auto"</code>
+      or provide a static <code>options</code> array.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+  &lt;trace-filter
+    field="serviceName"
+    label="Services"
+    type="multiselect"
+    source="local"
+    options-source="auto"
+    width="220"&gt;
+  &lt;/trace-filter&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — select one or more services</div>
+    <div class="result-box">
+      <trace-visualizer id="ex12" full-width>
+        <trace-filter field="serviceName" label="Services" type="multiselect"
+          source="local" options-source="auto" width="220">
+        </trace-filter>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 13 — Wildcard search
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-13">
+    <h2><span class="ex-num">13</span>Wildcard search <code>field="*"</code></h2>
+    <p class="desc">
+      Setting <code>field="*"</code> searches across <em>all</em> span fields: name, service,
+      span ID, all attributes, all event names and event attributes. Great as a global search box.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+  &lt;trace-filter
+    field="*"
+    label="Search"
+    type="text"
+    source="local"
+    placeholder="Search all fields..."
+    width="320"&gt;
+  &lt;/trace-filter&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — type anything to search all fields</div>
+    <div class="result-box">
+      <trace-visualizer id="ex13" full-width>
+        <trace-filter field="*" label="Search" type="text" source="local"
+          placeholder="Search all fields..." width="320">
+        </trace-filter>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 14 — All filters combined
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-14">
+    <h2><span class="ex-num">14</span>All filter types combined</h2>
+    <p class="desc">
+      Multiple <code>&lt;trace-filter&gt;</code> elements render a filter bar.
+      Local filters use AND logic — a span must satisfy every active filter simultaneously.
+      The <code>target</code> attribute controls whether the filter matches span-level fields
+      (<code>"span"</code>, default) or individual log/event attributes (<code>"log"</code>).
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width show-legend&gt;
+
+  &lt;!-- Wildcard global search --&gt;
+  &lt;trace-filter field="*" label="Search" type="text" source="local"
+    placeholder="Search all..." width="220"&gt;&lt;/trace-filter&gt;
+
+  &lt;!-- Span name substring --&gt;
+  &lt;trace-filter field="spanName" label="Operation" type="text" source="local"
+    placeholder="e.g. query" width="200"&gt;&lt;/trace-filter&gt;
+
+  &lt;!-- Service dropdown (auto) --&gt;
+  &lt;trace-filter field="serviceName" label="Service" type="dropdown" source="local"
+    options-source="auto" placeholder="All"&gt;&lt;/trace-filter&gt;
+
+  &lt;!-- Errors only --&gt;
+  &lt;trace-filter field="hasError" label="Errors Only" type="checkbox"
+    source="local"&gt;&lt;/trace-filter&gt;
+
+  &lt;!-- Datetime range --&gt;
+  &lt;trace-filter field="startTime" label="Time Range" type="datetime-range"
+    source="local" auto-range&gt;&lt;/trace-filter&gt;
+
+  &lt;!-- Multi-service select --&gt;
+  &lt;trace-filter field="serviceName" label="Services" type="multiselect" source="local"
+    options-source="auto" width="180"&gt;&lt;/trace-filter&gt;
+
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — all filter types active</div>
+    <div class="result-box">
+      <trace-visualizer id="ex14" full-width show-legend>
+        <trace-filter field="*" label="Search" type="text" source="local"
+          placeholder="Search all..." width="220"></trace-filter>
+        <trace-filter field="spanName" label="Operation" type="text" source="local"
+          placeholder="e.g. query" width="200"></trace-filter>
+        <trace-filter field="serviceName" label="Service" type="dropdown" source="local"
+          options-source="auto" placeholder="All"></trace-filter>
+        <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local">
+        </trace-filter>
+        <trace-filter field="startTime" label="Time Range" type="datetime-range"
+          source="local" auto-range></trace-filter>
+        <trace-filter field="serviceName" label="Services" type="multiselect" source="local"
+          options-source="auto" width="180"></trace-filter>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 15 — External filter + custom fetchCallback
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-15">
+    <h2><span class="ex-num">15</span>External filter &amp; custom <code>fetchCallback</code></h2>
+    <p class="desc">
+      <code>source="external"</code> filters are not applied client-side — their values are
+      forwarded to the server via query parameters (or to your <code>fetchCallback</code>).
+      <code>required</code> gates the initial fetch until the field is filled.
+      <code>auto-fetch="false"</code> shows a Search button instead of auto-triggering on change.
+      The <code>fetchCallback</code> receives the URL and all active external filter values.
+    </p>
+    <p class="desc">
+      This example mocks the server with a 600 ms delay so you can see the loading state.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer id="ex15" full-width auto-fetch="false"&gt;
+
+  &lt;trace-filter
+    field="requestId"
+    label="Request ID"
+    type="dropdown"
+    source="external"
+    required
+    options='["req-001","req-002"]'
+    placeholder="Select a trace..."&gt;
+  &lt;/trace-filter&gt;
+
+  &lt;trace-filter
+    field="service"
+    label="Service"
+    type="multiselect"
+    source="external"
+    options='["api","auth","db"]'
+    width="160"&gt;
+  &lt;/trace-filter&gt;
+
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript — mock fetchCallback</div>
+      <pre><code class="language-javascript">document.querySelector('#ex15').fetchCallback = async (url, filters) => {
+  console.log('Fetching with filters:', filters);
+  // Simulate a 600 ms server round-trip
+  await new Promise(r => setTimeout(r, 600));
+  // Return data filtered by the selected requestId
+  const id = filters.requestId;
+  const logs = SIMPLE_LOGS.filter(l => !id || l.requestId === id);
+  return logs; // component will call transformLogs() if transform config is set
+};</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — select a Request ID, then click Search</div>
+    <div class="result-box">
+      <trace-visualizer id="ex15" full-width auto-fetch="false"
+        trace-id-field="requestId"
+        span-name-field="action"
+        service-name-field="service"
+        timestamp-field="timestamp"
+        status-code-field="statusCode">
+        <trace-filter field="requestId" label="Request ID" type="dropdown"
+          source="external" required
+          options='["req-001","req-002"]'
+          placeholder="Select a trace...">
+        </trace-filter>
+        <trace-filter field="service" label="Service" type="multiselect"
+          source="external" options='["api","auth","db"]' width="160">
+        </trace-filter>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 16 — Span-kind rules
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-16">
+    <h2><span class="ex-num">16</span>Span-kind classification rules</h2>
+    <p class="desc">
+      <code>&lt;span-kind-rule&gt;</code> children classify spans based on log field values.
+      Rules are checked in order; the first match wins. Use <code>match-field</code> +
+      <code>match-value</code> for a single-field check, or the <code>match</code> JSON
+      attribute for a multi-field AND check. Unmatched spans fall back to
+      <code>default-span-kind</code>.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer full-width show-legend default-span-kind="Internal"&gt;
+
+  &lt;!-- Single-field shorthand --&gt;
+  &lt;span-kind-rule kind="Server"   match-field="service" match-value="api"&gt;&lt;/span-kind-rule&gt;
+  &lt;span-kind-rule kind="Consumer" match-field="service" match-value="auth"&gt;&lt;/span-kind-rule&gt;
+
+  &lt;!-- Multi-field JSON match (all conditions must match) --&gt;
+  &lt;span-kind-rule kind="Client"
+    match='{"service":"db","action":"db.query"}'&gt;
+  &lt;/span-kind-rule&gt;
+
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — notice the different colors per span kind</div>
+    <div class="result-box">
+      <trace-visualizer id="ex16" full-width show-legend default-span-kind="Internal">
+        <span-kind-rule kind="Server"   match-field="service" match-value="api"></span-kind-rule>
+        <span-kind-rule kind="Consumer" match-field="service" match-value="auth"></span-kind-rule>
+        <span-kind-rule kind="Client"   match='{"service":"db","action":"db.query"}'></span-kind-rule>
+      </trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 17 — span-selected event
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-17">
+    <h2><span class="ex-num">17</span><code>span-selected</code> event</h2>
+    <p class="desc">
+      Fired when the user clicks a span bar. <code>event.detail.span</code> is the full
+      <code>Span</code> OTel object. Use this to drive custom side panels, analytics, or
+      cross-component navigation.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript</div>
+      <pre><code class="language-javascript">document.querySelector('#ex17').addEventListener('span-selected', (e) => {
+  const { span } = e.detail;
+  document.querySelector('#ex17-output').textContent =
+    JSON.stringify({
+      name:      span.name,
+      kind:      span.kind,
+      spanId:    span.spanId,
+      parentId:  span.parentSpanId,
+      status:    span.status,
+      startNs:   span.startTimeUnixNano,
+      endNs:     span.endTimeUnixNano,
+      attributes: span.attributes,
+    }, null, 2);
+});</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — click any span bar</div>
+    <div class="result-box">
+      <trace-visualizer id="ex17" full-width></trace-visualizer>
+    </div>
+    <div class="result-label" style="margin-top:0.75rem">Selected span (JSON):</div>
+    <pre id="ex17-output" class="output-pre">// click a span above to see its data here</pre>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 18 — filter-changed event
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-18">
+    <h2><span class="ex-num">18</span><code>filter-changed</code> event</h2>
+    <p class="desc">
+      Fired whenever any filter value changes. The event detail contains
+      <code>{ field, source, value, allFilters }</code>. Use this for analytics, URL state
+      sync, or custom logic that runs alongside the built-in filtering.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript</div>
+      <pre><code class="language-javascript">document.querySelector('#ex18').addEventListener('filter-changed', (e) => {
+  const log = document.querySelector('#ex18-output');
+  const entry = `[${new Date().toLocaleTimeString()}] field="${e.detail.field}" `
+    + `source="${e.detail.source}" value=${JSON.stringify(e.detail.value)}`;
+  log.textContent = entry + '\n' + log.textContent;
+});</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — change any filter</div>
+    <div class="result-box">
+      <trace-visualizer id="ex18" full-width>
+        <trace-filter field="spanName" label="Operation" type="text" source="local"
+          placeholder="Type to filter..." width="250"></trace-filter>
+        <trace-filter field="serviceName" label="Service" type="dropdown" source="local"
+          options-source="auto" placeholder="All services"></trace-filter>
+        <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local">
+        </trace-filter>
+      </trace-visualizer>
+    </div>
+    <div class="result-label" style="margin-top:0.75rem">Event log:</div>
+    <pre id="ex18-output" class="output-pre">// change a filter above to see events here</pre>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 19 — Keyboard navigation
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-19">
+    <h2><span class="ex-num">19</span>Keyboard navigation</h2>
+    <p class="desc">
+      Click anywhere on the visualizer to focus it, then use the keyboard to navigate spans
+      and control the timeline. No configuration required — this is built in.
+    </p>
+
+    <table class="kbd-table" style="margin-bottom:1rem">
+      <thead>
+        <tr><th>Key</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Select previous / next span</td></tr>
+        <tr><td><kbd>&larr;</kbd> / <kbd>&rarr;</kbd></td><td>Pan timeline left / right</td></tr>
+        <tr><td><kbd>+</kbd> / <kbd>=</kbd></td><td>Zoom in</td></tr>
+        <tr><td><kbd>-</kbd> / <kbd>_</kbd></td><td>Zoom out</td></tr>
+        <tr><td><kbd>0</kbd> / <kbd>Home</kbd></td><td>Reset zoom to 100&thinsp;%</td></tr>
+        <tr><td><kbd>Enter</kbd> / <kbd>Space</kbd></td><td>Open detail panel for selected span</td></tr>
+        <tr><td><kbd>Escape</kbd></td><td>Close detail panel</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Mouse interactions:</strong> scroll wheel to zoom, drag to pan, double-click to reset zoom, click a span to open its detail panel.
+    </div>
+
+    <div class="result-label">&#9654; Live result — click the timeline, then use arrow keys</div>
+    <div class="result-box">
+      <trace-visualizer id="ex19" full-width show-legend></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 20 — loadTraceData() / loadAndTransform()
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-20">
+    <h2><span class="ex-num">20</span><code>loadTraceData()</code> &amp; <code>loadAndTransform()</code> methods</h2>
+    <p class="desc">
+      These async methods let you trigger a fetch imperatively — for example, from a button click
+      or a WebSocket message. Both return a <code>Promise&lt;void&gt;</code> that resolves when
+      rendering is complete.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript</div>
+      <pre><code class="language-javascript">const el = document.querySelector('#ex20');
+
+// Load a pre-built OTel trace from a URL
+async function loadOtel() {
+  await el.loadTraceData('./otel-trace.json');
+}
+
+// Fetch raw logs and transform them
+async function loadLogs() {
+  await el.loadAndTransform('./logs.json', {
+    traceIdField:     'text.BTMID',
+    spanNameField:    'text.Action',
+    serviceNameField: 'text.Application',
+    timestampField:   'text.CreateDate',
+  });
+}</code></pre>
+    </div>
+
+    <button class="demo-btn" id="btn-load-otel">Load OTel trace</button>
+    <button class="demo-btn" id="btn-load-logs" style="background:#2dba6e;margin-left:0.5rem">
+      Load &amp; transform logs
+    </button>
+
+    <div class="result-label">&#9654; Live result</div>
+    <div class="result-box">
+      <trace-visualizer id="ex20" full-width show-legend></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 21 — Empty & error states
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-21">
+    <h2><span class="ex-num">21</span>Empty &amp; error states</h2>
+    <p class="desc">
+      The component renders a built-in placeholder when there is no data, and an error message
+      when a fetch fails. An empty <code>TraceData</code> object produces the "no spans" state.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML — no data (empty state)</div>
+      <pre><code class="language-html">&lt;!-- No data-url and no programmatic data → empty state --&gt;
+&lt;trace-visualizer full-width&gt;&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Empty state</div>
+    <div class="result-box">
+      <trace-visualizer id="ex21a" full-width></trace-visualizer>
+    </div>
+
+    <br>
+
+    <div class="code-block">
+      <div class="code-label">HTML — bad URL (error state)</div>
+      <pre><code class="language-html">&lt;trace-visualizer data-url="./does-not-exist.json" full-width&gt;&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Error state (404)</div>
+    <div class="result-box">
+      <trace-visualizer id="ex21b" data-url="./does-not-exist.json" full-width></trace-visualizer>
+    </div>
+
+    <br>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript — empty TraceData</div>
+      <pre><code class="language-javascript">document.querySelector('#ex21c').traceData = { resourceSpans: [] };</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Empty TraceData (zero spans)</div>
+    <div class="result-box">
+      <trace-visualizer id="ex21c" full-width></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 22 — transformLogs() standalone utility
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-22">
+    <h2><span class="ex-num">22</span><code>transformLogs()</code> standalone utility</h2>
+    <p class="desc">
+      Import <code>transformLogs</code> directly to convert log arrays to OTel
+      <code>TraceData</code> without rendering anything. Useful for pre-processing, serialization,
+      or feeding data to other OTel-compatible tools.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript</div>
+      <pre><code class="language-javascript">import { transformLogs } from './dist/log2trace.min.js';
+
+const traceData = transformLogs(SIMPLE_LOGS, {
+  traceIdField:     'requestId',
+  spanGroupFields:  ['service', 'action'],
+  spanNameField:    'action',
+  serviceNameField: 'service',
+  timestampField:   'timestamp',
+  statusCodeField:  'statusCode',
+});
+
+// traceData is a standard OTLP TraceData object
+console.log(JSON.stringify(traceData, null, 2));</code></pre>
+    </div>
+
+    <button class="demo-btn" id="btn-transform">Run transformLogs()</button>
+
+    <div class="result-label">&#9654; Output — <code>TraceData</code> JSON</div>
+    <pre id="ex22-output" class="output-pre">// click the button above to run the transformation</pre>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 23 — Full advanced setup
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-23">
+    <h2><span class="ex-num">23</span>Full advanced setup</h2>
+    <p class="desc">
+      Everything combined: log transformation with <code>parentSpanLookupFields</code>,
+      span-kind classification rules, all filter types, a custom color scheme,
+      a <code>span-selected</code> event listener, and a mock <code>fetchCallback</code>.
+      This is the pattern for a production integration.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer id="ex23" full-width show-legend
+  auto-fetch="false"
+  trace-id-field="requestId"
+  span-group-fields="service,action"
+  span-name-field="action"
+  service-name-field="service"
+  timestamp-field="timestamp"
+  end-time-field="endTimestamp"
+  status-code-field="statusCode"
+  parent-span-lookup-fields="parentService"
+  default-span-kind="Internal"
+  span-height="32"
+  span-padding="6"
+  detail-panel-width="38%"
+  color-scheme='{"0":"#90a4ae","1":"#7e57c2","2":"#26a69a","3":"#ef5350","4":"#ff7043","5":"#ab47bc"}'&gt;
+
+  &lt;!-- Span-kind rules --&gt;
+  &lt;span-kind-rule kind="Server"   match-field="service" match-value="api"&gt;&lt;/span-kind-rule&gt;
+  &lt;span-kind-rule kind="Consumer" match-field="service" match-value="auth"&gt;&lt;/span-kind-rule&gt;
+  &lt;span-kind-rule kind="Client"   match='{"service":"db","action":"db.query"}'&gt;&lt;/span-kind-rule&gt;
+
+  &lt;!-- Filters --&gt;
+  &lt;trace-filter field="requestId" label="Trace" type="dropdown"
+    source="external" required options='["req-001","req-002"]'
+    placeholder="Select trace..."&gt;&lt;/trace-filter&gt;
+
+  &lt;trace-filter field="*" label="Search" type="text" source="local"
+    placeholder="Search all fields..." width="220"&gt;&lt;/trace-filter&gt;
+
+  &lt;trace-filter field="serviceName" label="Services" type="multiselect"
+    source="local" options-source="auto" width="180"&gt;&lt;/trace-filter&gt;
+
+  &lt;trace-filter field="hasError" label="Errors Only"
+    type="checkbox" source="local"&gt;&lt;/trace-filter&gt;
+
+  &lt;trace-filter field="startTime" label="Time Range"
+    type="datetime-range" source="local" auto-range&gt;&lt;/trace-filter&gt;
+
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">JavaScript</div>
+      <pre><code class="language-javascript">const el23 = document.querySelector('#ex23');
+
+// Mock server: filter by requestId, simulate 500 ms latency
+el23.fetchCallback = async (url, filters) => {
+  await new Promise(r => setTimeout(r, 500));
+  const id = filters.requestId;
+  return id ? SIMPLE_LOGS.filter(l => l.requestId === id) : SIMPLE_LOGS;
+};
+
+// React to span selection
+el23.addEventListener('span-selected', (e) => {
+  document.querySelector('#ex23-output').textContent =
+    `Selected: "${e.detail.span.name}" (${e.detail.span.spanId})`;
+});</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — select a Trace, then use filters &amp; click spans</div>
+    <div class="result-box">
+      <trace-visualizer id="ex23" full-width show-legend
+        auto-fetch="false"
+        trace-id-field="requestId"
+        span-group-fields="service,action"
+        span-name-field="action"
+        service-name-field="service"
+        timestamp-field="timestamp"
+        end-time-field="endTimestamp"
+        status-code-field="statusCode"
+        parent-span-lookup-fields="parentService"
+        default-span-kind="Internal"
+        span-height="32"
+        span-padding="6"
+        detail-panel-width="38%"
+        color-scheme='{"0":"#90a4ae","1":"#7e57c2","2":"#26a69a","3":"#ef5350","4":"#ff7043","5":"#ab47bc"}'>
+
+        <span-kind-rule kind="Server"   match-field="service" match-value="api"></span-kind-rule>
+        <span-kind-rule kind="Consumer" match-field="service" match-value="auth"></span-kind-rule>
+        <span-kind-rule kind="Client"   match='{"service":"db","action":"db.query"}'></span-kind-rule>
+
+        <trace-filter field="requestId" label="Trace" type="dropdown"
+          source="external" required options='["req-001","req-002"]'
+          placeholder="Select trace..."></trace-filter>
+
+        <trace-filter field="*" label="Search" type="text" source="local"
+          placeholder="Search all fields..." width="220"></trace-filter>
+
+        <trace-filter field="serviceName" label="Services" type="multiselect"
+          source="local" options-source="auto" width="180"></trace-filter>
+
+        <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local">
+        </trace-filter>
+
+        <trace-filter field="startTime" label="Time Range" type="datetime-range"
+          source="local" auto-range></trace-filter>
+      </trace-visualizer>
+    </div>
+    <pre id="ex23-output" class="output-pre">// click a span above to see its name here</pre>
+  </section>
+
+
+  <footer>
+    <a href="./">&larr; Back to demos</a> &middot;
+    <a href="https://github.com/rukpet/log2trace" target="_blank">GitHub</a> &middot;
+    <a href="/docs/index.html" target="_blank">API Docs</a>
+  </footer>
+
+</main>
+
+<!-- ════════════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+
+<script type="module">
+import { transformLogs } from './dist/log2trace.min.js';
+
+// ── Shared datasets ────────────────────────────────────────────────────────
+
+const SIMPLE_OTEL = {
+  resourceSpans: [
+    {
+      resource: { attributes: [{ key: 'service.name', value: { stringValue: 'frontend' } }] },
+      scopeSpans: [{
+        scope: { name: 'demo' },
+        spans: [
+          {
+            traceId: 'trace0001', spanId: 'span0001',
+            name: 'HTTP GET /home', kind: 2,
+            startTimeUnixNano: '1700000000000000000',
+            endTimeUnixNano:   '1700000000350000000',
+            status: { code: 1 },
+            attributes: [
+              { key: 'http.method', value: { stringValue: 'GET' } },
+              { key: 'http.status_code', value: { intValue: '200' } }
+            ]
+          }
+        ]
+      }]
+    },
+    {
+      resource: { attributes: [{ key: 'service.name', value: { stringValue: 'backend' } }] },
+      scopeSpans: [{
+        scope: { name: 'demo' },
+        spans: [
+          {
+            traceId: 'trace0001', spanId: 'span0002', parentSpanId: 'span0001',
+            name: 'cache.get session', kind: 1,
+            startTimeUnixNano: '1700000000010000000',
+            endTimeUnixNano:   '1700000000035000000',
+            status: { code: 1 },
+            attributes: [{ key: 'cache.hit', value: { boolValue: true } }]
+          },
+          {
+            traceId: 'trace0001', spanId: 'span0003', parentSpanId: 'span0001',
+            name: 'db.query users', kind: 3,
+            startTimeUnixNano: '1700000000050000000',
+            endTimeUnixNano:   '1700000000300000000',
+            status: { code: 1 },
+            attributes: [
+              { key: 'db.system', value: { stringValue: 'postgresql' } },
+              { key: 'db.statement', value: { stringValue: 'SELECT * FROM users' } }
+            ],
+            events: [
+              {
+                timeUnixNano: '1700000000100000000',
+                name: 'query.start',
+                attributes: []
+              },
+              {
+                timeUnixNano: '1700000000290000000',
+                name: 'query.end',
+                attributes: [{ key: 'rows', value: { intValue: '42' } }]
+              }
+            ]
+          }
+        ]
+      }]
+    }
+  ]
+};
+
+const SIMPLE_LOGS = [
+  // Trace req-001 — login flow (~310ms total)
+  { requestId: 'req-001', service: 'api',  action: 'POST /login',
+    timestamp: '2024-01-15T10:00:00.000Z', endTimestamp: '2024-01-15T10:00:00.310Z',
+    statusCode: 0, parentService: null },
+  { requestId: 'req-001', service: 'auth', action: 'validate token',
+    timestamp: '2024-01-15T10:00:00.015Z', endTimestamp: '2024-01-15T10:00:00.085Z',
+    statusCode: 0, parentService: 'api' },
+  { requestId: 'req-001', service: 'db',   action: 'SELECT users',
+    timestamp: '2024-01-15T10:00:00.090Z', endTimestamp: '2024-01-15T10:00:00.290Z',
+    statusCode: 0, parentService: 'auth' },
+
+  // Trace req-002 — data fetch with an error (~480ms total, overlapping with req-001)
+  { requestId: 'req-002', service: 'api',  action: 'GET /data',
+    timestamp: '2024-01-15T10:00:00.050Z', endTimestamp: '2024-01-15T10:00:00.530Z',
+    statusCode: 0, parentService: null },
+  { requestId: 'req-002', service: 'auth', action: 'check permissions',
+    timestamp: '2024-01-15T10:00:00.065Z', endTimestamp: '2024-01-15T10:00:00.130Z',
+    statusCode: 0, parentService: 'api' },
+  { requestId: 'req-002', service: 'db',   action: 'SELECT records',
+    timestamp: '2024-01-15T10:00:00.140Z', endTimestamp: '2024-01-15T10:00:00.500Z',
+    statusCode: 500, parentService: 'auth' },  // ← error span
+];
+
+const LOG_CONFIG = {
+  traceIdField:         'requestId',
+  spanGroupFields:      ['service', 'action'],
+  spanNameField:        'action',
+  serviceNameField:     'service',
+  timestampField:       'timestamp',
+  endTimeField:         'endTimestamp',
+  statusCodeField:      'statusCode',
+  parentSpanLookupFields: ['parentService'],
+};
+
+// ── Wire up examples ───────────────────────────────────────────────────────
+
+// Ex 2 — traceData setter
+document.querySelector('#ex2').traceData = SIMPLE_OTEL;
+
+// Ex 3 — HTML-attribute driven transform (logData setter with minimal config)
+document.querySelector('#ex3').logData = {
+  logs: SIMPLE_LOGS,
+  config: {
+    traceIdField:    'requestId',
+    spanNameField:   'action',
+    serviceNameField:'service',
+    timestampField:  'timestamp',
+  }
+};
+
+// Ex 4 — Full JS config setter
+document.querySelector('#ex4').logData = { logs: SIMPLE_LOGS, config: LOG_CONFIG };
+
+// Ex 5 — Display options (data via logData)
+document.querySelector('#ex5').logData = { logs: SIMPLE_LOGS, config: LOG_CONFIG };
+
+// Ex 6 — Custom color scheme (data via logData)
+document.querySelector('#ex6').logData = { logs: SIMPLE_LOGS, config: LOG_CONFIG };
+
+// Ex 7 — Sizing (reuse SIMPLE_OTEL)
+document.querySelector('#ex7a').traceData = SIMPLE_OTEL;
+document.querySelector('#ex7b').traceData = SIMPLE_OTEL;
+
+// Ex 8–14 — Filter demos
+['#ex8','#ex9','#ex10','#ex11','#ex12','#ex13','#ex14'].forEach(sel => {
+  document.querySelector(sel).logData = { logs: SIMPLE_LOGS, config: LOG_CONFIG };
+});
+
+// Ex 15 — External filter + mock fetchCallback
+{
+  const el = document.querySelector('#ex15');
+  el.fetchCallback = async (_url, filters) => {
+    await new Promise(r => setTimeout(r, 600));
+    const id = Array.isArray(filters.requestId) ? filters.requestId[0] : filters.requestId;
+    return id ? SIMPLE_LOGS.filter(l => l.requestId === id) : SIMPLE_LOGS;
+  };
+}
+
+// Ex 16 — Span-kind rules
+document.querySelector('#ex16').logData = { logs: SIMPLE_LOGS, config: LOG_CONFIG };
+
+// Ex 17 — span-selected event
+{
+  const el = document.querySelector('#ex17');
+  el.traceData = SIMPLE_OTEL;
+  el.addEventListener('span-selected', (e) => {
+    const s = e.detail.span;
+    document.querySelector('#ex17-output').textContent = JSON.stringify({
+      name:       s.name,
+      kind:       s.kind,
+      spanId:     s.spanId,
+      parentId:   s.parentSpanId,
+      status:     s.status,
+      attributes: s.attributes,
+    }, null, 2);
+  });
+}
+
+// Ex 18 — filter-changed event
+{
+  const el = document.querySelector('#ex18');
+  el.logData = { logs: SIMPLE_LOGS, config: LOG_CONFIG };
+  el.addEventListener('filter-changed', (e) => {
+    const log = document.querySelector('#ex18-output');
+    const entry = `[${new Date().toLocaleTimeString()}] field="${e.detail.field}" `
+      + `source="${e.detail.source}" value=${JSON.stringify(e.detail.value)}`;
+    log.textContent = entry + '\n' + log.textContent;
+  });
+}
+
+// Ex 19 — Keyboard navigation (reuse SIMPLE_OTEL)
+document.querySelector('#ex19').traceData = SIMPLE_OTEL;
+
+// Ex 20 — loadTraceData() / loadAndTransform()
+{
+  const el = document.querySelector('#ex20');
+  document.querySelector('#btn-load-otel').addEventListener('click', () => {
+    el.loadTraceData('./otel-trace.json');
+  });
+  document.querySelector('#btn-load-logs').addEventListener('click', () => {
+    el.loadAndTransform('./logs.json', {
+      traceIdField:     'text.BTMID',
+      spanNameField:    'text.Action',
+      serviceNameField: 'text.Application',
+      timestampField:   'text.CreateDate',
+    });
+  });
+}
+
+// Ex 21c — empty TraceData
+document.querySelector('#ex21c').traceData = { resourceSpans: [] };
+
+// Ex 22 — transformLogs() standalone
+document.querySelector('#btn-transform').addEventListener('click', () => {
+  const result = transformLogs(SIMPLE_LOGS, LOG_CONFIG);
+  document.querySelector('#ex22-output').textContent =
+    JSON.stringify(result, null, 2);
+});
+
+// Ex 23 — Full advanced setup
+{
+  const el = document.querySelector('#ex23');
+  el.fetchCallback = async (_url, filters) => {
+    await new Promise(r => setTimeout(r, 500));
+    const id = Array.isArray(filters.requestId) ? filters.requestId[0] : filters.requestId;
+    return id ? SIMPLE_LOGS.filter(l => l.requestId === id) : SIMPLE_LOGS;
+  };
+  el.addEventListener('span-selected', (e) => {
+    document.querySelector('#ex23-output').textContent =
+      `Selected: "${e.detail.span.name}" (${e.detail.span.spanId})`;
+  });
+}
+
+// ── Sticky TOC active-link tracking ────────────────────────────────────────
+const tocLinks = document.querySelectorAll('#toc a[href^="#"]');
+const sections = [...tocLinks].map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      tocLinks.forEach(a => a.classList.remove('active'));
+      const active = [...tocLinks].find(a => a.getAttribute('href') === '#' + entry.target.id);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+// ── Prism re-highlight after content is rendered ───────────────────────────
+// Prism already runs on DOMContentLoaded via the non-module scripts;
+// call it again after the module script sets up all content.
+if (typeof Prism !== 'undefined') Prism.highlightAll();
+</script>
+
+</body>
+</html>
