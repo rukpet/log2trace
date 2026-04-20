@@ -16,7 +16,22 @@ import { getField } from './transform.ts';
 // Local filtering
 // ---------------------------------------------------------------------------
 
-/** Filter spans by all active local filters (AND logic). */
+/**
+ * Filter a flattened span list by all active local filters.
+ *
+ * Filters are combined with AND logic: a span is kept only when every
+ * active filter matches. A filter counts as "active" only when its value
+ * is non-empty (e.g. a non-empty string, a checked checkbox, a non-empty
+ * array, or a date range with at least one bound). Empty filters are
+ * skipped entirely so that an unconfigured filter bar is a no-op.
+ *
+ * Only filters whose `config.source === 'local'` should be passed in;
+ * external filters are applied server-side via {@link buildQueryParams}.
+ *
+ * @param spans - Flattened spans produced by {@link FlatSpan}.
+ * @param filters - Local filter state (config + current value).
+ * @returns A new array of spans that satisfy every active filter.
+ */
 export function filterSpans(spans: FlatSpan[], filters: Filter[]): FlatSpan[] {
   const active = filters.filter(f => isActiveValue(f.value));
   if (active.length === 0) return spans;
@@ -211,14 +226,38 @@ function resolveEventField(event: Event, field: string): FieldValue {
 // External filtering helpers
 // ---------------------------------------------------------------------------
 
-/** Check whether all required external filters have a value. */
+/**
+ * Check whether all required external filters have a non-empty value.
+ *
+ * Used to gate fetching: when external filters are marked `required`,
+ * the component must not issue a request until the user has supplied
+ * values for each of them.
+ *
+ * @param filters - The full filter set; only those with `config.required` are inspected.
+ * @returns `true` when every required filter is filled, or when there are no required filters.
+ */
 export function areRequiredExternalFiltersFilled(filters: Filter[]): boolean {
   return filters
     .filter(f => f.config.required)
     .every(f => isActiveValue(f.value));
 }
 
-/** Convert external filter values to a flat Record for URL query params. */
+/**
+ * Convert active external filter values into a flat record suitable for URL query parameters.
+ *
+ * Encoding rules per filter type:
+ * - `datetime-range` becomes two keys, `<field>From` and `<field>To`,
+ *   each only present when its bound is set.
+ * - `checkbox` is emitted only when truthy, with the literal string `"true"`.
+ * - `multiselect` is emitted as a `string[]` so callers can serialize it
+ *   however their backend expects (repeated keys, comma-joined, etc.).
+ * - All other types fall through as a single string under `config.field`.
+ *
+ * Inactive filters (empty value) are skipped.
+ *
+ * @param filters - The full filter set; only those with non-empty values are encoded.
+ * @returns A record keyed by query-parameter name.
+ */
 export function buildQueryParams(filters: Filter[]): Record<string, string | string[]> {
   const params: Record<string, string | string[]> = {};
 

@@ -17,9 +17,20 @@ import {
 } from './opentelemetry/common.ts';
 import { nanoToMilli } from './time.ts';
 
+/**
+ * A single span paired with its rendering metadata.
+ *
+ * Produced by {@link TraceTree.flatten}. `level` is the depth from the
+ * root span (root = 0) and is used to indent the span label and bar.
+ * `serviceName` is denormalized from the parent `ResourceSpans` so that
+ * each row can be coloured/labelled without re-walking the tree.
+ */
 export interface FlatSpan {
+  /** The original OTel span. */
   span: Span;
+  /** Depth in the parent-child tree; root spans are at level 0. */
   level: number;
+  /** Service name resolved from the owning `ResourceSpans` resource attributes. */
   serviceName: string;
 }
 
@@ -28,12 +39,43 @@ export interface FlatSpan {
  * Spans are kept as-is; relationships and metadata are stored in lookup maps.
  */
 export class TraceTree {
+  /**
+   * Construct a tree directly from precomputed lookup maps.
+   *
+   * Most callers should use {@link TraceTree.build} instead. The public
+   * constructor exists so trees can be assembled in tests or by callers
+   * that already have the indexed structure.
+   *
+   * @param roots - Spans with no resolvable parent, sorted by start time.
+   * @param childrenOf - `parentSpanId` → ordered list of child spans.
+   * @param serviceNameOf - `spanId` → owning service name.
+   */
   constructor(
     public readonly roots: Span[],
     public readonly childrenOf: Map<string, Span[]>,
     public readonly serviceNameOf: Map<string, string>,
   ) {}
 
+  /**
+   * Index a flat {@link TraceData} payload into a parent-child tree.
+   *
+   * Spans whose `parentSpanId` does not resolve to a known span in the
+   * payload are treated as roots, so dangling references do not silently
+   * disappear. Children at every level are sorted by `startTimeUnixNano`
+   * to keep timeline ordering stable.
+   *
+   * @param traceData - OTel-shaped trace data, typically produced by
+   *   `transformLogs` (from `transform.ts`) or fetched from a backend.
+   * @returns A new `TraceTree`. Safe to call repeatedly on the same input.
+   *
+   * @example
+   * ```ts
+   * const tree = TraceTree.build(traceData);
+   * for (const { span, level } of tree.flatten()) {
+   *   console.log('  '.repeat(level) + span.name);
+   * }
+   * ```
+   */
   static build(traceData: TraceData): TraceTree {
     const spanMap = new Map<string, Span>();
     const childrenOf = new Map<string, Span[]>();
@@ -83,6 +125,15 @@ export class TraceTree {
     return extractString(serviceNameAttr?.value) ?? 'unknown-service';
   }
 
+  /**
+   * Walk the tree depth-first and return one {@link FlatSpan} per span.
+   *
+   * Order matches the visual top-to-bottom order of the waterfall: each
+   * root is visited followed by all of its descendants (also depth-first)
+   * before moving on to the next root.
+   *
+   * @returns The complete list of spans annotated with depth and service name.
+   */
   flatten(): FlatSpan[] {
     const result: FlatSpan[] = [];
 
@@ -101,6 +152,15 @@ export class TraceTree {
     return result;
   }
 
+  /**
+   * Compute the bounding time range across every span in the tree.
+   *
+   * Both bounds are returned in milliseconds since the Unix epoch,
+   * suitable for `Date` construction and pixel-offset math. An empty
+   * tree returns `{ min: 0, max: 0 }`.
+   *
+   * @returns The earliest start and latest end timestamp in the tree.
+   */
   getTimeRange(): { min: number; max: number } {
     const flat = this.flatten();
     if (flat.length === 0) {
