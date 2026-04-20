@@ -24,6 +24,27 @@ export interface SpanKindRule {
   kind: string;
 }
 
+/**
+ * Unified runtime configuration for the `<trace-visualizer>` Web Component.
+ *
+ * Every field maps 1:1 to a kebab-case HTML attribute on the custom
+ * element, so the same options can be set declaratively from markup or
+ * imperatively via the `config` setter. The interface deliberately
+ * mixes two concerns:
+ *
+ * - **Transform fields** (`traceIdField`, `spanGroupFields`,
+ *   `spanNameField`, `serviceNameField`, `timestampField`, etc.) tell
+ *   the component how to map raw log records onto the OTel span model.
+ *   They are required only when feeding the component logs rather than
+ *   pre-built {@link TraceData}.
+ * - **Display fields** (`width`, `height`, `colorScheme`, `showLegend`,
+ *   `detailPanelWidth`, etc.) control rendering. Defaults are applied
+ *   by {@link resolveDisplayDefaults}.
+ *
+ * All fields are optional so a single shared type can describe both the
+ * declarative attribute surface and the resolved runtime config.
+ * {@link TransformConfig} narrows it to the transform-required subset.
+ */
 export interface TraceVisualizerConfig {
   /** URL to fetch trace/log data from */
   dataUrl?: string;
@@ -150,39 +171,100 @@ export interface DisplayConfig {
 // Filter types
 // ---------------------------------------------------------------------------
 
+/**
+ * UI control rendered for a filter.
+ *
+ * - `text` — free-text substring search.
+ * - `dropdown` — single-select from `options`.
+ * - `datetime-range` — paired `from` / `to` inputs.
+ * - `checkbox` — boolean toggle.
+ * - `multiselect` — multi-value select from `options`.
+ */
 export type FilterFieldType = 'text' | 'dropdown' | 'datetime-range' | 'checkbox' | 'multiselect';
+
+/**
+ * Where a filter is applied.
+ *
+ * - `local` — applied client-side via `filterSpans` (from `filter.ts`) against the
+ *   already-loaded span list.
+ * - `external` — sent to the data source (URL query params or a
+ *   {@link FetchCallback}); the server returns a filtered payload.
+ */
 export type FilterSource = 'external' | 'local';
+
+/**
+ * Which level a local filter matches against.
+ *
+ * - `span` — match span-level fields (name, attributes, kind, etc.).
+ * - `log` — match against any source log/event under the span; the span
+ *   passes when at least one of its events matches.
+ */
 export type FilterTarget = 'span' | 'log';
+
+/**
+ * Where dropdown / multiselect options come from.
+ *
+ * - `static` — declared up-front via the `options` attribute / array.
+ * - `auto` — derived at load time from the unique values present in the
+ *   loaded data.
+ */
 export type OptionsSource = 'static' | 'auto';
 
-/** A dropdown option with value and human-readable label. */
+/** A dropdown / multiselect option pairing a stored value with a human-readable label. */
 export interface FilterOption {
+  /** Value sent in filter state and query params. */
   value: string;
+  /** Text shown to the user in the dropdown. */
   label: string;
 }
 
-/** Parsed representation of a <trace-filter> element's attributes. */
+/**
+ * Parsed representation of a `<trace-filter>` child element's attributes.
+ *
+ * One config per filter field. `<trace-visualizer>` collects these from
+ * any `<trace-filter>` children at connect time, but they can also be
+ * supplied programmatically via `TraceVisualizerConfig.filterConfigs`.
+ *
+ * The config drives both the rendered control (via {@link FilterFieldType})
+ * and the matching logic in `filterSpans` (from `filter.ts`) / `buildQueryParams` (from `filter.ts`).
+ */
 export interface FilterFieldConfig {
+  /** Dot-path or special key (e.g. `'spanName'`, `'serviceName'`, `'hasError'`, `'*'`) the filter matches on. */
   field: string;
+  /** Human-readable label rendered next to the control. */
   label: string;
+  /** Which UI control to render. */
   type: FilterFieldType;
+  /** Whether the filter runs client-side or is pushed to the data source. */
   source: FilterSource;
+  /** Whether the filter matches span-level fields or per-log event attributes. */
   target: FilterTarget;
+  /** When `true`, fetch is gated until the user supplies a value. */
   required: boolean;
   /** Dropdown options. Use string[] for simple values or FilterOption[] for value/label pairs. */
   options: FilterOption[];
   /** How to populate dropdown options: 'static' (from attribute) or 'auto' (from data). */
   optionsSource: OptionsSource;
+  /** Placeholder text for `text` and `datetime-range` inputs. Empty string when not set. */
   placeholder: string;
+  /** Debounce delay in milliseconds applied to `text` filters. `0` disables debouncing. */
   debounce: number;
+  /** Pixel width of the rendered control. `0` falls back to the default per type. */
   width: number;
   /** When true, the from/to values are auto-computed from data min/max span timestamps on load. */
   autoRange: boolean;
 }
 
 /**
- * Normalize options to FilterOption[].
- * Accepts: string[], FilterOption[], or mixed array.
+ * Coerce a heterogeneous list of dropdown options into {@link FilterOption}s.
+ *
+ * Bare strings become an option whose `value` and `label` are both the
+ * string. Objects missing a `label` fall back to using `value` as the
+ * displayed label. Useful when the `<trace-filter options="...">`
+ * attribute contains JSON that may have been authored either way.
+ *
+ * @param raw - Mixed array of strings and {@link FilterOption} objects.
+ * @returns A new array of fully-formed {@link FilterOption}s.
  */
 export function normalizeOptions(raw: (string | FilterOption)[]): FilterOption[] {
   return raw.map(item => {
@@ -196,17 +278,56 @@ export function normalizeOptions(raw: (string | FilterOption)[]): FilterOption[]
   });
 }
 
+/**
+ * Current value of a filter, shape determined by {@link FilterFieldType}.
+ *
+ * - `text`, `dropdown` → `string`
+ * - `checkbox` → `boolean`
+ * - `datetime-range` → `{ from?, to? }` ISO strings
+ * - `multiselect` → `string[]`
+ *
+ * Empty values (empty string, empty array, `false`, range with neither
+ * bound) mean the filter is inactive.
+ */
 export type FilterValue = string | boolean | { from?: string; to?: string } | string[];
 
-/** Runtime state of a single active filter (local or external). */
+/** Runtime pairing of a filter's static config and its current value. */
 export interface Filter {
+  /** Static definition of the filter (field, type, source, etc.). */
   config: FilterFieldConfig;
+  /** Current value supplied by the user; shape matches `config.type`. */
   value: FilterValue;
 }
 
-/** Callback for custom data fetching with external filters. */
+/**
+ * Callback that supplies trace data on behalf of `<trace-visualizer>`.
+ *
+ * Set via the `fetchCallback` setter. The component invokes the callback
+ * whenever a refetch is needed: on connect, when the `data-url` attribute
+ * changes, and whenever an external filter value changes (subject to
+ * `autoFetch`).
+ *
+ * The callback may return either pre-built {@link TraceData} or a raw
+ * `LogEntry[]`; in the latter case the component runs `transformLogs` (from `transform.ts`)
+ * with the configured field mappings before rendering.
+ *
+ * @param url - The current `dataUrl` (may be `undefined` if not configured).
+ * @param filters - Active external filters encoded by `buildQueryParams` (from `filter.ts`).
+ * @returns A promise resolving to the data to render.
+ */
 export type FetchCallback = (url: string | undefined, filters: Record<string, string | string[]>) => Promise<TraceData | LogEntry[]>;
 
+/**
+ * Apply the built-in display defaults to a {@link TraceVisualizerConfig}.
+ *
+ * Falsy values in the input are replaced with the canonical defaults
+ * (white background, 30 px span height, 5 px padding, 40% detail panel,
+ * the built-in {@link SpanKind} colour scheme, etc.). Boolean fields use
+ * strict `=== true` so that `undefined` falls back to `false`.
+ *
+ * @param config - The user-supplied config; any field may be omitted.
+ * @returns A frozen-shape {@link DisplayConfig} safe to read in templates.
+ */
 export function resolveDisplayDefaults(config: TraceVisualizerConfig): DisplayConfig {
   return {
     width: config.width || 0,
