@@ -41,6 +41,7 @@ jobs:
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/logs-transform.html > _site/logs-transform.html
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/benchmark.html > _site/benchmark.html
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/filter-demo.html > _site/filter-demo.html
+          cp demo/guide.html _site/guide.html
           cp demo/logs.json _site/logs.json
           cp demo/favicon.svg _site/favicon.svg
           cp dist/log2trace.min.js _site/dist/log2trace.min.js
