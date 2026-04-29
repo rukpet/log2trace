@@ -232,7 +232,7 @@ export class Template {
       return `
         <div class="${styles.spanEvent}"
              style="left:${eventOffset}%"
-             title="${event.name}\nTime: ${Template.formatDuration(eventMs - startMs)}">
+             title="${Template.escapeHtml(event.name)}\nTime: ${Template.formatDuration(eventMs - startMs)}">
         </div>
       `;
     }).join('');
@@ -341,7 +341,7 @@ export class Template {
         <div class="${styles.spanBar}"
              style="left:${startPercent}%;width:${Math.max(widthPercent, 0.5)}%;background:${color}"
              data-span-id="${span.spanId}"
-             title="${span.name}\nDuration: ${Template.formatDuration(spanDuration)}\nKind: ${kindLabel}">
+             title="${Template.escapeHtml(span.name)}\nDuration: ${Template.formatDuration(spanDuration)}\nKind: ${kindLabel}">
           <div class="${styles.spanDuration}">
             ${Template.formatDuration(spanDuration)}
           </div>
@@ -373,11 +373,11 @@ export class Template {
       const statusIcon = Template.getStatusIcon(span.status?.code ?? 0);
 
       return `
-        <div class="${styles.spanLabelFixed}" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${span.name}">
+        <div class="${styles.spanLabelFixed}" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${Template.escapeHtml(span.name)}">
           <span class="${styles.statusIcon}">${statusIcon}</span>
-          <strong>${serviceName}</strong>
+          <strong>${Template.escapeHtml(serviceName)}</strong>
           <br/>
-          <small>${span.name}</small>
+          <small>${Template.escapeHtml(span.name)}</small>
         </div>
       `;
     }).join('');
@@ -428,7 +428,7 @@ export class Template {
       <div class="${styles.traceViewer}" style="background: ${config.backgroundColor};">
         ${filterBarHtml}
         <div class="${styles.traceHeader}">
-          <h3>Trace: ${traceId}</h3>
+          <h3>Trace: ${Template.escapeHtml(traceId)}</h3>
           <div class="${styles.traceStats}">
             ${statsText}
             <span>Duration: ${Template.formatDuration(timeRange.max - timeRange.min)}</span>
@@ -528,7 +528,7 @@ export class Template {
     return `
       <div class="${styles.traceViewer}">
         <div class="${styles.message} ${styles.messageError}">
-          <strong>Error:</strong> ${message}
+          <strong>Error:</strong> ${Template.escapeHtml(message)}
         </div>
       </div>
     `;
@@ -536,6 +536,7 @@ export class Template {
 
   /** @internal */
   static getTooltipMarkup({ span, serviceName }: FlatSpan): string {
+    const esc = Template.escapeHtml;
     const duration = nanoToMilli(span.endTimeUnixNano) - nanoToMilli(span.startTimeUnixNano);
     const kindLabel = SpanKind[span.kind] || 'Unknown';
     const statusLabel = span.status?.code === 1 ? 'OK' : span.status?.code === 2 ? 'Error' : 'Unset';
@@ -544,10 +545,10 @@ export class Template {
 
     return `
       <div class="${styles.tooltipHeader}">
-        <strong>${serviceName}</strong>
+        <strong>${esc(serviceName)}</strong>
         <span class="${styles.tooltipStatus} ${styles.tooltipStatusVariants[statusVariant]}">${statusLabel}</span>
       </div>
-      <div class="${styles.tooltipOperation}">${span.name}</div>
+      <div class="${styles.tooltipOperation}">${esc(span.name)}</div>
       <div class="${styles.tooltipInfo}">
         <div class="${styles.tooltipRow}">
           <span class="${styles.tooltipLabel}">Duration:</span>
@@ -559,12 +560,12 @@ export class Template {
         </div>
         <div class="${styles.tooltipRow}">
           <span class="${styles.tooltipLabel}">Span ID:</span>
-          <span class="${styles.tooltipValue}">${span.spanId.substring(0, 16)}...</span>
+          <span class="${styles.tooltipValue}">${esc(span.spanId.substring(0, 16))}...</span>
         </div>
         ${span.status?.message ? `
           <div class="${styles.tooltipRow}">
             <span class="${styles.tooltipLabel}">Message:</span>
-            <span class="${styles.tooltipValue}">${span.status.message}</span>
+            <span class="${styles.tooltipValue}">${esc(span.status.message)}</span>
           </div>
         ` : ''}
         ${span.events && span.events.length > 0 ? `
