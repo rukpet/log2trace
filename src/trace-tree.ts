@@ -3,7 +3,7 @@
  *
  * Converts flat OTel TraceData into a parent-child span tree.
  * build() indexes spans, resolves parent links, sorts by start time.
- * flatten() produces the ordered list that Template uses for rendering.
+ * flatSpans is the depth-first ordered list that Template uses for rendering.
  * getTimeRange() computes the min/max timestamps for the timeline axis.
  */
 
@@ -20,7 +20,7 @@ import { nanoToMilli } from './time.ts';
 /**
  * A single span paired with its rendering metadata.
  *
- * Produced by {@link TraceTree.flatten}. `level` is the depth from the
+ * Stored in {@link TraceTree.flatSpans}. `level` is the depth from the
  * root span (root = 0) and is used to indent the span label and bar.
  * `serviceName` is denormalized from the parent `ResourceSpans` so that
  * each row can be coloured/labelled without re-walking the tree.
@@ -49,11 +49,14 @@ export class TraceTree {
    * @param roots - Spans with no resolvable parent, sorted by start time.
    * @param childrenOf - `parentSpanId` → ordered list of child spans.
    * @param serviceNameOf - `spanId` → owning service name.
+   * @param flatSpans - Depth-first ordered list of every span paired with
+   *   rendering metadata; treated as read-only.
    */
   constructor(
     public readonly roots: Span[],
     public readonly childrenOf: Map<string, Span[]>,
     public readonly serviceNameOf: Map<string, string>,
+    public readonly flatSpans: FlatSpan[],
   ) {}
 
   /**
@@ -71,7 +74,7 @@ export class TraceTree {
    * @example
    * ```ts
    * const tree = TraceTree.build(traceData);
-   * for (const { span, level } of tree.flatten()) {
+   * for (const { span, level } of tree.flatSpans) {
    *   console.log('  '.repeat(level) + span.name);
    * }
    * ```
@@ -115,7 +118,8 @@ export class TraceTree {
     }
     roots.sort(compareByStartTime);
 
-    return new TraceTree(roots, childrenOf, serviceNameOf);
+    const flatSpans = TraceTree.computeFlatSpans(roots, childrenOf, serviceNameOf);
+    return new TraceTree(roots, childrenOf, serviceNameOf, flatSpans);
   }
 
   private static extractServiceName(resourceSpan: ResourceSpans): string {
@@ -126,29 +130,31 @@ export class TraceTree {
   }
 
   /**
-   * Walk the tree depth-first and return one {@link FlatSpan} per span.
+   * Walk the tree depth-first and produce one {@link FlatSpan} per span.
    *
    * Order matches the visual top-to-bottom order of the waterfall: each
    * root is visited followed by all of its descendants (also depth-first)
    * before moving on to the next root.
-   *
-   * @returns The complete list of spans annotated with depth and service name.
    */
-  flatten(): FlatSpan[] {
+  private static computeFlatSpans(
+    roots: Span[],
+    childrenOf: Map<string, Span[]>,
+    serviceNameOf: Map<string, string>,
+  ): FlatSpan[] {
     const result: FlatSpan[] = [];
 
     const walk = (spans: Span[], level: number) => {
       for (const span of spans) {
-        const serviceName = this.serviceNameOf.get(span.spanId) || 'unknown-service';
+        const serviceName = serviceNameOf.get(span.spanId) || 'unknown-service';
         result.push({ span, level, serviceName });
-        const children = this.childrenOf.get(span.spanId);
+        const children = childrenOf.get(span.spanId);
         if (children && children.length > 0) {
           walk(children, level + 1);
         }
       }
     };
 
-    walk(this.roots, 0);
+    walk(roots, 0);
     return result;
   }
 
@@ -162,15 +168,14 @@ export class TraceTree {
    * @returns The earliest start and latest end timestamp in the tree.
    */
   getTimeRange(): { min: number; max: number } {
-    const flat = this.flatten();
-    if (flat.length === 0) {
+    if (this.flatSpans.length === 0) {
       return { min: 0, max: 0 };
     }
 
     let min = Infinity;
     let max = -Infinity;
 
-    for (const { span } of flat) {
+    for (const { span } of this.flatSpans) {
       const start = nanoToMilli(span.startTimeUnixNano);
       const end = nanoToMilli(span.endTimeUnixNano);
       if (start < min) min = start;

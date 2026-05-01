@@ -100,7 +100,7 @@ export class Template {
    * `log2trace.*` housekeeping keys), and per-event detail. Empty
    * sections are omitted.
    *
-   * @param flatSpan - The span and its denormalized service name from {@link TraceTree.flatten}.
+   * @param flatSpan - The span and its denormalized service name from {@link TraceTree.flatSpans}.
    * @returns A self-contained HTML fragment ready to insert into the detail-panel slot.
    */
   static getSpanDetailMarkup({ span, serviceName }: FlatSpan): string {
@@ -400,7 +400,7 @@ export class Template {
    *   (produced by the internal filter helpers); pass empty string when
    *   no filters are configured.
    * @param filteredSpans - When local filters are active, the already
-   *   filtered span list to render in place of `tree.flatten()`.
+   *   filtered span list to render in place of `tree.flatSpans`.
    * @returns A self-contained HTML fragment for the full visualization.
    */
   static getTraceMarkup(
@@ -409,7 +409,7 @@ export class Template {
     filterBarHtml: string = '',
     filteredSpans: FlatSpan[] | null = null,
   ): string {
-    const allFlatSpans = tree.flatten();
+    const allFlatSpans = tree.flatSpans;
     const displaySpans = filteredSpans ?? allFlatSpans;
     const timeRange = tree.getTimeRange();
     const chartHeight = displaySpans.length * (config.spanHeight + config.spanPadding);

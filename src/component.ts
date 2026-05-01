@@ -67,7 +67,7 @@ styleSheet.replaceSync(componentCss);
  * ```
  */
 export class TraceVisualizerElement extends HTMLElement {
-  private _tree = new TraceTree([], new Map(), new Map());
+  private _tree = new TraceTree([], new Map(), new Map(), []);
   private _programmatic: TraceVisualizerConfig = {};
   private shadow: ShadowRoot;
   private zoomLevel: number = 1;
@@ -528,7 +528,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   private attachEventListeners(tree: TraceTree): void {
     const spanBars = this.shadow.querySelectorAll('.' + styles.spanBar);
-    const flatSpans = tree.flatten();
+    const flatSpans = tree.flatSpans;
     const detailPanel = this.shadow.querySelector('.' + styles.detailPanel) as HTMLElement;
     const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
     const closeBtn = this.shadow.querySelector('.' + styles.detailPanelClose) as HTMLElement;
@@ -751,7 +751,7 @@ export class TraceVisualizerElement extends HTMLElement {
   // ---------------------------------------------------------------------------
 
   private keyboardHandler = (e: KeyboardEvent) => {
-    const flatSpans = this._tree.flatten();
+    const flatSpans = this._tree.flatSpans;
     if (flatSpans.length === 0) return;
 
     switch (e.key) {
@@ -820,7 +820,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private selectNextSpan(): void {
-    const flatSpans = this._tree.flatten();
+    const flatSpans = this._tree.flatSpans;
     if (flatSpans.length === 0) return;
 
     this.selectedSpanIndex = Math.min(flatSpans.length - 1, this.selectedSpanIndex + 1);
@@ -864,7 +864,7 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private openSpanDetails(index: number): void {
-    const flatSpans = this._tree.flatten();
+    const flatSpans = this._tree.flatSpans;
     const entry = flatSpans[index];
     if (!entry) return;
 
@@ -926,7 +926,7 @@ class FilterBarController {
    */
   private populateAutoOptions(): void {
     if (!this._cachedTree) return;
-    const flatSpans = this._cachedTree.flatten();
+    const flatSpans = this._cachedTree.flatSpans;
 
     const autoDropdowns = this.filterConfigs.filter(
       f => (f.type === 'dropdown' || f.type === 'multiselect') && f.optionsSource === 'auto'
@@ -1051,7 +1051,7 @@ class FilterBarController {
     if (!this._cachedTree) return null;
     if (this._filteredSpans) return this._filteredSpans;
 
-    const flatSpans = this._cachedTree.flatten();
+    const flatSpans = this._cachedTree.flatSpans;
     const activeLocalFilters = Array.from(this.localValues.values());
     this._filteredSpans = filterSpans(flatSpans, activeLocalFilters);
     return this._filteredSpans;
