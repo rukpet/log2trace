@@ -4,3 +4,5 @@ docs/
 .claude
 .superpowers
 docs/superpowers
+.agents/
+AGENTS.md
