@@ -8,7 +8,8 @@
  */
 
 import { TraceData } from './opentelemetry/trace.ts';
-import { TraceTree, type FlatSpan } from './trace-tree.ts';
+import { buildSpanIndex, type SpanIndex, type IndexedSpan } from './span-index.ts';
+import { TraceViewModel, type ViewSpan } from './trace-view-model.ts';
 import { Template } from './template.ts';
 import { transformLogs, getField } from './transform.ts';
 import {
@@ -18,7 +19,7 @@ import {
   type FilterOption, type SpanKindRule, type LogEntry,
   resolveDisplayDefaults, normalizeOptions,
 } from './config.ts';
-import { filterSpans, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
+import { filterSpanIds, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
 import componentCss from 'virtual:component-css';
 import * as styles from './styles.css.ts';
 
@@ -67,7 +68,8 @@ styleSheet.replaceSync(componentCss);
  * ```
  */
 export class TraceVisualizerElement extends HTMLElement {
-  private _tree = new TraceTree([], new Map(), new Map(), []);
+  private _index: SpanIndex | null = null;
+  private _viewModel: TraceViewModel | null = null;
   private _programmatic: TraceVisualizerConfig = {};
   private shadow: ShadowRoot;
   private zoomLevel: number = 1;
@@ -78,6 +80,15 @@ export class TraceVisualizerElement extends HTMLElement {
   private resizeObserver: ResizeObserver;
   private selectedSpanIndex: number = -1;
   private filterController!: FilterBarController;
+
+  // Virtual scroll state
+  private _vsEnabled = false;
+  private _vsStart = 0;
+  private _vsEnd = 0;
+  private _vsScrollHandler: (() => void) | null = null;
+
+  /** Span count threshold above which virtual scrolling activates. */
+  static VIRTUAL_SCROLL_THRESHOLD = 200;
 
   constructor() {
     super();
@@ -128,6 +139,7 @@ export class TraceVisualizerElement extends HTMLElement {
     this.resizeObserver.disconnect();
     this.removeKeyboardNavigation();
     this.filterController.destroy();
+    this.detachVirtualScroll();
   }
 
   attributeChangedCallback(_name: string, oldValue: string, newValue: string) {
@@ -146,19 +158,21 @@ export class TraceVisualizerElement extends HTMLElement {
    * @param data - OTel trace data, typically from {@link transformLogs}.
    */
   set traceData(data: TraceData) {
-    this._tree = TraceTree.build(data);
-    this.filterController.cachedTree = this._tree;
+    this._index = buildSpanIndex(data);
+    this._viewModel = new TraceViewModel(this._index);
+    this.filterController.activeIndex = this._index;
     this.render();
   }
 
   /**
-   * Read the currently rendered tree.
+   * The active view model for the current trace data.
    *
-   * Returns an empty `TraceTree` before any data has been supplied, so
-   * callers do not need a null check.
+   * Returns `null` before any data has been supplied. The view model
+   * provides the visible spans (accounting for collapse and filter state),
+   * the precomputed time range, and collapse/expand controls.
    */
-  get traceData(): TraceTree {
-    return this._tree;
+  get viewModel(): TraceViewModel | null {
+    return this.activeViewModel;
   }
 
   /**
@@ -437,6 +451,16 @@ export class TraceVisualizerElement extends HTMLElement {
     return resolveDisplayDefaults(this._mergedConfig());
   }
 
+  /** Resolve the active view model (prefers filter controller's, falls back to component's). */
+  private get activeViewModel(): TraceViewModel | null {
+    return this.filterController.activeViewModel ?? this._viewModel;
+  }
+
+  /** Resolve the active time range (O(1) from precomputed index). */
+  private get activeTimeRange(): { min: number; max: number } {
+    return this.activeViewModel?.timeRange ?? { min: 0, max: 0 };
+  }
+
 
 
   // ---------------------------------------------------------------------------
@@ -464,10 +488,13 @@ export class TraceVisualizerElement extends HTMLElement {
       }
     }
 
-    const filteredSpans = hasFilters ? fc.getFilteredSpans() : null;
-    const tree = fc.cachedTree ?? this._tree;
+    // Apply local filters to view model if active
+    const vm = this.activeViewModel;
+    if (vm && hasFilters) {
+      fc.applyLocalFiltersToViewModel(vm);
+    }
 
-    if (tree.roots.length === 0) {
+    if (!vm || vm.isEmpty) {
       if (hasFilters) {
         this.shadow.innerHTML = Template.getFilteredEmptyMarkup(filterBarHtml, '', config);
         fc.attachFilterListeners(this.shadow);
@@ -478,7 +505,8 @@ export class TraceVisualizerElement extends HTMLElement {
     }
 
     try {
-      this.shadow.innerHTML = Template.getTraceMarkup(tree, config, filterBarHtml, filteredSpans);
+      this.detachVirtualScroll();
+      this.shadow.innerHTML = Template.getViewModelMarkup(vm, config, filterBarHtml);
 
       const tooltip = document.createElement('div');
       tooltip.className = styles.spanTooltip;
@@ -487,10 +515,15 @@ export class TraceVisualizerElement extends HTMLElement {
 
       if (hasFilters) fc.attachFilterListeners(this.shadow);
 
-      this.attachEventListeners(tree);
+      this.attachViewModelEventListeners(vm);
       this.attachZoomPanListeners();
       this.observeTimelineResize();
       this.recalculateTimelineTicks();
+
+      // Activate virtual scrolling for large datasets
+      if (this.shouldVirtualScroll(vm)) {
+        this.attachVirtualScroll(vm);
+      }
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Rendering failed');
     }
@@ -515,7 +548,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const timelineOverlay = this.shadow.querySelector(`.${styles.timelineOverlay} .${styles.timeline}`) as HTMLElement;
     if (!timelineContainer || !timelineOverlay) return;
 
-    const timeRange = (this.filterController.cachedTree ?? this._tree).getTimeRange();
+    const timeRange = this.activeTimeRange;
     const containerWidth = timelineContainer.clientWidth;
     timelineOverlay.innerHTML = Template.getTimelineOverlayTicksMarkup(
       timeRange, containerWidth, this.zoomLevel, this.panOffset
@@ -526,42 +559,40 @@ export class TraceVisualizerElement extends HTMLElement {
   // Interaction
   // ---------------------------------------------------------------------------
 
-  private attachEventListeners(tree: TraceTree): void {
+  /** Event listeners for the ViewModel-based rendering path. */
+  private attachViewModelEventListeners(vm: TraceViewModel): void {
     const spanBars = this.shadow.querySelectorAll('.' + styles.spanBar);
-    const flatSpans = tree.flatSpans;
+    const visibleSpans = vm.visibleSpans;
     const detailPanel = this.shadow.querySelector('.' + styles.detailPanel) as HTMLElement;
     const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
     const closeBtn = this.shadow.querySelector('.' + styles.detailPanelClose) as HTMLElement;
 
     spanBars.forEach((bar, index) => {
-      // Click handler
       bar.addEventListener('click', (event) => {
         const spanId = (event.currentTarget as HTMLElement).getAttribute('data-span-id');
-        const entry = flatSpans.find(e => e.span.spanId === spanId);
+        const entry = visibleSpans.find(e => e.indexed.spanId === spanId);
 
         if (entry) {
-          detailContent.innerHTML = Template.getSpanDetailMarkup(entry);
-
+          detailContent.innerHTML = Template.getViewSpanDetailMarkup(entry);
           detailPanel.classList.add(styles.detailPanelVisible);
           this.selectedSpanIndex = index;
           this.updateSpanSelection();
 
           this.dispatchEvent(new CustomEvent('span-selected', {
-            detail: { span: entry.span },
+            detail: { span: entry.indexed.span },
             bubbles: true,
-            composed: true
+            composed: true,
           }));
         }
       });
 
-      // Hover tooltip handler
       bar.addEventListener('mouseenter', (event) => {
         const spanId = (event.currentTarget as HTMLElement).getAttribute('data-span-id');
-        const entry = flatSpans.find(e => e.span.spanId === spanId);
+        const entry = visibleSpans.find(e => e.indexed.spanId === spanId);
 
         if (entry) {
           const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-          this.showTooltip(entry, rect.left, rect.bottom);
+          this.showViewSpanTooltip(entry, rect.left, rect.bottom);
         }
       });
 
@@ -570,12 +601,23 @@ export class TraceVisualizerElement extends HTMLElement {
       });
     });
 
+    // Collapse/expand chevrons
+    this.shadow.querySelectorAll('[data-collapse-id]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const spanId = (e.currentTarget as HTMLElement).getAttribute('data-collapse-id');
+        if (spanId) {
+          vm.toggleCollapse(spanId);
+          this._rerender();
+        }
+      });
+    });
+
     closeBtn?.addEventListener('click', () => {
       detailPanel.classList.remove(styles.detailPanelVisible);
       this.selectedSpanIndex = -1;
       this.updateSpanSelection();
     });
-
   }
 
   private attachZoomPanListeners(): void {
@@ -667,7 +709,7 @@ export class TraceVisualizerElement extends HTMLElement {
     // Update timeline overlay ticks (outside scaled container)
     const timelineOverlay = this.shadow.querySelector(`.${styles.timelineOverlay} .${styles.timeline}`) as HTMLElement;
     if (timelineOverlay && timelineContainer) {
-      const timeRange = (this.filterController.cachedTree ?? this._tree).getTimeRange();
+      const timeRange = this.activeTimeRange;
       const containerWidth = timelineContainer.clientWidth;
       timelineOverlay.innerHTML = Template.getTimelineOverlayTicksMarkup(
         timeRange, containerWidth, this.zoomLevel, this.panOffset
@@ -724,7 +766,7 @@ export class TraceVisualizerElement extends HTMLElement {
   // Tooltip
   // ---------------------------------------------------------------------------
 
-  private showTooltip(entry: FlatSpan, x: number, y: number): void {
+  private showViewSpanTooltip(entry: ViewSpan, x: number, y: number): void {
     let tooltip = this.shadow.querySelector('.' + styles.spanTooltip) as HTMLElement;
 
     if (!tooltip) {
@@ -733,7 +775,7 @@ export class TraceVisualizerElement extends HTMLElement {
       this.shadow.appendChild(tooltip);
     }
 
-    tooltip.innerHTML = Template.getTooltipMarkup(entry);
+    tooltip.innerHTML = Template.getViewSpanTooltipMarkup(entry);
     tooltip.style.display = 'block';
     tooltip.style.left = `${x + 10}px`;
     tooltip.style.top = `${y + 10}px`;
@@ -751,8 +793,8 @@ export class TraceVisualizerElement extends HTMLElement {
   // ---------------------------------------------------------------------------
 
   private keyboardHandler = (e: KeyboardEvent) => {
-    const flatSpans = this._tree.flatSpans;
-    if (flatSpans.length === 0) return;
+    const vm = this.activeViewModel;
+    if (!vm || vm.visibleSpans.length === 0) return;
 
     switch (e.key) {
       case 'ArrowUp':
@@ -820,10 +862,10 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private selectNextSpan(): void {
-    const flatSpans = this._tree.flatSpans;
-    if (flatSpans.length === 0) return;
+    const vm = this.activeViewModel;
+    if (!vm || vm.visibleSpans.length === 0) return;
 
-    this.selectedSpanIndex = Math.min(flatSpans.length - 1, this.selectedSpanIndex + 1);
+    this.selectedSpanIndex = Math.min(vm.visibleSpans.length - 1, this.selectedSpanIndex + 1);
     this.updateSpanSelection();
     this.scrollToSelectedSpan();
   }
@@ -864,25 +906,158 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private openSpanDetails(index: number): void {
-    const flatSpans = this._tree.flatSpans;
-    const entry = flatSpans[index];
+    const vm = this.activeViewModel;
+    if (!vm) return;
+    const entry = vm.visibleSpans[index];
     if (!entry) return;
 
     const detailPanel = this.shadow.querySelector('.' + styles.detailPanel) as HTMLElement;
     const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
 
     if (detailContent) {
-      detailContent.innerHTML = Template.getSpanDetailMarkup(entry);
+      detailContent.innerHTML = Template.getViewSpanDetailMarkup(entry);
     }
     detailPanel?.classList.add(styles.detailPanelVisible);
 
     this.dispatchEvent(new CustomEvent('span-selected', {
-      detail: { span: entry.span },
+      detail: { span: entry.indexed.span },
       bubbles: true,
-      composed: true
+      composed: true,
     }));
   }
 
+  // ---------------------------------------------------------------------------
+  // Virtual scrolling
+  // ---------------------------------------------------------------------------
+
+  private shouldVirtualScroll(vm: TraceViewModel): boolean {
+    return vm.visibleSpans.length > TraceVisualizerElement.VIRTUAL_SCROLL_THRESHOLD;
+  }
+
+  /**
+   * Set up virtual scroll on the traceChart container.
+   * Makes traceChart scrollable and renders only the visible window.
+   */
+  private attachVirtualScroll(vm: TraceViewModel): void {
+    const traceChart = this.shadow.querySelector('.' + styles.traceChart) as HTMLElement;
+    if (!traceChart) return;
+
+    // Make the chart scrollable
+    traceChart.style.overflowY = 'auto';
+
+    this._vsEnabled = true;
+
+    // Initial window render
+    this.renderVirtualWindow(vm, traceChart);
+
+    // Scroll handler with requestAnimationFrame throttle
+    let ticking = false;
+    this._vsScrollHandler = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          this.renderVirtualWindow(vm, traceChart);
+          ticking = false;
+        });
+      }
+    };
+    traceChart.addEventListener('scroll', this._vsScrollHandler, { passive: true });
+  }
+
+  private detachVirtualScroll(): void {
+    if (!this._vsScrollHandler) return;
+    const traceChart = this.shadow.querySelector('.' + styles.traceChart) as HTMLElement;
+    if (traceChart) {
+      traceChart.removeEventListener('scroll', this._vsScrollHandler);
+    }
+    this._vsScrollHandler = null;
+    this._vsEnabled = false;
+  }
+
+  /**
+   * Compute the visible window and patch DOM if the window has changed.
+   */
+  private renderVirtualWindow(vm: TraceViewModel, container: HTMLElement): void {
+    const config = this.resolveConfig();
+    const rowHeight = config.spanHeight + config.spanPadding;
+    const scrollTop = container.scrollTop;
+    const viewportHeight = container.clientHeight;
+
+    const { startIndex, endIndex, spans } = vm.getWindow(scrollTop, viewportHeight, rowHeight);
+
+    // Skip DOM update if the window hasn't changed
+    if (startIndex === this._vsStart && endIndex === this._vsEnd) return;
+    this._vsStart = startIndex;
+    this._vsEnd = endIndex;
+
+    const timeRange = vm.timeRange;
+
+    // Patch span bars
+    const timelineContainer = this.shadow.querySelector('.' + styles.timelineContainer) as HTMLElement;
+    if (timelineContainer) {
+      timelineContainer.innerHTML = Template.getWindowedSpansMarkup(spans, startIndex, timeRange, config);
+    }
+
+    // Patch span labels
+    const labelsContainer = this.shadow.querySelector('.' + styles.spanLabelsContainer) as HTMLElement;
+    if (labelsContainer) {
+      labelsContainer.innerHTML = Template.getWindowedLabelsMarkup(spans, startIndex, config);
+    }
+
+    // Re-attach click handlers on the new span bars
+    this.attachWindowedSpanListeners(vm);
+  }
+
+  /** Attach click/hover listeners to windowed span bars after DOM patch. */
+  private attachWindowedSpanListeners(vm: TraceViewModel): void {
+    const spanBars = this.shadow.querySelectorAll('.' + styles.spanBar);
+    const detailPanel = this.shadow.querySelector('.' + styles.detailPanel) as HTMLElement;
+    const detailContent = this.shadow.querySelector('.' + styles.detailContent) as HTMLElement;
+    const tooltip = this.shadow.querySelector('.' + styles.spanTooltip) as HTMLElement;
+
+    spanBars.forEach((bar) => {
+      bar.addEventListener('click', (event) => {
+        const spanId = (event.currentTarget as HTMLElement).getAttribute('data-span-id');
+        const visibleSpans = vm.visibleSpans;
+        const entry = visibleSpans.find(e => e.indexed.spanId === spanId);
+
+        if (entry) {
+          if (detailContent) detailContent.innerHTML = Template.getViewSpanDetailMarkup(entry);
+          detailPanel?.classList.add(styles.detailPanelVisible);
+
+          // Update selection visual
+          this.shadow.querySelectorAll('.' + styles.spanBar).forEach(b =>
+            b.classList.remove(styles.spanBarSelected));
+          (event.currentTarget as HTMLElement).classList.add(styles.spanBarSelected);
+
+          this.selectedSpanIndex = visibleSpans.indexOf(entry);
+          this.dispatchEvent(new CustomEvent('span-selected', {
+            detail: { span: entry.indexed.span },
+            bubbles: true, composed: true,
+          }));
+        }
+      });
+
+      if (tooltip) {
+        bar.addEventListener('mouseenter', (event) => {
+          const spanId = (event.currentTarget as HTMLElement).getAttribute('data-span-id');
+          const entry = vm.visibleSpans.find(e => e.indexed.spanId === spanId);
+          if (entry) {
+            tooltip.innerHTML = Template.getViewSpanTooltipMarkup(entry);
+            tooltip.style.display = 'block';
+          }
+        });
+        bar.addEventListener('mouseleave', () => {
+          tooltip.style.display = 'none';
+        });
+        bar.addEventListener('mousemove', (event: Event) => {
+          const me = event as MouseEvent;
+          tooltip.style.left = `${me.clientX + 10}px`;
+          tooltip.style.top = `${me.clientY + 10}px`;
+        });
+      }
+    });
+  }
 
 }
 
@@ -894,8 +1069,8 @@ class FilterBarController {
   private filterConfigs: FilterFieldConfig[] = [];
   private externalValues = new Map<string, Filter>();
   private localValues = new Map<string, Filter>();
-  private _cachedTree: TraceTree | null = null;
-  private _filteredSpans: FlatSpan[] | null = null;
+  private _activeIndex: SpanIndex | null = null;
+  private _activeViewModel: TraceViewModel | null = null;
   private debounceTimers = new Map<string, number>();
   private _fetchCallback: FetchCallback | null = null;
   private _fetchInProgress = false;
@@ -914,59 +1089,76 @@ class FilterBarController {
   get fetchCallback(): FetchCallback | null { return this._fetchCallback; }
   set fetchCallback(cb: FetchCallback | null) { this._fetchCallback = cb; }
 
-  get cachedTree(): TraceTree | null { return this._cachedTree; }
-  set cachedTree(tree: TraceTree | null) {
-    this._cachedTree = tree;
-    this._filteredSpans = null;
+  /** The active SpanIndex (from external fetch or component's own index). */
+  get activeIndex(): SpanIndex | null { return this._activeIndex; }
+  set activeIndex(index: SpanIndex | null) {
+    this._activeIndex = index;
+    if (index) {
+      this._activeViewModel = new TraceViewModel(index);
+    } else {
+      this._activeViewModel = null;
+    }
     this.populateAutoOptions();
+  }
+
+  /** The active view model managed by the filter controller. */
+  get activeViewModel(): TraceViewModel | null { return this._activeViewModel; }
+
+  /** Apply local filters to a view model via filterSpanIds. */
+  applyLocalFiltersToViewModel(vm: TraceViewModel): void {
+    const activeLocalFilters = Array.from(this.localValues.values());
+    const index = vm.index;
+    const ids = filterSpanIds(index.spans.values(), activeLocalFilters);
+    vm.applyFilter(ids);
   }
 
   /**
    * For dropdown filters with optionsSource='auto', extract unique values from data.
    */
   private populateAutoOptions(): void {
-    if (!this._cachedTree) return;
-    const flatSpans = this._cachedTree.flatSpans;
+    if (!this._activeIndex) return;
+    const spans = this._activeIndex.spans;
 
     const autoDropdowns = this.filterConfigs.filter(
       f => (f.type === 'dropdown' || f.type === 'multiselect') && f.optionsSource === 'auto'
     );
     for (const filter of autoDropdowns) {
       const uniqueValues = new Set<string>();
-      for (const flatSpan of flatSpans) {
-        const value = this.resolveFieldValue(flatSpan, filter);
+      for (const indexed of spans.values()) {
+        const value = this.resolveIndexedFieldValue(indexed, filter);
         if (value !== undefined && value !== '') uniqueValues.add(value);
       }
       const sorted = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b));
       filter.options = sorted.map(v => ({ value: v, label: v }));
     }
 
-    this.populateAutoRange(flatSpans);
+    this.populateAutoRange();
   }
 
-  private populateAutoRange(flatSpans: FlatSpan[]): void {
+  private populateAutoRange(): void {
+    if (!this._activeIndex) return;
     const autoRangeFilters = this.filterConfigs.filter(
       f => f.type === 'datetime-range' && f.autoRange
     );
-    if (autoRangeFilters.length === 0 || flatSpans.length === 0) return;
+    if (autoRangeFilters.length === 0 || this._activeIndex.size === 0) return;
 
-    let minNano = BigInt(flatSpans[0].span.startTimeUnixNano);
-    let maxNano = minNano;
-    for (const { span } of flatSpans) {
-      const nano = BigInt(span.startTimeUnixNano);
-      if (nano < minNano) minNano = nano;
-      if (nano > maxNano) maxNano = nano;
+    const spans = this._activeIndex.spans;
+    let minMs = Infinity;
+    let maxMs = -Infinity;
+    for (const indexed of spans.values()) {
+      if (indexed.startMs < minMs) minMs = indexed.startMs;
+      if (indexed.startMs > maxMs) maxMs = indexed.startMs;
     }
 
-    const toLocal = (nano: bigint): string => {
-      const d = new Date(Number(nano / 1_000_000n));
+    const toLocal = (ms: number): string => {
+      const d = new Date(ms);
       const p = (n: number) => n.toString().padStart(2, '0');
-      const ms = d.getMilliseconds().toString().padStart(3, '0');
-      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.${ms}`;
+      const msStr = d.getMilliseconds().toString().padStart(3, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.${msStr}`;
     };
 
-    const from = toLocal(minNano);
-    const to = toLocal(maxNano);
+    const from = toLocal(minMs);
+    const to = toLocal(maxMs);
 
     for (const filter of autoRangeFilters) {
       const map = filter.source === 'external' ? this.externalValues : this.localValues;
@@ -975,16 +1167,14 @@ class FilterBarController {
       const v = existing.value as { from?: string; to?: string };
       if (!v.from && !v.to) {
         existing.value = { from, to };
-        this._filteredSpans = null;
       }
     }
   }
 
-  private resolveFieldValue(flatSpan: FlatSpan, filter: FilterFieldConfig): string | undefined {
-    const { span, serviceName } = flatSpan;
+  private resolveIndexedFieldValue(indexed: IndexedSpan, filter: FilterFieldConfig): string | undefined {
+    const { span, serviceName } = indexed;
     const field = filter.field;
 
-    // Handle special built-in fields
     switch (field) {
       case 'spanName':
       case 'name':
@@ -996,7 +1186,6 @@ class FilterBarController {
         return String(span.kind ?? '');
     }
 
-    // Try span attributes
     if (span.attributes) {
       const attr = span.attributes.find(a => a.key === field);
       if (attr) {
@@ -1006,7 +1195,6 @@ class FilterBarController {
       }
     }
 
-    // Try log/event attributes if target is 'log'
     if (filter.target === 'log' && span.events) {
       for (const event of span.events) {
         if (event.attributes) {
@@ -1020,7 +1208,6 @@ class FilterBarController {
       }
     }
 
-    // Fallback: try getField for nested paths
     const val = getField(span, field);
     if (val !== undefined) return String(val);
 
@@ -1047,22 +1234,12 @@ class FilterBarController {
     return Template.getFilterBarMarkup(externals, locals, !autoFetch);
   }
 
-  getFilteredSpans(): FlatSpan[] | null {
-    if (!this._cachedTree) return null;
-    if (this._filteredSpans) return this._filteredSpans;
-
-    const flatSpans = this._cachedTree.flatSpans;
-    const activeLocalFilters = Array.from(this.localValues.values());
-    this._filteredSpans = filterSpans(flatSpans, activeLocalFilters);
-    return this._filteredSpans;
-  }
-
   getFilterEmptyStateMarkup(): string {
     if (this._fetchInProgress) return Template.getFilterEmptyStateMarkup('loading');
     if (this.hasRequiredUnfilled()) return Template.getFilterEmptyStateMarkup('required');
 
-    const filtered = this.getFilteredSpans();
-    if (filtered && filtered.length === 0 && this._cachedTree && this._cachedTree.roots.length > 0) {
+    const vm = this._activeViewModel;
+    if (vm && vm.visibleSpans.length === 0 && !vm.isEmpty) {
       return Template.getFilterEmptyStateMarkup('no-match');
     }
     return '';
@@ -1261,7 +1438,7 @@ class FilterBarController {
       if (filter) { filter.value = value; this.externalValues.set(field, filter); }
     } else {
       const filter = this.localValues.get(field);
-      if (filter) { filter.value = value; this.localValues.set(field, filter); this._filteredSpans = null; }
+      if (filter) { filter.value = value; this.localValues.set(field, filter); }
     }
 
     const allFilters: Record<string, FilterValue> = {};
@@ -1299,7 +1476,6 @@ class FilterBarController {
         : filter.config.type === 'multiselect' ? []
         : '';
     }
-    this._filteredSpans = null;
     this.host._rerender();
   }
 
@@ -1307,8 +1483,8 @@ class FilterBarController {
     const externals = Array.from(this.externalValues.values());
 
     if (!areRequiredExternalFiltersFilled(externals)) {
-      this._cachedTree = null;
-      this._filteredSpans = null;
+      this._activeIndex = null;
+      this._activeViewModel = null;
       this.host._rerender();
       return;
     }
@@ -1344,14 +1520,14 @@ class FilterBarController {
       const config = this.host.config;
       if (this.isTransformReady(config)) {
         const traceData = transformLogs(data as LogEntry[], config as TransformConfig);
-        this._cachedTree = TraceTree.build(traceData);
+        this._activeIndex = buildSpanIndex(traceData);
       } else {
-        this._cachedTree = TraceTree.build(data as TraceData);
+        this._activeIndex = buildSpanIndex(data as TraceData);
       }
-      this._filteredSpans = null;
+      this._activeViewModel = new TraceViewModel(this._activeIndex);
     } catch {
-      this._cachedTree = null;
-      this._filteredSpans = null;
+      this._activeIndex = null;
+      this._activeViewModel = null;
     } finally {
       this._fetchInProgress = false;
       this.host._rerender();
