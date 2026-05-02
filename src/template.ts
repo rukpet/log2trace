@@ -10,7 +10,8 @@
 import { Span, SpanKind, Event } from './opentelemetry/trace.ts';
 import { AnyValue, KeyValue } from './opentelemetry/common.ts';
 import { nanoToMilli } from './time.ts';
-import { TraceTree, type FlatSpan } from './trace-tree.ts';
+import type { ViewSpan } from './trace-view-model.ts';
+import type { TraceViewModel } from './trace-view-model.ts';
 import type { DisplayConfig, FilterFieldConfig } from './config.ts';
 import * as styles from './styles.css.ts';
 
@@ -27,7 +28,7 @@ import * as styles from './styles.css.ts';
  * class and are marked `@internal` to keep the generated docs focused.
  * The handful of higher-level entry points worth calling directly are:
  *
- * - {@link Template.getTraceMarkup} — the full waterfall view.
+ * - {@link Template.getViewModelMarkup} — the full waterfall view.
  * - {@link Template.getSpanDetailMarkup} — the right-hand detail panel
  *   for a single span.
  * - {@link Template.getLoadingMarkup}, {@link Template.getEmptyMarkup},
@@ -100,10 +101,10 @@ export class Template {
    * `log2trace.*` housekeeping keys), and per-event detail. Empty
    * sections are omitted.
    *
-   * @param flatSpan - The span and its denormalized service name from {@link TraceTree.flatSpans}.
+   * @param entry - Object with `span` and `serviceName` fields.
    * @returns A self-contained HTML fragment ready to insert into the detail-panel slot.
    */
-  static getSpanDetailMarkup({ span, serviceName }: FlatSpan): string {
+  static getSpanDetailMarkup({ span, serviceName }: { span: Span; serviceName: string }): string {
     const esc = Template.escapeHtml;
     const startMs = nanoToMilli(span.startTimeUnixNano);
     const endMs = nanoToMilli(span.endTimeUnixNano);
@@ -351,76 +352,38 @@ export class Template {
     `;
   }
 
-  /** @internal */
-  static getSpansMarkup(
-    flatSpans: FlatSpan[],
-    timeRange: { min: number; max: number },
-    config: DisplayConfig
-  ): string {
-    return flatSpans.map(({ span }, index) =>
-      Template.getSpanMarkup(span, index, timeRange, config)
-    ).join('');
-  }
-
-  /** @internal */
-  static getSpanLabelsMarkup(
-    flatSpans: FlatSpan[],
-    config: DisplayConfig
-  ): string {
-    return flatSpans.map(({ span, level, serviceName }, index) => {
-      const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
-      const indent = level * 20;
-      const statusIcon = Template.getStatusIcon(span.status?.code ?? 0);
-
-      return `
-        <div class="${styles.spanLabelFixed}" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${Template.escapeHtml(span.name)}">
-          <span class="${styles.statusIcon}">${statusIcon}</span>
-          <strong>${Template.escapeHtml(serviceName)}</strong>
-          <br/>
-          <small>${Template.escapeHtml(span.name)}</small>
-        </div>
-      `;
-    }).join('');
-  }
-
   // ---------------------------------------------------------------------------
   // Top-level markup
   // ---------------------------------------------------------------------------
 
   /**
-   * Build the complete waterfall markup for a trace.
+   * Build the complete waterfall markup from a TraceViewModel.
    *
-   * Composes the timeline, span labels, span bars, optional legend,
-   * optional filter bar, and zoom controls into a single fragment. The
-   * component sets the result on its shadow root.
+   * New entry point that replaces `getTraceMarkup` for callers using the
+   * refactored SpanIndex + TraceViewModel architecture. Uses precomputed
+   * millisecond values from IndexedSpan, avoiding repeated BigInt parsing.
    *
-   * @param tree - The trace tree to render, typically from {@link TraceTree.build}.
-   * @param config - Resolved display config from `resolveDisplayDefaults` (from `config.ts`).
-   * @param filterBarHtml - Optional pre-rendered filter bar markup
-   *   (produced by the internal filter helpers); pass empty string when
-   *   no filters are configured.
-   * @param filteredSpans - When local filters are active, the already
-   *   filtered span list to render in place of `tree.flatSpans`.
-   * @returns A self-contained HTML fragment for the full visualization.
+   * @param vm - The view model with visible spans and precomputed timeRange.
+   * @param config - Resolved display config.
+   * @param filterBarHtml - Optional pre-rendered filter bar markup.
    */
-  static getTraceMarkup(
-    tree: TraceTree,
+  static getViewModelMarkup(
+    vm: TraceViewModel,
     config: DisplayConfig,
     filterBarHtml: string = '',
-    filteredSpans: FlatSpan[] | null = null,
   ): string {
-    const allFlatSpans = tree.flatSpans;
-    const displaySpans = filteredSpans ?? allFlatSpans;
-    const timeRange = tree.getTimeRange();
+    const displaySpans = vm.visibleSpans;
+    const timeRange = vm.timeRange;
     const chartHeight = displaySpans.length * (config.spanHeight + config.spanPadding);
     const totalHeight = Math.max(chartHeight + 100, config.height);
-    const traceId = tree.roots[0]?.traceId || 'N/A';
+    const traceId = vm.traceId || 'N/A';
 
-    const statsText = filteredSpans
-      ? `<span>Showing ${displaySpans.length} of ${allFlatSpans.length} Spans</span>`
+    const totalSpans = vm.totalSpans;
+    const statsText = displaySpans.length < totalSpans
+      ? `<span>Showing ${displaySpans.length} of ${totalSpans} Spans</span>`
       : `<span>Total Spans: ${displaySpans.length}</span>`;
 
-    const noMatchHtml = displaySpans.length === 0 && filteredSpans
+    const noMatchHtml = displaySpans.length === 0
       ? `<div class="${styles.filterEmptyState}">No spans match current filters</div>`
       : '';
 
@@ -438,7 +401,7 @@ export class Template {
         <div class="${styles.traceBody}" style="height: ${totalHeight}px;">
           <div class="${styles.traceChart}">
             <div class="${styles.spanLabelsContainer}">
-              ${Template.getSpanLabelsMarkup(displaySpans, config)}
+              ${Template.getViewSpanLabelsMarkup(displaySpans, config)}
             </div>
             <div class="${styles.timelineOverlay}">
               <div class="${styles.timeline}">
@@ -447,7 +410,7 @@ export class Template {
             </div>
             <div class="${styles.timelineClip}">
               <div class="${styles.timelineContainer}" data-role="timeline-container">
-                ${Template.getSpansMarkup(displaySpans, timeRange, config)}
+                ${Template.getViewSpansMarkup(displaySpans, timeRange, config)}
               </div>
             </div>
           </div>
@@ -462,6 +425,147 @@ export class Template {
         `}
       </div>
     `;
+  }
+
+  /** @internal Render span bars from ViewSpan[], using precomputed ms values. */
+  static getViewSpansMarkup(
+    viewSpans: ViewSpan[],
+    timeRange: { min: number; max: number },
+    config: DisplayConfig,
+  ): string {
+    const totalDuration = timeRange.max - timeRange.min;
+    return viewSpans.map(({ indexed }, index) => {
+      const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
+      const color = config.colorScheme[indexed.span.kind] || '#999';
+      const startPercent = ((indexed.startMs - timeRange.min) / totalDuration) * 100;
+      const widthPercent = (indexed.durationMs / totalDuration) * 100;
+      const kindLabel = SpanKind[indexed.span.kind];
+
+      return `
+        <div class="${styles.spanRow}" style="top:${yPosition}px;height:${config.spanHeight}px">
+          <div class="${styles.spanBar}"
+               style="left:${startPercent}%;width:${Math.max(widthPercent, 0.5)}%;background:${color}"
+               data-span-id="${indexed.spanId}"
+               title="${Template.escapeHtml(indexed.span.name)}\nDuration: ${Template.formatDuration(indexed.durationMs)}\nKind: ${kindLabel}">
+            <div class="${styles.spanDuration}">
+              ${Template.formatDuration(indexed.durationMs)}
+            </div>
+            ${Template.getEventsMarkup(indexed.span)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /** @internal Render span labels from ViewSpan[], with collapse-ready chevrons. */
+  static getViewSpanLabelsMarkup(
+    viewSpans: ViewSpan[],
+    config: DisplayConfig,
+  ): string {
+    return viewSpans.map(({ indexed, level, hasChildren, collapsed }, index) => {
+      const yPosition = 50 + index * (config.spanHeight + config.spanPadding);
+      const indent = level * 20;
+      const statusIcon = Template.getStatusIcon(indexed.span.status?.code ?? 0);
+      const chevron = hasChildren
+        ? `<span class="${styles.statusIcon}" style="cursor:pointer" data-collapse-id="${indexed.spanId}">${collapsed ? '&#9654;' : '&#9660;'}</span>`
+        : `<span class="${styles.statusIcon}">${statusIcon}</span>`;
+
+      return `
+        <div class="${styles.spanLabelFixed}" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${Template.escapeHtml(indexed.span.name)}">
+          ${chevron}
+          <strong>${Template.escapeHtml(indexed.serviceName)}</strong>
+          <br/>
+          <small>${Template.escapeHtml(indexed.span.name)}</small>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /** @internal Detail panel markup from a ViewSpan (delegates to existing logic). */
+  static getViewSpanDetailMarkup(viewSpan: ViewSpan): string {
+    return Template.getSpanDetailMarkup({
+      span: viewSpan.indexed.span,
+      serviceName: viewSpan.indexed.serviceName,
+    });
+  }
+
+  /** @internal Tooltip markup from a ViewSpan (delegates to existing logic). */
+  static getViewSpanTooltipMarkup(viewSpan: ViewSpan): string {
+    return Template.getTooltipMarkup({
+      span: viewSpan.indexed.span,
+      serviceName: viewSpan.indexed.serviceName,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Virtual scrolling — windowed rendering
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Render only a window of span bars with absolute positioning.
+   *
+   * Each bar is positioned using its global index (startIndex + i) so it
+   * appears at the correct scroll offset regardless of which slice is rendered.
+   */
+  static getWindowedSpansMarkup(
+    viewSpans: ViewSpan[],
+    startIndex: number,
+    timeRange: { min: number; max: number },
+    config: DisplayConfig,
+  ): string {
+    const totalDuration = timeRange.max - timeRange.min;
+    return viewSpans.map((vs, i) => {
+      const globalIndex = startIndex + i;
+      const { indexed } = vs;
+      const yPosition = 50 + globalIndex * (config.spanHeight + config.spanPadding);
+      const color = config.colorScheme[indexed.span.kind] || '#999';
+      const startPercent = ((indexed.startMs - timeRange.min) / totalDuration) * 100;
+      const widthPercent = (indexed.durationMs / totalDuration) * 100;
+      const kindLabel = SpanKind[indexed.span.kind];
+
+      return `
+        <div class="${styles.spanRow}" style="top:${yPosition}px;height:${config.spanHeight}px">
+          <div class="${styles.spanBar}"
+               style="left:${startPercent}%;width:${Math.max(widthPercent, 0.5)}%;background:${color}"
+               data-span-id="${indexed.spanId}"
+               title="${Template.escapeHtml(indexed.span.name)}\nDuration: ${Template.formatDuration(indexed.durationMs)}\nKind: ${kindLabel}">
+            <div class="${styles.spanDuration}">
+              ${Template.formatDuration(indexed.durationMs)}
+            </div>
+            ${Template.getEventsMarkup(indexed.span)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /**
+   * Render only a window of span labels with absolute positioning.
+   */
+  static getWindowedLabelsMarkup(
+    viewSpans: ViewSpan[],
+    startIndex: number,
+    config: DisplayConfig,
+  ): string {
+    return viewSpans.map((vs, i) => {
+      const globalIndex = startIndex + i;
+      const { indexed, level, hasChildren, collapsed } = vs;
+      const yPosition = 50 + globalIndex * (config.spanHeight + config.spanPadding);
+      const indent = level * 20;
+      const statusIcon = Template.getStatusIcon(indexed.span.status?.code ?? 0);
+      const chevron = hasChildren
+        ? `<span class="${styles.statusIcon}" style="cursor:pointer" data-collapse-id="${indexed.spanId}">${collapsed ? '&#9654;' : '&#9660;'}</span>`
+        : `<span class="${styles.statusIcon}">${statusIcon}</span>`;
+
+      return `
+        <div class="${styles.spanLabelFixed}" style="top:${yPosition}px;left:${indent}px;width:${230 - indent}px;height:${config.spanHeight}px" title="${Template.escapeHtml(indexed.span.name)}">
+          ${chevron}
+          <strong>${Template.escapeHtml(indexed.serviceName)}</strong>
+          <br/>
+          <small>${Template.escapeHtml(indexed.span.name)}</small>
+        </div>
+      `;
+    }).join('');
   }
 
   /** @internal */
@@ -535,7 +639,7 @@ export class Template {
   }
 
   /** @internal */
-  static getTooltipMarkup({ span, serviceName }: FlatSpan): string {
+  static getTooltipMarkup({ span, serviceName }: { span: Span; serviceName: string }): string {
     const esc = Template.escapeHtml;
     const duration = nanoToMilli(span.endTimeUnixNano) - nanoToMilli(span.startTimeUnixNano);
     const kindLabel = SpanKind[span.kind] || 'Unknown';

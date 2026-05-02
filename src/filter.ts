@@ -1,42 +1,47 @@
 /**
  * Core filtering logic.
  *
- * filterSpans() applies local filters to a FlatSpan[] array.
+ * filterSpanIds() applies local filters and returns matching span IDs as a Set.
  * buildQueryParams() converts external filter values to URL query params.
  * areRequiredExternalFiltersFilled() gates fetch on required fields.
  */
 
-import type { FlatSpan } from './trace-tree.ts';
+import type { IndexedSpan } from './span-index.ts';
 import type { Filter, FilterValue, FieldValue } from './config.ts';
 import type { AnyValue } from './opentelemetry/common.ts';
-import type { Event } from './opentelemetry/trace.ts';
+import type { Event, Span } from './opentelemetry/trace.ts';
 import { getField } from './transform.ts';
+
+/** Internal shape used by filter matchers. */
+type SpanEntry = { span: Span; serviceName: string };
 
 // ---------------------------------------------------------------------------
 // Local filtering
 // ---------------------------------------------------------------------------
 
 /**
- * Filter a flattened span list by all active local filters.
+ * Filter indexed spans and return matching span IDs.
  *
- * Filters are combined with AND logic: a span is kept only when every
- * active filter matches. A filter counts as "active" only when its value
- * is non-empty (e.g. a non-empty string, a checked checkbox, a non-empty
- * array, or a date range with at least one bound). Empty filters are
- * skipped entirely so that an unconfigured filter bar is a no-op.
+ * Works on {@link IndexedSpan} (from SpanIndex). Returns a Set of spanIds
+ * that pass all active filters, suitable for passing to
+ * `TraceViewModel.applyFilter()`.
  *
- * Only filters whose `config.source === 'local'` should be passed in;
- * external filters are applied server-side via {@link buildQueryParams}.
- *
- * @param spans - Flattened spans produced by {@link FlatSpan}.
+ * @param spans - Iterable of indexed spans to filter.
  * @param filters - Local filter state (config + current value).
- * @returns A new array of spans that satisfy every active filter.
+ * @returns Set of spanIds that match all active filters, or null if no filters are active.
  */
-export function filterSpans(spans: FlatSpan[], filters: Filter[]): FlatSpan[] {
+export function filterSpanIds(spans: Iterable<IndexedSpan>, filters: Filter[]): Set<string> | null {
   const active = filters.filter(f => isActiveValue(f.value));
-  if (active.length === 0) return spans;
+  if (active.length === 0) return null;
 
-  return spans.filter(flatSpan => active.every(f => matchesFilter(flatSpan, f)));
+  const result = new Set<string>();
+  for (const indexed of spans) {
+    const entry: SpanEntry = { span: indexed.span, serviceName: indexed.serviceName };
+    if (active.every(f => matchesFilter(entry, f))) {
+      result.add(indexed.spanId);
+    }
+  }
+  return result;
 }
 
 function isActiveValue(value: FilterValue): boolean {
@@ -47,26 +52,26 @@ function isActiveValue(value: FilterValue): boolean {
   return false;
 }
 
-function matchesFilter(flatSpan: FlatSpan, filter: Filter): boolean {
+function matchesFilter(entry: SpanEntry, filter: Filter): boolean {
   const { config, value } = filter;
 
   // Wildcard: search across all span fields + all event attributes
   if (config.field === '*') {
-    return matchesWildcard(flatSpan, config.type, value);
+    return matchesWildcard(entry, config.type, value);
   }
 
   if (config.target === 'log') {
-    return matchesLogFilter(flatSpan, config.field, config.type, value);
+    return matchesLogFilter(entry, config.field, config.type, value);
   }
 
-  return matchesSpanFilter(flatSpan, config.field, config.type, value);
+  return matchesSpanFilter(entry, config.field, config.type, value);
 }
 
-function matchesWildcard(flatSpan: FlatSpan, type: string, value: FilterValue): boolean {
+function matchesWildcard(entry: SpanEntry, type: string, value: FilterValue): boolean {
   if (type !== 'text' || typeof value !== 'string') return true;
 
   const needle = value.toLowerCase();
-  const { span, serviceName } = flatSpan;
+  const { span, serviceName } = entry;
 
   // Check span-level fields
   if (span.name.toLowerCase().includes(needle)) return true;
@@ -107,12 +112,12 @@ function extractAttrString(value: AnyValue): string | undefined {
 }
 
 function matchesSpanFilter(
-  flatSpan: FlatSpan,
+  entry: SpanEntry,
   field: string,
   type: string,
   value: FilterValue,
 ): boolean {
-  const resolved = resolveSpanField(flatSpan, field);
+  const resolved = resolveSpanField(entry, field);
 
   switch (type) {
     case 'text':
@@ -124,12 +129,12 @@ function matchesSpanFilter(
 
     case 'checkbox':
       if (!value) return true;
-      if (field === 'hasError') return flatSpan.span.status?.code === 2;
+      if (field === 'hasError') return entry.span.status?.code === 2;
       return !!resolved;
 
     case 'datetime-range': {
       if (typeof value !== 'object' || value === null) return true;
-      const startMs = Number(BigInt(flatSpan.span.startTimeUnixNano) / 1_000_000n);
+      const startMs = Number(BigInt(entry.span.startTimeUnixNano) / 1_000_000n);
       const { from, to } = value as { from?: string; to?: string };
       if (from) {
         const fromMs = new Date(from).getTime();
@@ -150,8 +155,8 @@ function matchesSpanFilter(
   }
 }
 
-function resolveSpanField(flatSpan: FlatSpan, field: string): FieldValue {
-  const { span, serviceName } = flatSpan;
+function resolveSpanField(entry: SpanEntry, field: string): FieldValue {
+  const { span, serviceName } = entry;
 
   switch (field) {
     case 'spanName':
@@ -179,12 +184,12 @@ function resolveSpanField(flatSpan: FlatSpan, field: string): FieldValue {
 }
 
 function matchesLogFilter(
-  flatSpan: FlatSpan,
+  entry: SpanEntry,
   field: string,
   type: string,
   value: FilterValue,
 ): boolean {
-  const events = flatSpan.span.events;
+  const events = entry.span.events;
   if (!events || events.length === 0) return false;
 
   // Span passes if ANY event matches

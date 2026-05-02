@@ -35,8 +35,11 @@
 import './component.ts';
 
 export { transformLogs, getField } from './transform.ts';
-export { TraceTree } from './trace-tree.ts';
+export { buildSpanIndex } from './span-index.ts';
+export { TraceViewModel } from './trace-view-model.ts';
 export { Template } from './template.ts';
-export { filterSpans } from './filter.ts';
+export { filterSpanIds } from './filter.ts';
 export { resolveDisplayDefaults, normalizeOptions } from './config.ts';
+export type { SpanIndex, IndexedSpan } from './span-index.ts';
+export type { ViewSpan } from './trace-view-model.ts';
 export type { TraceVisualizerConfig, TransformConfig, DisplayConfig, FilterFieldConfig, FilterOption, OptionsSource, Filter, FetchCallback, LogEntry, FieldValue } from './config.ts';
