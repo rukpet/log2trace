@@ -131,7 +131,7 @@
 
   <script type="module">
     // Import the dev bundle for access to individual pipeline functions
-    import { transformLogs, TraceTree, Template, resolveDisplayDefaults } from './dist/log2trace.min.js';
+    import { transformLogs, Template, resolveDisplayDefaults, buildSpanIndex, TraceViewModel } from './dist/log2trace.min.js';
 
     const SCALES = [100, 500, 1_000, 5_000, 10_000];
 
@@ -284,8 +284,9 @@
         log('JIT warmup (full pipeline, untimed)\u2026');
         const warmupLogs = generateLogs(500);
         const warmupData = transformLogs(warmupLogs, TRANSFORM_CONFIG);
-        const warmupTree = TraceTree.build(warmupData);
-        consume(Template.getTraceMarkup(warmupTree, DISPLAY_CONFIG));
+        const warmupIndex = buildSpanIndex(warmupData);
+        const warmupVm = new TraceViewModel(warmupIndex);
+        consume(Template.getViewModelMarkup(warmupVm, DISPLAY_CONFIG));
         const container = document.getElementById('render-target');
         for (let i = 0; i < 3; i++) {
           container.innerHTML = '';
@@ -293,7 +294,7 @@
           el.setAttribute('full-width', '');
           el.setAttribute('show-legend', '');
           container.appendChild(el);
-          el._tree = warmupTree;
+          el.traceData = warmupData;
           el.setAttribute('span-height', '30');
           await afterPaint();
           container.removeChild(el);
@@ -329,16 +330,16 @@
         allResults.transform.push(median(transformSamples));
         log(`  Transform: ${formatResult(median(transformSamples))}  [${transformSamples.map(s => formatResult(s)).join(', ')}]`);
 
-        // --- Stage 2: Tree build (TraceData -> TraceTree) ---
+        // --- Stage 2: Index build (TraceData -> SpanIndex + ViewModel) ---
         let tree;
-        log('  Tree build: warming up\u2026');
+        log('  Index build: warming up\u2026');
         for (let w = 0; w < WARMUP; w++)
-          for (let b = 0; b < batch; b++) consume(TraceTree.build(traceData));
+          for (let b = 0; b < batch; b++) consume(new TraceViewModel(buildSpanIndex(traceData)));
 
         const treeSamples = [];
         for (let s = 0; s < SAMPLES; s++) {
           const t0 = performance.now();
-          for (let b = 0; b < batch; b++) tree = TraceTree.build(traceData);
+          for (let b = 0; b < batch; b++) tree = new TraceViewModel(buildSpanIndex(traceData));
           const t1 = performance.now();
           consume(tree);
           treeSamples.push((t1 - t0) / batch);
@@ -346,15 +347,15 @@
         allResults.treeBuild.push(median(treeSamples));
         log(`  Tree build: ${formatResult(median(treeSamples))}  [${treeSamples.map(s => formatResult(s)).join(', ')}]`);
 
-        // --- Stage 3: HTML generation (TraceTree -> markup string) ---
+        // --- Stage 3: HTML generation (ViewModel -> markup string) ---
         log('  HTML gen: warming up\u2026');
         for (let w = 0; w < WARMUP; w++)
-          for (let b = 0; b < batch; b++) consume(Template.getTraceMarkup(tree, DISPLAY_CONFIG));
+          for (let b = 0; b < batch; b++) consume(Template.getViewModelMarkup(tree, DISPLAY_CONFIG));
 
         const htmlSamples = [];
         for (let s = 0; s < SAMPLES; s++) {
           const t0 = performance.now();
-          for (let b = 0; b < batch; b++) consume(Template.getTraceMarkup(tree, DISPLAY_CONFIG));
+          for (let b = 0; b < batch; b++) consume(Template.getViewModelMarkup(tree, DISPLAY_CONFIG));
           const t1 = performance.now();
           htmlSamples.push((t1 - t0) / batch);
         }
@@ -362,9 +363,7 @@
         log(`  HTML gen:   ${formatResult(median(htmlSamples))}  [${htmlSamples.map(s => formatResult(s)).join(', ')}]`);
 
         // --- Stage 4: DOM render (innerHTML + events listeners) ---
-        // Assign the pre-built tree directly to _tree, then trigger render
-        // via an attribute change.  This isolates pure rendering cost from
-        // the TraceTree.build() that the traceData setter would repeat.
+        // Use traceData setter which builds index + viewModel internally.
         // Batched like other stages to stay above the ~1 ms rounding floor.
         log('  DOM render: warming up\u2026');
         const container = document.getElementById('render-target');
@@ -377,7 +376,7 @@
             el.setAttribute('full-width', '');
             el.setAttribute('show-legend', '');
             container.appendChild(el);
-            el._tree = tree;
+            el.traceData = traceData;
             el.setAttribute('span-height', '30');
           }
         }
@@ -392,7 +391,7 @@
             el.setAttribute('full-width', '');
             el.setAttribute('show-legend', '');
             container.appendChild(el);
-            el._tree = tree;
+            el.traceData = traceData;
             el.setAttribute('span-height', '30');
           }
           const t1 = performance.now();
@@ -411,7 +410,7 @@
           el.setAttribute('full-width', '');
           el.setAttribute('show-legend', '');
           container.appendChild(el);
-          el._tree = tree;
+          el.traceData = traceData;
 
           const t0 = performance.now();
           el.setAttribute('span-height', '30');
