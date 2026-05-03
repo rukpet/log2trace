@@ -147,15 +147,26 @@
       Built on <time>__BUILD_DATE__</time> &middot;
       <a href="./">&larr; Back to demos</a>
     </footer>
+
+    <h3 style="margin-top:2rem">Events</h3>
+    <div id="event-log" style="background:#1a1a2e;color:#a0e0a0;font-family:monospace;font-size:0.8rem;padding:0.75rem 1rem;border-radius:8px;max-height:200px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
   </div>
 
   <script type="module">
     import './dist/log2trace.min.js';
 
-    // Log filter-changed events
-    document.querySelector('trace-visualizer').addEventListener('filter-changed', (e) => {
-      console.log('filter-changed:', e.detail);
-    });
+    const el = document.querySelector('trace-visualizer');
+    const log = document.getElementById('event-log');
+    function logEvent(name, detail) {
+      const time = new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 });
+      const line = document.createElement('div');
+      line.textContent = `[${time}] ${name}: ${JSON.stringify(detail)}`;
+      log.prepend(line);
+    }
+    el.addEventListener('trace-loaded', e => logEvent('trace-loaded', e.detail));
+    el.addEventListener('virtual-scroll-activated', e => logEvent('virtual-scroll-activated', e.detail));
+    el.addEventListener('span-selected', e => logEvent('span-selected', { spanId: e.detail.span.spanId, name: e.detail.span.name }));
+    el.addEventListener('filter-changed', e => logEvent('filter-changed', e.detail));
   </script>
 </body>
 </html>
