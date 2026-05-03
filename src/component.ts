@@ -20,6 +20,7 @@ import {
   resolveDisplayDefaults, normalizeOptions,
 } from './config.ts';
 import { filterSpanIds, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
+import { mark, measure, measureAsync } from './instrumentation.ts';
 import componentCss from 'virtual:component-css';
 import * as styles from './styles.css.ts';
 
@@ -82,7 +83,7 @@ export class TraceVisualizerElement extends HTMLElement {
   private filterController!: FilterBarController;
 
   // Virtual scroll state
-  private _vsEnabled = false;
+
   private _vsStart = 0;
   private _vsEnd = 0;
   private _vsScrollHandler: (() => void) | null = null;
@@ -158,10 +159,14 @@ export class TraceVisualizerElement extends HTMLElement {
    * @param data - OTel trace data, typically from {@link transformLogs}.
    */
   set traceData(data: TraceData) {
-    this._index = buildSpanIndex(data);
+    this._index = measure('buildSpanIndex', () => buildSpanIndex(data));
     this._viewModel = new TraceViewModel(this._index);
     this.filterController.activeIndex = this._index;
     this.render();
+    this.dispatchEvent(new CustomEvent('trace-loaded', {
+      detail: { spans: this._index.size, roots: this._index.roots.length, traceId: this._index.traceId },
+      bubbles: true, composed: true,
+    }));
   }
 
   /**
@@ -187,7 +192,7 @@ export class TraceVisualizerElement extends HTMLElement {
    *   describes how to map them onto spans.
    */
   set logData(input: { logs: LogEntry[]; config: TransformConfig }) {
-    this.traceData = transformLogs(input.logs, input.config);
+    this.traceData = measure('transformLogs', () => transformLogs(input.logs, input.config));
   }
 
   /**
@@ -268,7 +273,8 @@ export class TraceVisualizerElement extends HTMLElement {
   async loadTraceData(url: string): Promise<void> {
     try {
       this.shadow.innerHTML = Template.getLoadingMarkup();
-      this.traceData = await this.fetchJson<TraceData>(url);
+      const data = await measureAsync('fetch', () => this.fetchJson<TraceData>(url));
+      this.traceData = data;
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Failed to load trace data');
     }
@@ -291,8 +297,8 @@ export class TraceVisualizerElement extends HTMLElement {
   async loadAndTransform(url: string, config: TransformConfig): Promise<void> {
     try {
       this.shadow.innerHTML = Template.getLoadingMarkup();
-      const logs = await this.fetchJson<LogEntry[]>(url);
-      this.traceData = transformLogs(logs, config);
+      const logs = await measureAsync('fetch', () => this.fetchJson<LogEntry[]>(url));
+      this.traceData = measure('transformLogs', () => transformLogs(logs, config));
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Failed to load trace data');
     }
@@ -506,7 +512,9 @@ export class TraceVisualizerElement extends HTMLElement {
 
     try {
       this.detachVirtualScroll();
-      this.shadow.innerHTML = Template.getViewModelMarkup(vm, config, filterBarHtml);
+      measure('render', () => {
+        this.shadow.innerHTML = Template.getViewModelMarkup(vm, config, filterBarHtml);
+      });
 
       const tooltip = document.createElement('div');
       tooltip.className = styles.spanTooltip;
@@ -522,7 +530,12 @@ export class TraceVisualizerElement extends HTMLElement {
 
       // Activate virtual scrolling for large datasets
       if (this.shouldVirtualScroll(vm)) {
+        mark('virtual-scroll-activated', { spanCount: vm.visibleSpans.length });
         this.attachVirtualScroll(vm);
+        this.dispatchEvent(new CustomEvent('virtual-scroll-activated', {
+          detail: { spanCount: vm.visibleSpans.length, threshold: TraceVisualizerElement.VIRTUAL_SCROLL_THRESHOLD },
+          bubbles: true, composed: true,
+        }));
       }
     } catch (error) {
       this.shadow.innerHTML = Template.getErrorMarkup(error instanceof Error ? error.message : 'Rendering failed');
@@ -945,8 +958,6 @@ export class TraceVisualizerElement extends HTMLElement {
     // Make the chart scrollable
     traceChart.style.overflowY = 'auto';
 
-    this._vsEnabled = true;
-
     // Initial window render
     this.renderVirtualWindow(vm, traceChart);
 
@@ -971,7 +982,6 @@ export class TraceVisualizerElement extends HTMLElement {
       traceChart.removeEventListener('scroll', this._vsScrollHandler);
     }
     this._vsScrollHandler = null;
-    this._vsEnabled = false;
   }
 
   /**
@@ -987,6 +997,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
     // Skip DOM update if the window hasn't changed
     if (startIndex === this._vsStart && endIndex === this._vsEnd) return;
+    mark('virtual-scroll-window', { startIndex, endIndex, rendered: spans.length, total: vm.visibleSpans.length });
     this._vsStart = startIndex;
     this._vsEnd = endIndex;
 
@@ -1108,7 +1119,7 @@ class FilterBarController {
   applyLocalFiltersToViewModel(vm: TraceViewModel): void {
     const activeLocalFilters = Array.from(this.localValues.values());
     const index = vm.index;
-    const ids = filterSpanIds(index.spans.values(), activeLocalFilters);
+    const ids = measure('filterSpanIds', () => filterSpanIds(index.spans.values(), activeLocalFilters));
     vm.applyFilter(ids);
   }
 
@@ -1519,7 +1530,7 @@ class FilterBarController {
 
       const config = this.host.config;
       if (this.isTransformReady(config)) {
-        const traceData = transformLogs(data as LogEntry[], config as TransformConfig);
+        const traceData = measure('transformLogs', () => transformLogs(data as LogEntry[], config as TransformConfig));
         this._activeIndex = buildSpanIndex(traceData);
       } else {
         this._activeIndex = buildSpanIndex(data as TraceData);

@@ -124,6 +124,9 @@
 
   <div id="render-target"></div>
 
+  <h3 style="margin-top:2rem">Events</h3>
+  <div id="event-log" style="background:#1a1a2e;color:#a0e0a0;font-family:monospace;font-size:0.8rem;padding:0.75rem 1rem;border-radius:8px;max-height:200px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
+
   <footer>
     Built on <time>__BUILD_DATE__</time> &middot;
     <a href="./">&larr; Back to demos</a>
@@ -268,8 +271,8 @@
       // - Anti-DCE: all return values are pushed to an opaque sink.
       // - DOM render uses double-rAF to include layout + paint.
 
-      const WARMUP  = 3;   // untimed batches (JIT warmup)
-      const SAMPLES = 7;   // timed batches → report median
+      const WARMUP  = 0;   // untimed batches (JIT warmup)
+      const SAMPLES = 1;   // timed batches → report median
 
       // Batch size scales inversely with data size so the total time per
       // batch stays above the ~1 ms rounding floor.
@@ -546,6 +549,18 @@
     }
 
     document.getElementById('run-btn').addEventListener('click', runBenchmark);
+
+    // Event log
+    const eventLog = document.getElementById('event-log');
+    function logEvent(name, detail) {
+      const time = new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 });
+      const line = document.createElement('div');
+      line.textContent = `[${time}] ${name}: ${JSON.stringify(detail)}`;
+      eventLog.prepend(line);
+    }
+    document.getElementById('render-target').addEventListener('trace-loaded', e => logEvent('trace-loaded', e.detail));
+    document.getElementById('render-target').addEventListener('virtual-scroll-activated', e => logEvent('virtual-scroll-activated', e.detail));
+    document.getElementById('render-target').addEventListener('span-selected', e => logEvent('span-selected', { spanId: e.detail.span?.spanId, name: e.detail.span?.name }));
   </script>
 </body>
 </html>
