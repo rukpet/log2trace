@@ -1,6 +1,6 @@
 {
   "name": "log2trace-ui",
-  "version": "1.0.0-RC1",
+  "version": "1.0.0-RC2",
   "description": "Zero-dependency Web Component that renders OpenTelemetry traces as an interactive waterfall timeline, with built-in log-to-trace transformation.",
   "main": "dist/log2trace.js",
   "module": "dist/log2trace.js",
