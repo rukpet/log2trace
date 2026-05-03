@@ -35,13 +35,13 @@ jobs:
         run: |
           BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
           mkdir -p _site/dist
-          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/demo.html > _site/index.html
+          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/demo.html > _site/demo.html
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/otel-trace.html > _site/otel-trace.html
           cp demo/otel-trace.json _site/otel-trace.json
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/logs-transform.html > _site/logs-transform.html
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/benchmark.html > _site/benchmark.html
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/filter-demo.html > _site/filter-demo.html
-          cp demo/guide.html _site/guide.html
+          cp demo/guide.html _site/index.html
           cp demo/logs.json _site/logs.json
           cp demo/favicon.svg _site/favicon.svg
           cp dist/log2trace.min.js _site/dist/log2trace.min.js
