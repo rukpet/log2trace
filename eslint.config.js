@@ -1,6 +1,20 @@
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 
+// Markup and styles are never built from strings: DOM nodes use textContent / setAttribute,
+// and every class and token comes from a typed vanilla-extract export (`*.css.ts`), so a typo
+// fails the build instead of silently producing unstyled output.
+const bannedMarkupApis = [
+  { property: 'innerHTML', message: 'Build DOM nodes with textContent / setAttribute instead of HTML strings.' },
+  { property: 'outerHTML', message: 'Build DOM nodes with textContent / setAttribute instead of HTML strings.' },
+  { property: 'insertAdjacentHTML', message: 'Build DOM nodes with textContent / setAttribute instead of HTML strings.' },
+  { property: 'cssText', message: 'Style through vanilla-extract classes or element.style.<prop>.' },
+];
+const bannedStyleAttribute = {
+  selector: "CallExpression[callee.property.name='setAttribute'][arguments.0.value='style']",
+  message: 'Do not set the style attribute from a string; use a vanilla-extract class or element.style.<prop>.',
+};
+
 export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -24,6 +38,16 @@ export default [
       'prefer-const': 'error',
       'no-var': 'error',
       'no-console': 'off',
+      'no-restricted-properties': ['error', ...bannedMarkupApis],
+      'no-restricted-syntax': ['error', bannedStyleAttribute],
+    },
+  },
+  {
+    // Legacy string renderer, deleted at the v2 cutover: report instead of failing.
+    files: ['src/component.ts', 'src/template.ts'],
+    rules: {
+      'no-restricted-properties': ['warn', ...bannedMarkupApis],
+      'no-restricted-syntax': ['warn', bannedStyleAttribute],
     },
   },
   {

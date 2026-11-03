@@ -7,8 +7,8 @@
  * All CSS class names come from styles.css.ts (never raw strings).
  */
 
-import { Span, SpanKind, Event } from './opentelemetry/trace.ts';
-import { AnyValue, KeyValue } from './opentelemetry/common.ts';
+import { SpanKind, spanKindName, type Span, type Event } from './opentelemetry/trace.ts';
+import type { AnyValue, KeyValue } from './opentelemetry/common.ts';
 import { nanoToMilli } from './time.ts';
 import type { ViewSpan } from './trace-view-model.ts';
 import type { TraceViewModel } from './trace-view-model.ts';
@@ -109,7 +109,7 @@ export class Template {
     const startMs = nanoToMilli(span.startTimeUnixNano);
     const endMs = nanoToMilli(span.endTimeUnixNano);
     const duration = endMs - startMs;
-    const kindLabel = SpanKind[span.kind] || 'Unknown';
+    const kindLabel = spanKindName(span.kind) || 'Unknown';
     const statusLabel = span.status?.code === 1 ? 'OK' : span.status?.code === 2 ? 'Error' : 'Unset';
     type StatusVariant = keyof typeof styles.detailStatusVariants;
     const statusVariant: StatusVariant = span.status?.code === 2 ? 'error' : span.status?.code === 1 ? 'ok' : 'unset';
@@ -244,7 +244,7 @@ export class Template {
     const items = Object.entries(config.colorScheme)
       .filter(([kindValue]) => Number(kindValue) !== SpanKind.Unspecified)
       .map(([kindValue, color]) => {
-        const label = SpanKind[Number(kindValue)] || 'Unknown';
+        const label = spanKindName(Number(kindValue)) || 'Unknown';
         return `
           <div class="${styles.legendItem}">
             <div class="${styles.legendColor}" style="background: ${color};"></div>
@@ -335,7 +335,7 @@ export class Template {
     const startPercent = ((startMs - timeRange.min) / totalDuration) * 100;
     const widthPercent = (spanDuration / totalDuration) * 100;
 
-    const kindLabel = SpanKind[span.kind];
+    const kindLabel = spanKindName(span.kind);
 
     return `
       <div class="${styles.spanRow}" style="top:${yPosition}px;height:${config.spanHeight}px">
@@ -439,7 +439,7 @@ export class Template {
       const color = config.colorScheme[indexed.span.kind] || '#999';
       const startPercent = ((indexed.startMs - timeRange.min) / totalDuration) * 100;
       const widthPercent = (indexed.durationMs / totalDuration) * 100;
-      const kindLabel = SpanKind[indexed.span.kind];
+      const kindLabel = spanKindName(indexed.span.kind);
 
       return `
         <div class="${styles.spanRow}" style="top:${yPosition}px;height:${config.spanHeight}px">
@@ -521,7 +521,7 @@ export class Template {
       const color = config.colorScheme[indexed.span.kind] || '#999';
       const startPercent = ((indexed.startMs - timeRange.min) / totalDuration) * 100;
       const widthPercent = (indexed.durationMs / totalDuration) * 100;
-      const kindLabel = SpanKind[indexed.span.kind];
+      const kindLabel = spanKindName(indexed.span.kind);
 
       return `
         <div class="${styles.spanRow}" style="top:${yPosition}px;height:${config.spanHeight}px">
@@ -642,7 +642,7 @@ export class Template {
   static getTooltipMarkup({ span, serviceName }: { span: Span; serviceName: string }): string {
     const esc = Template.escapeHtml;
     const duration = nanoToMilli(span.endTimeUnixNano) - nanoToMilli(span.startTimeUnixNano);
-    const kindLabel = SpanKind[span.kind] || 'Unknown';
+    const kindLabel = spanKindName(span.kind) || 'Unknown';
     const statusLabel = span.status?.code === 1 ? 'OK' : span.status?.code === 2 ? 'Error' : 'Unset';
     type TooltipStatusVariant = keyof typeof styles.tooltipStatusVariants;
     const statusVariant: TooltipStatusVariant = span.status?.code === 2 ? 'error' : span.status?.code === 1 ? 'ok' : 'unset';

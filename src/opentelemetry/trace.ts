@@ -3,11 +3,8 @@
  * Based on opentelemetry-proto/trace/v1/trace.proto
  */
 
-import { 
-  KeyValue, 
-  InstrumentationScope 
-} from './common.ts';
-import { Resource } from './resource.ts';
+import type { KeyValue, InstrumentationScope } from './common.ts';
+import type { Resource } from './resource.ts';
 
 /**
  * SpanKind is the type of span. Can be used to specify additional relationships between spans
@@ -25,7 +22,12 @@ export enum SpanKind {
   /** Indicates that the span describes a producer sending a message to a broker. */
   Producer = 4,
   /** Indicates that the span describes consumer receiving a message from a broker. */
-  Consumer = 5
+  Consumer = 5,
+}
+
+/** Reverse lookup of a {@link SpanKind} value to its name ("Server", "Client", ...); `undefined` for unknown values. */
+export function spanKindName(kind: number): string | undefined {
+  return SpanKind[kind];
 }
 
 /**

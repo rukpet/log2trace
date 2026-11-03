@@ -6,13 +6,13 @@
  */
 
 import {
-  TraceData,
-  ResourceSpans,
-  Span,
   SpanKind,
-  Event,
+  type TraceData,
+  type ResourceSpans,
+  type Span,
+  type Event,
 } from './opentelemetry/trace.ts';
-import { KeyValue } from './opentelemetry/common.ts';
+import type { KeyValue } from './opentelemetry/common.ts';
 import type { TransformConfig, SpanKindRule, LogEntry, FieldValue } from './config.ts';
 
 // ---------------------------------------------------------------------------

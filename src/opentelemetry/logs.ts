@@ -3,12 +3,8 @@
  * Based on opentelemetry-proto/logs/v1/logs.proto
  */
 
-import { 
-  AnyValue,
-  KeyValue, 
-  InstrumentationScope 
-} from './common.ts';
-import { Resource } from './resource.ts';
+import type { AnyValue, KeyValue, InstrumentationScope } from './common.ts';
+import type { Resource } from './resource.ts';
 
 /**
  * Possible values for LogRecord.SeverityNumber
@@ -38,7 +34,7 @@ export enum SeverityNumber {
   SEVERITY_NUMBER_FATAL = 21,
   SEVERITY_NUMBER_FATAL2 = 22,
   SEVERITY_NUMBER_FATAL3 = 23,
-  SEVERITY_NUMBER_FATAL4 = 24
+  SEVERITY_NUMBER_FATAL4 = 24,
 }
 
 /**
