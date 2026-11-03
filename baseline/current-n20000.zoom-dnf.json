@@ -1,0 +1,365 @@
+{
+  "schema": "log2trace-perf/1",
+  "status": "did-not-finish",
+  "impl": "current",
+  "reason": "wheel-zoom: Did not finish by the 60 s rule: the worker saw no heartbeat for 60 s during the first wheel-zoom steps. The page recovered; wheel-zoom then ended on its own 60 s budget about 145 s after it started (frame interval p50 10.2 s). The tab was closed by hand when drag-pan began, because the renderer had grown to about 5 GB.",
+  "params": {
+    "impl": "current",
+    "n": 20000,
+    "flat": false,
+    "ns": 1,
+    "seed": 1,
+    "heavy": 0.001,
+    "ev": 2,
+    "only": null,
+    "wdSec": 60,
+    "budgetSec": 900,
+    "bundle": "./dist/log2trace.min.js",
+    "manual": false,
+    "hud": false
+  },
+  "startedAt": "2026-11-03T01:37:44.322Z",
+  "lastBeaconAt": "2026-11-03T01:40:18.185Z",
+  "lastScenarioStarted": "drag-pan",
+  "scenariosCompletedBeforeFailure": [
+    {
+      "name": "first-render",
+      "status": "ok",
+      "headline": {
+        "label": "first render (js sync / to first frame)",
+        "unit": "ms",
+        "p50": 3731,
+        "p95": 5728,
+        "max": 5731
+      }
+    },
+    {
+      "name": "wheel-zoom",
+      "status": "timeout",
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 10200.01,
+        "p95": 11983.39,
+        "p99": 11983.39,
+        "max": 11983.39
+      }
+    }
+  ],
+  "watchdog": {
+    "silentMs": 60014,
+    "lastHeartbeat": {
+      "phase": "scenario",
+      "name": "wheel-zoom"
+    },
+    "at": "2026-11-03T01:38:53.337Z"
+  },
+  "env": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.4212.0 Chrome/152.0.7977.167 Safari/537.36 MSIX",
+    "uaData": {
+      "brands": [
+        {
+          "brand": "Not?A_Brand",
+          "version": "24.0.0.0"
+        },
+        {
+          "brand": "Chromium",
+          "version": "152.0.7977.167"
+        }
+      ],
+      "platform": "Windows",
+      "platformVersion": "19.0.0",
+      "architecture": "x86",
+      "bitness": "64",
+      "mobile": false
+    },
+    "hardwareConcurrency": 20,
+    "deviceMemoryGb": 32,
+    "devicePixelRatio": 1.5,
+    "screen": {
+      "width": 2560,
+      "height": 1440,
+      "availWidth": 2560,
+      "availHeight": 1392,
+      "colorDepth": 24
+    },
+    "viewport": {
+      "innerWidth": 537,
+      "innerHeight": 550,
+      "outerWidth": 915,
+      "outerHeight": 708
+    },
+    "crossOriginIsolated": true,
+    "secureContext": true,
+    "gpu": {
+      "webgl": true,
+      "vendor": "Google Inc. (Intel)",
+      "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "refresh": {
+      "medianMs": 16.67,
+      "p95Ms": 16.98,
+      "maxMs": 17.02,
+      "hz": 60,
+      "samples": 60
+    },
+    "visibility": {
+      "state": "visible",
+      "hasFocus": false
+    },
+    "observers": {
+      "longtask": true,
+      "loaf": true,
+      "event": true
+    },
+    "language": "uk",
+    "timeZone": "Europe/Kiev",
+    "url": "http://localhost:3017/perf.html#impl=current&n=20000&auto=1&label=baseline-r1&rev=38df9e68d022a33f6512dcf6fdb3e054e8aecb4a&sink=http://localhost:3918/save",
+    "probe": {
+      "cpu": {
+        "minMs": 8.04,
+        "p50Ms": 8.13,
+        "maxMs": 11.07
+      },
+      "pipeline": {
+        "frames": 89,
+        "p50": 16.66,
+        "p95": 17.03,
+        "p99": 18.49,
+        "max": 18.49,
+        "overRefresh1_5": 0
+      }
+    }
+  },
+  "dataset": {
+    "spans": 20000,
+    "traceId": "8f7fae3c7d7a340927c482c2895403dd",
+    "roots": 1,
+    "precision": "ns",
+    "depth": {
+      "mean": 9,
+      "max": 30,
+      "histogram": [
+        1,
+        1,
+        5,
+        25,
+        120,
+        428,
+        1144,
+        2335,
+        3651,
+        4352,
+        3889,
+        2529,
+        1132,
+        313,
+        43,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "fanout": {
+      "internal": 3535,
+      "leaves": 16465,
+      "mean": 5.66,
+      "max": 500,
+      "classesPct": {
+        "1-3": 71.6,
+        "4-12": 23.6,
+        "13-19": 0,
+        "20-60": 4.7,
+        "61+": 0.1
+      },
+      "classCounts": {
+        "1-3": 2532,
+        "4-12": 834,
+        "13-19": 0,
+        "20-60": 166,
+        "61+": 3
+      }
+    },
+    "kinds": {
+      "Server": 4019,
+      "Client": 4039,
+      "Internal": 9900,
+      "Producer": 1033,
+      "Consumer": 1009
+    },
+    "services": {
+      "count": 25,
+      "topShare": 0.265
+    },
+    "names": {
+      "distinct": 500,
+      "maxLength": 356,
+      "nonLatin": 25
+    },
+    "errors": {
+      "total": 1058,
+      "share": 0.0529
+    },
+    "events": {
+      "total": 67068,
+      "perSpan": 3.35,
+      "spansWithEvents": 17397,
+      "max": 2000,
+      "heavySpans": 20
+    },
+    "durations": {
+      "traceMs": 73400,
+      "rootMs": 73400.989,
+      "p10Us": 55.2,
+      "medianUs": 630.1,
+      "p90Us": 9443.8,
+      "p99Us": 180716.8,
+      "maxMs": 73400.989,
+      "under1msShare": 0.595,
+      "zeroShare": 0
+    },
+    "hot": {
+      "root": {
+        "spanId": "096e9b5d6f457738",
+        "name": "MessageService.getPrice",
+        "depth": 0,
+        "descendants": 19999
+      },
+      "bigSubtree": {
+        "spanId": "09caddf7c03b8dcd",
+        "name": "GET /api/v3/carts/{id}/payments",
+        "depth": 3,
+        "descendants": 9448,
+        "target": 8000
+      },
+      "heavyEvents": {
+        "spanId": "b2bc42140885238c",
+        "name": "AuditService.createMessage",
+        "depth": 9,
+        "events": 2000
+      },
+      "widestFanout": {
+        "spanId": "8e21a26768cb5050",
+        "name": "SessionService.decryptPolicy",
+        "depth": 6,
+        "children": 500
+      },
+      "deepest": {
+        "spanId": "39c4008a1a1b2a57",
+        "name": "Відправка сповіщення · Policy",
+        "depth": 30
+      }
+    },
+    "generator": {
+      "kind": "hierarchical",
+      "version": 1,
+      "params": {
+        "n": 20000,
+        "seed": 1,
+        "ns": 1,
+        "heavy": 0.001,
+        "heavyMin": 500,
+        "heavyMax": 2000,
+        "ev": 2,
+        "depthMean": 9,
+        "depthMax": 14,
+        "chainDepth": 30,
+        "errorRate": 0.02,
+        "leafMedianUs": 450
+      },
+      "rootDurationMs": 73400.988734,
+      "errorsSeeded": 404,
+      "megaFanout": 500,
+      "megaSpanIds": [
+        "8e21a26768cb5050",
+        "2ccf856827666e52",
+        "b1d5f4b5076fed4a"
+      ],
+      "chains": [
+        {
+          "anchorSpanId": "371df798517e3c63",
+          "tipSpanId": "39c4008a1a1b2a57",
+          "length": 22,
+          "tipDepth": 30
+        },
+        {
+          "anchorSpanId": "12ef277695603c31",
+          "tipSpanId": "f93dfd20ff23f1c2",
+          "length": 26,
+          "tipDepth": 30
+        }
+      ],
+      "heavySpanIds": [
+        "b2bc42140885238c",
+        "b89eeeecae2c7722",
+        "cbf284c74d69958d",
+        "3d7735bf11b2a82e",
+        "fb561569ba8ace81"
+      ],
+      "genMs": 214.3
+    },
+    "buildMs": 215
+  },
+  "firstRenderBeforeFailure": {
+    "status": "ok",
+    "jsMs": 3731.3,
+    "toFirstFrameMs": 5728.2,
+    "doubleRafMs": 5730.6,
+    "stageHeightPx": 700296,
+    "dom": {
+      "elements": 227115,
+      "nodes": 327137,
+      "shadowRoots": 1
+    },
+    "libraryTimings": {
+      "buildSpanIndexMs": 17.4,
+      "renderInnerHtmlMs": 655.5,
+      "virtualScrollWindow": {
+        "startIndex": 0,
+        "endIndex": 20000,
+        "rendered": 20000,
+        "total": 20000
+      }
+    },
+    "longTasks": {
+      "count": 1,
+      "totalMs": 1996
+    },
+    "jsHeapUsedMB": {
+      "dataReady": 46.9,
+      "afterFirstRender": 71.1
+    }
+  },
+  "hostObservations": {
+    "source": "Windows process list sampled by hand (renderer of the browser pane); not produced by perf.html",
+    "rendererPrivateMemoryMB": {
+      "during first-render/zoom start": 1719,
+      "about 70 s later": 3221,
+      "about 130 s later": 5067
+    },
+    "note": "closed the tab at about 130 s after the page load; measureUserAgentSpecificMemory is unavailable in this browser"
+  },
+  "pageStateAtClose": {
+    "hud": "drag-pan…",
+    "scenariosCompleted": [
+      "first-render",
+      "wheel-zoom (timeout)"
+    ],
+    "status": "running"
+  },
+  "scope": "wheel-zoom",
+  "harnessNote": "Captured with an earlier iteration of demo/perf.html in which wheel-zoom was the first scenario after first-render (the order was later changed so that zoom runs last, see the protocol). The zoom code path, the watchdog and the dataset (seed 1) are the same as in the committed harness; the complete non-zoom scenarios at this size are in current-n20000.run1.json."
+}

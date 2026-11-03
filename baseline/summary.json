@@ -1,0 +1,2357 @@
+{
+  "generatedAt": "2026-11-03T02:34:18.392Z",
+  "sizes": {
+    "1000": {
+      "runs": 3,
+      "usable": 3,
+      "files": [
+        "current-n1000.run1.json",
+        "current-n1000.run2.json",
+        "current-n1000.run3.json"
+      ],
+      "statuses": [
+        "complete",
+        "complete",
+        "complete"
+      ],
+      "zoomDnf": false,
+      "metrics": {
+        "spans": {
+          "median": 1000,
+          "min": 1000,
+          "max": 1000,
+          "values": [
+            1000,
+            1000,
+            1000
+          ]
+        },
+        "events": {
+          "median": 4013,
+          "min": 4013,
+          "max": 4013,
+          "values": [
+            4013,
+            4013,
+            4013
+          ]
+        },
+        "domElements": {
+          "median": 12060,
+          "min": 12060,
+          "max": 12060,
+          "values": [
+            12060,
+            12060,
+            12060
+          ]
+        },
+        "firstRenderJsMs": {
+          "median": 89.8,
+          "min": 73.1,
+          "max": 112.8,
+          "values": [
+            112.8,
+            89.8,
+            73.1
+          ]
+        },
+        "firstRenderToFrameMs": {
+          "median": 140.5,
+          "min": 125.7,
+          "max": 170.2,
+          "values": [
+            170.2,
+            140.5,
+            125.7
+          ]
+        },
+        "wheelZoomP50": {
+          "median": 249.86,
+          "min": 233.06,
+          "max": 266.7,
+          "values": [
+            233.06,
+            266.7,
+            249.86
+          ]
+        },
+        "wheelZoomP95": {
+          "median": 316.68,
+          "min": 283.46,
+          "max": 366.61,
+          "values": [
+            283.46,
+            366.61,
+            316.68
+          ]
+        },
+        "wheelZoomMax": {
+          "median": 367.03,
+          "min": 316.97,
+          "max": 416.64,
+          "values": [
+            316.97,
+            416.64,
+            367.03
+          ]
+        },
+        "wheelZoomFrames": {
+          "median": 120,
+          "min": 120,
+          "max": 120,
+          "values": [
+            120,
+            120,
+            120
+          ]
+        },
+        "wheelZoomOver33": {
+          "median": 99.2,
+          "min": 99.2,
+          "max": 99.2,
+          "values": [
+            99.2,
+            99.2,
+            99.2
+          ]
+        },
+        "dragPanP50": {
+          "median": 33.32,
+          "min": 33.21,
+          "max": 33.34,
+          "values": [
+            33.32,
+            33.34,
+            33.21
+          ]
+        },
+        "dragPanP95": {
+          "median": 33.72,
+          "min": 33.47,
+          "max": 50,
+          "values": [
+            50,
+            33.72,
+            33.47
+          ]
+        },
+        "dragPanMax": {
+          "median": 83.26,
+          "min": 49.79,
+          "max": 150.01,
+          "values": [
+            150.01,
+            83.26,
+            49.79
+          ]
+        },
+        "dragPanFrames": {
+          "median": 120,
+          "min": 120,
+          "max": 120,
+          "values": [
+            120,
+            120,
+            120
+          ]
+        },
+        "dragPanZoom": {
+          "median": 10,
+          "min": 10,
+          "max": 10,
+          "values": [
+            10,
+            10,
+            10
+          ]
+        },
+        "hoverP50": {
+          "median": 16.66,
+          "min": 16.66,
+          "max": 16.67,
+          "values": [
+            16.66,
+            16.66,
+            16.67
+          ]
+        },
+        "hoverP95": {
+          "median": 16.98,
+          "min": 16.92,
+          "max": 17,
+          "values": [
+            16.98,
+            16.92,
+            17
+          ]
+        },
+        "hoverMax": {
+          "median": 20.95,
+          "min": 20.28,
+          "max": 53.03,
+          "values": [
+            53.03,
+            20.95,
+            20.28
+          ]
+        },
+        "selectP50": {
+          "median": 26.91,
+          "min": 26.39,
+          "max": 30.33,
+          "values": [
+            30.33,
+            26.91,
+            26.39
+          ]
+        },
+        "selectP95": {
+          "median": 54.63,
+          "min": 39.5,
+          "max": 54.95,
+          "values": [
+            54.95,
+            54.63,
+            39.5
+          ]
+        },
+        "selectMax": {
+          "median": 63.28,
+          "min": 61.88,
+          "max": 140.79,
+          "values": [
+            140.79,
+            61.88,
+            63.28
+          ]
+        },
+        "selectHeavyMs": {
+          "median": 695.9,
+          "min": 695.6,
+          "max": 738,
+          "values": [
+            738,
+            695.6,
+            695.9
+          ]
+        },
+        "selectHeavyNodes": {
+          "median": 50051,
+          "min": 50051,
+          "max": 50051,
+          "values": [
+            50051,
+            50051,
+            50051
+          ]
+        },
+        "selectTypicalNodes": {
+          "median": 95,
+          "min": 95,
+          "max": 95,
+          "values": [
+            95,
+            95,
+            95
+          ]
+        },
+        "hoverAZP50": {
+          "median": 33.14,
+          "min": 16.68,
+          "max": 33.32,
+          "values": [
+            16.68,
+            33.32,
+            33.14
+          ]
+        },
+        "hoverAZP95": {
+          "median": 33.71,
+          "min": 33.47,
+          "max": 34.16,
+          "values": [
+            33.47,
+            34.16,
+            33.71
+          ]
+        },
+        "hoverAZMax": {
+          "median": 53.3,
+          "min": 50.35,
+          "max": 65.54,
+          "values": [
+            53.3,
+            65.54,
+            50.35
+          ]
+        },
+        "selectAZP50": {
+          "median": 73.46,
+          "min": 73.46,
+          "max": 78.89,
+          "values": [
+            73.46,
+            78.89,
+            73.46
+          ]
+        },
+        "selectAZP95": {
+          "median": 117.08,
+          "min": 113.49,
+          "max": 130.46,
+          "values": [
+            117.08,
+            130.46,
+            113.49
+          ]
+        },
+        "selectAZMax": {
+          "median": 117.08,
+          "min": 113.49,
+          "max": 130.46,
+          "values": [
+            117.08,
+            130.46,
+            113.49
+          ]
+        },
+        "selectAZHeavyMs": {
+          "median": 913.8,
+          "min": 911.4,
+          "max": 935.5,
+          "values": [
+            913.8,
+            911.4,
+            935.5
+          ]
+        },
+        "selectCount": {
+          "median": 50,
+          "min": 50,
+          "max": 50,
+          "values": [
+            50,
+            50,
+            50
+          ]
+        },
+        "resizeP50": {
+          "median": 33.35,
+          "min": 33.33,
+          "max": 82.97,
+          "values": [
+            33.35,
+            82.97,
+            33.33
+          ]
+        },
+        "resizeP95": {
+          "median": 49.98,
+          "min": 33.44,
+          "max": 100.01,
+          "values": [
+            49.98,
+            100.01,
+            33.44
+          ]
+        },
+        "resizeMax": {
+          "median": 50.05,
+          "min": 34.11,
+          "max": 100.13,
+          "values": [
+            50.05,
+            100.13,
+            34.11
+          ]
+        },
+        "collapseP50": {
+          "median": 136.32,
+          "min": 123.82,
+          "max": 193.97,
+          "values": [
+            123.82,
+            193.97,
+            136.32
+          ]
+        },
+        "expandP50": {
+          "median": 196.93,
+          "min": 191.75,
+          "max": 357.76,
+          "values": [
+            191.75,
+            357.76,
+            196.93
+          ]
+        },
+        "collapseAllP50": {
+          "median": 14.87,
+          "min": 9.1,
+          "max": 16.25,
+          "values": [
+            14.87,
+            16.25,
+            9.1
+          ]
+        },
+        "expandAllP50": {
+          "median": 112.12,
+          "min": 100.37,
+          "max": 116.33,
+          "values": [
+            100.37,
+            112.12,
+            116.33
+          ]
+        },
+        "collapseOps": {
+          "median": 46,
+          "min": 46,
+          "max": 46,
+          "values": [
+            46,
+            46,
+            46
+          ]
+        },
+        "filterSelectiveP50": {
+          "median": 11.5,
+          "min": 11.2,
+          "max": 14.8,
+          "values": [
+            11.5,
+            14.8,
+            11.2
+          ]
+        },
+        "filterBroadP50": {
+          "median": 21,
+          "min": 18.3,
+          "max": 21.6,
+          "values": [
+            21,
+            21.6,
+            18.3
+          ]
+        },
+        "filterClearP50": {
+          "median": 90.1,
+          "min": 84.6,
+          "max": 103.1,
+          "values": [
+            84.6,
+            103.1,
+            90.1
+          ]
+        },
+        "scrollSmoothP50": {
+          "median": 16.67,
+          "min": 16.67,
+          "max": 16.67,
+          "values": [
+            16.67,
+            16.67,
+            16.67
+          ]
+        },
+        "scrollSmoothP95": {
+          "median": 17,
+          "min": 16.98,
+          "max": 17.01,
+          "values": [
+            16.98,
+            17.01,
+            17
+          ]
+        },
+        "scrollSmoothMax": {
+          "median": 18.33,
+          "min": 17.12,
+          "max": 33.59,
+          "values": [
+            18.33,
+            17.12,
+            33.59
+          ]
+        },
+        "scrollJumpsP50": {
+          "median": 16.67,
+          "min": 16.66,
+          "max": 16.67,
+          "values": [
+            16.67,
+            16.67,
+            16.66
+          ]
+        },
+        "scrollJumpsP95": {
+          "median": 17.08,
+          "min": 16.78,
+          "max": 30.1,
+          "values": [
+            17.08,
+            30.1,
+            16.78
+          ]
+        },
+        "scrollJumpsMax": {
+          "median": 17.38,
+          "min": 17,
+          "max": 35.53,
+          "values": [
+            17.38,
+            35.53,
+            17
+          ]
+        },
+        "longTasks": {
+          "median": 236,
+          "min": 236,
+          "max": 289,
+          "values": [
+            236,
+            289,
+            236
+          ]
+        },
+        "longTaskMs": {
+          "median": 39705,
+          "min": 37847,
+          "max": 52411,
+          "values": [
+            37847,
+            52411,
+            39705
+          ]
+        },
+        "jsHeapEndMB": {
+          "median": 5.505675315856934,
+          "min": 5.207585334777832,
+          "max": 5.540506362915039,
+          "values": [
+            5.207585334777832,
+            5.540506362915039,
+            5.505675315856934
+          ]
+        },
+        "jsHeapDataMB": {
+          "median": 6.740922927856445,
+          "min": 4.653575897216797,
+          "max": 18.699040412902832,
+          "values": [
+            4.653575897216797,
+            6.740922927856445,
+            18.699040412902832
+          ]
+        },
+        "jsHeapRenderMB": {
+          "median": 10.043862342834473,
+          "min": 7.011573791503906,
+          "max": 30.03873634338379,
+          "values": [
+            10.043862342834473,
+            7.011573791503906,
+            30.03873634338379
+          ]
+        },
+        "probeCpuStartMs": {
+          "median": 4.02,
+          "min": 3.84,
+          "max": 4.57,
+          "values": [
+            4.02,
+            3.84,
+            4.57
+          ]
+        },
+        "probeCpuEndMs": {
+          "median": 6.95,
+          "min": 5.9,
+          "max": 6.97,
+          "values": [
+            6.97,
+            5.9,
+            6.95
+          ]
+        },
+        "probePipelineP95Ms": {
+          "median": 16.84,
+          "min": 16.79,
+          "max": 16.94,
+          "values": [
+            16.94,
+            16.84,
+            16.79
+          ]
+        },
+        "wallSec": {
+          "median": 73.765,
+          "min": 72.219,
+          "max": 86.084,
+          "values": [
+            72.219,
+            86.084,
+            73.765
+          ]
+        }
+      }
+    },
+    "5000": {
+      "runs": 2,
+      "usable": 2,
+      "files": [
+        "current-n5000.run1.json",
+        "current-n5000.run2.json"
+      ],
+      "statuses": [
+        "partial",
+        "partial"
+      ],
+      "zoomDnf": false,
+      "metrics": {
+        "spans": {
+          "median": 5000,
+          "min": 5000,
+          "max": 5000,
+          "values": [
+            5000,
+            5000
+          ]
+        },
+        "events": {
+          "median": 16176,
+          "min": 16176,
+          "max": 16176,
+          "values": [
+            16176,
+            16176
+          ]
+        },
+        "domElements": {
+          "median": 56223,
+          "min": 56223,
+          "max": 56223,
+          "values": [
+            56223,
+            56223
+          ]
+        },
+        "firstRenderJsMs": {
+          "median": 492.5,
+          "min": 447.6,
+          "max": 537.4,
+          "values": [
+            447.6,
+            537.4
+          ]
+        },
+        "firstRenderToFrameMs": {
+          "median": 846.35,
+          "min": 799,
+          "max": 893.7,
+          "values": [
+            799,
+            893.7
+          ]
+        },
+        "wheelZoomP50": {
+          "median": 1316.7350000000001,
+          "min": 1266.46,
+          "max": 1367.01,
+          "values": [
+            1266.46,
+            1367.01
+          ]
+        },
+        "wheelZoomP95": {
+          "median": 1616.7199999999998,
+          "min": 1533.37,
+          "max": 1700.07,
+          "values": [
+            1533.37,
+            1700.07
+          ]
+        },
+        "wheelZoomMax": {
+          "median": 3649.925,
+          "min": 3516.7,
+          "max": 3783.15,
+          "values": [
+            3516.7,
+            3783.15
+          ]
+        },
+        "wheelZoomFrames": {
+          "median": 44,
+          "min": 41,
+          "max": 47,
+          "values": [
+            47,
+            41
+          ]
+        },
+        "wheelZoomOver33": {
+          "median": 100,
+          "min": 100,
+          "max": 100,
+          "values": [
+            100,
+            100
+          ]
+        },
+        "dragPanP50": {
+          "median": 108.375,
+          "min": 83.46,
+          "max": 133.29,
+          "values": [
+            133.29,
+            83.46
+          ]
+        },
+        "dragPanP95": {
+          "median": 157.41000000000003,
+          "min": 148.08,
+          "max": 166.74,
+          "values": [
+            166.74,
+            148.08
+          ]
+        },
+        "dragPanMax": {
+          "median": 674.985,
+          "min": 399.95,
+          "max": 950.02,
+          "values": [
+            950.02,
+            399.95
+          ]
+        },
+        "dragPanFrames": {
+          "median": 120,
+          "min": 120,
+          "max": 120,
+          "values": [
+            120,
+            120
+          ]
+        },
+        "dragPanZoom": {
+          "median": 10,
+          "min": 10,
+          "max": 10,
+          "values": [
+            10,
+            10
+          ]
+        },
+        "hoverP50": {
+          "median": 33.4,
+          "min": 33.39,
+          "max": 33.41,
+          "values": [
+            33.41,
+            33.39
+          ]
+        },
+        "hoverP95": {
+          "median": 75.13499999999999,
+          "min": 66.91,
+          "max": 83.36,
+          "values": [
+            66.91,
+            83.36
+          ]
+        },
+        "hoverMax": {
+          "median": 104.68,
+          "min": 100.53,
+          "max": 108.83,
+          "values": [
+            100.53,
+            108.83
+          ]
+        },
+        "selectP50": {
+          "median": 71.345,
+          "min": 70.32,
+          "max": 72.37,
+          "values": [
+            70.32,
+            72.37
+          ]
+        },
+        "selectP95": {
+          "median": 124.69,
+          "min": 124.54,
+          "max": 124.84,
+          "values": [
+            124.54,
+            124.84
+          ]
+        },
+        "selectMax": {
+          "median": 207.935,
+          "min": 206.03,
+          "max": 209.84,
+          "values": [
+            209.84,
+            206.03
+          ]
+        },
+        "selectHeavyMs": {
+          "median": 1050.3,
+          "min": 846.9,
+          "max": 1253.7,
+          "values": [
+            846.9,
+            1253.7
+          ]
+        },
+        "selectHeavyNodes": {
+          "median": 50045,
+          "min": 50045,
+          "max": 50045,
+          "values": [
+            50045,
+            50045
+          ]
+        },
+        "selectTypicalNodes": {
+          "median": 145,
+          "min": 145,
+          "max": 145,
+          "values": [
+            145,
+            145
+          ]
+        },
+        "hoverAZP50": {
+          "median": 75.035,
+          "min": 50.05,
+          "max": 100.02,
+          "values": [
+            100.02,
+            50.05
+          ]
+        },
+        "hoverAZP95": {
+          "median": 91.97,
+          "min": 66.95,
+          "max": 116.99,
+          "values": [
+            116.99,
+            66.95
+          ]
+        },
+        "hoverAZMax": {
+          "median": 148.465,
+          "min": 113.27,
+          "max": 183.66,
+          "values": [
+            183.66,
+            113.27
+          ]
+        },
+        "selectAZP50": {
+          "median": 1008.18,
+          "min": 948.01,
+          "max": 1068.35,
+          "values": [
+            1068.35,
+            948.01
+          ]
+        },
+        "selectAZP95": {
+          "median": 1174.525,
+          "min": 1141.99,
+          "max": 1207.06,
+          "values": [
+            1207.06,
+            1141.99
+          ]
+        },
+        "selectAZMax": {
+          "median": 1174.525,
+          "min": 1141.99,
+          "max": 1207.06,
+          "values": [
+            1207.06,
+            1141.99
+          ]
+        },
+        "selectAZHeavyMs": {
+          "median": 2648.95,
+          "min": 2535.1,
+          "max": 2762.8,
+          "values": [
+            2762.8,
+            2535.1
+          ]
+        },
+        "selectCount": {
+          "median": 50,
+          "min": 50,
+          "max": 50,
+          "values": [
+            50,
+            50
+          ]
+        },
+        "resizeP50": {
+          "median": 149.97,
+          "min": 149.94,
+          "max": 150,
+          "values": [
+            149.94,
+            150
+          ]
+        },
+        "resizeP95": {
+          "median": 199.89499999999998,
+          "min": 183.31,
+          "max": 216.48,
+          "values": [
+            183.31,
+            216.48
+          ]
+        },
+        "resizeMax": {
+          "median": 258.58,
+          "min": 250.15,
+          "max": 267.01,
+          "values": [
+            250.15,
+            267.01
+          ]
+        },
+        "collapseP50": {
+          "median": 538.4000000000001,
+          "min": 534.22,
+          "max": 542.58,
+          "values": [
+            534.22,
+            542.58
+          ]
+        },
+        "expandP50": {
+          "median": 994.19,
+          "min": 969.48,
+          "max": 1018.9,
+          "values": [
+            969.48,
+            1018.9
+          ]
+        },
+        "collapseAllP50": {
+          "median": 30.165,
+          "min": 29.48,
+          "max": 30.85,
+          "values": [
+            29.48,
+            30.85
+          ]
+        },
+        "expandAllP50": {
+          "median": 606.785,
+          "min": 566.29,
+          "max": 647.28,
+          "values": [
+            566.29,
+            647.28
+          ]
+        },
+        "collapseOps": {
+          "median": 46,
+          "min": 46,
+          "max": 46,
+          "values": [
+            46,
+            46
+          ]
+        },
+        "filterSelectiveP50": {
+          "median": 39.2,
+          "min": 35.2,
+          "max": 43.2,
+          "values": [
+            43.2,
+            35.2
+          ]
+        },
+        "filterBroadP50": {
+          "median": 153.5,
+          "min": 145.6,
+          "max": 161.4,
+          "values": [
+            161.4,
+            145.6
+          ]
+        },
+        "filterClearP50": {
+          "median": 886.3499999999999,
+          "min": 883.9,
+          "max": 888.8,
+          "values": [
+            883.9,
+            888.8
+          ]
+        },
+        "scrollSmoothP50": {
+          "median": 33.355000000000004,
+          "min": 33.35,
+          "max": 33.36,
+          "values": [
+            33.36,
+            33.35
+          ]
+        },
+        "scrollSmoothP95": {
+          "median": 58.46,
+          "min": 50.44,
+          "max": 66.48,
+          "values": [
+            50.44,
+            66.48
+          ]
+        },
+        "scrollSmoothMax": {
+          "median": 133.18,
+          "min": 100.04,
+          "max": 166.32,
+          "values": [
+            166.32,
+            100.04
+          ]
+        },
+        "scrollJumpsP50": {
+          "median": 57.415,
+          "min": 50.25,
+          "max": 64.58,
+          "values": [
+            50.25,
+            64.58
+          ]
+        },
+        "scrollJumpsP95": {
+          "median": 108.45,
+          "min": 100.22,
+          "max": 116.68,
+          "values": [
+            116.68,
+            100.22
+          ]
+        },
+        "scrollJumpsMax": {
+          "median": 199.14499999999998,
+          "min": 166.76,
+          "max": 231.53,
+          "values": [
+            231.53,
+            166.76
+          ]
+        },
+        "longTasks": {
+          "median": 663,
+          "min": 657,
+          "max": 669,
+          "values": [
+            669,
+            657
+          ]
+        },
+        "longTaskMs": {
+          "median": 179871,
+          "min": 174625,
+          "max": 185117,
+          "values": [
+            185117,
+            174625
+          ]
+        },
+        "jsHeapEndMB": {
+          "median": 15.345057964324951,
+          "min": 13.773496627807617,
+          "max": 16.916619300842285,
+          "values": [
+            13.773496627807617,
+            16.916619300842285
+          ]
+        },
+        "jsHeapDataMB": {
+          "median": 12.303760528564453,
+          "min": 12.061577796936035,
+          "max": 12.545943260192871,
+          "values": [
+            12.545943260192871,
+            12.061577796936035
+          ]
+        },
+        "jsHeapRenderMB": {
+          "median": 14.608858585357666,
+          "min": 14.167669296264648,
+          "max": 15.050047874450684,
+          "values": [
+            14.167669296264648,
+            15.050047874450684
+          ]
+        },
+        "probeCpuStartMs": {
+          "median": 5.94,
+          "min": 3.89,
+          "max": 7.99,
+          "values": [
+            3.89,
+            7.99
+          ]
+        },
+        "probeCpuEndMs": {
+          "median": 6.0649999999999995,
+          "min": 5,
+          "max": 7.13,
+          "values": [
+            7.13,
+            5
+          ]
+        },
+        "probePipelineP95Ms": {
+          "median": 16.975,
+          "min": 16.93,
+          "max": 17.02,
+          "values": [
+            16.93,
+            17.02
+          ]
+        },
+        "wallSec": {
+          "median": 215.36649999999997,
+          "min": 211.14,
+          "max": 219.593,
+          "values": [
+            219.593,
+            211.14
+          ]
+        }
+      }
+    },
+    "10000": {
+      "runs": 1,
+      "usable": 1,
+      "files": [
+        "current-n10000.run1.json"
+      ],
+      "statuses": [
+        "partial"
+      ],
+      "zoomDnf": false,
+      "metrics": {
+        "spans": {
+          "median": 10000,
+          "min": 10000,
+          "max": 10000,
+          "values": [
+            10000
+          ]
+        },
+        "events": {
+          "median": 31171,
+          "min": 31171,
+          "max": 31171,
+          "values": [
+            31171
+          ]
+        },
+        "domElements": {
+          "median": 111218,
+          "min": 111218,
+          "max": 111218,
+          "values": [
+            111218
+          ]
+        },
+        "firstRenderJsMs": {
+          "median": 1250.8,
+          "min": 1250.8,
+          "max": 1250.8,
+          "values": [
+            1250.8
+          ]
+        },
+        "firstRenderToFrameMs": {
+          "median": 2058.5,
+          "min": 2058.5,
+          "max": 2058.5,
+          "values": [
+            2058.5
+          ]
+        },
+        "wheelZoomP50": {
+          "median": 3449.99,
+          "min": 3449.99,
+          "max": 3449.99,
+          "values": [
+            3449.99
+          ]
+        },
+        "wheelZoomP95": {
+          "median": 14316.71,
+          "min": 14316.71,
+          "max": 14316.71,
+          "values": [
+            14316.71
+          ]
+        },
+        "wheelZoomMax": {
+          "median": 14316.71,
+          "min": 14316.71,
+          "max": 14316.71,
+          "values": [
+            14316.71
+          ]
+        },
+        "wheelZoomFrames": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "values": [
+            15
+          ]
+        },
+        "wheelZoomOver33": {
+          "median": 100,
+          "min": 100,
+          "max": 100,
+          "values": [
+            100
+          ]
+        },
+        "dragPanP50": {
+          "median": 183.33,
+          "min": 183.33,
+          "max": 183.33,
+          "values": [
+            183.33
+          ]
+        },
+        "dragPanP95": {
+          "median": 283.04,
+          "min": 283.04,
+          "max": 283.04,
+          "values": [
+            283.04
+          ]
+        },
+        "dragPanMax": {
+          "median": 733.43,
+          "min": 733.43,
+          "max": 733.43,
+          "values": [
+            733.43
+          ]
+        },
+        "dragPanFrames": {
+          "median": 120,
+          "min": 120,
+          "max": 120,
+          "values": [
+            120
+          ]
+        },
+        "dragPanZoom": {
+          "median": 10,
+          "min": 10,
+          "max": 10,
+          "values": [
+            10
+          ]
+        },
+        "hoverP50": {
+          "median": 66.77,
+          "min": 66.77,
+          "max": 66.77,
+          "values": [
+            66.77
+          ]
+        },
+        "hoverP95": {
+          "median": 133.49,
+          "min": 133.49,
+          "max": 133.49,
+          "values": [
+            133.49
+          ]
+        },
+        "hoverMax": {
+          "median": 233.58,
+          "min": 233.58,
+          "max": 233.58,
+          "values": [
+            233.58
+          ]
+        },
+        "selectP50": {
+          "median": 204.1,
+          "min": 204.1,
+          "max": 204.1,
+          "values": [
+            204.1
+          ]
+        },
+        "selectP95": {
+          "median": 347.17,
+          "min": 347.17,
+          "max": 347.17,
+          "values": [
+            347.17
+          ]
+        },
+        "selectMax": {
+          "median": 447.52,
+          "min": 447.52,
+          "max": 447.52,
+          "values": [
+            447.52
+          ]
+        },
+        "selectHeavyMs": {
+          "median": 2471.8,
+          "min": 2471.8,
+          "max": 2471.8,
+          "values": [
+            2471.8
+          ]
+        },
+        "selectHeavyNodes": {
+          "median": 50051,
+          "min": 50051,
+          "max": 50051,
+          "values": [
+            50051
+          ]
+        },
+        "selectTypicalNodes": {
+          "median": 40,
+          "min": 40,
+          "max": 40,
+          "values": [
+            40
+          ]
+        },
+        "hoverAZP50": {
+          "median": 116.67,
+          "min": 116.67,
+          "max": 116.67,
+          "values": [
+            116.67
+          ]
+        },
+        "hoverAZP95": {
+          "median": 166.63,
+          "min": 166.63,
+          "max": 166.63,
+          "values": [
+            166.63
+          ]
+        },
+        "hoverAZMax": {
+          "median": 216.62,
+          "min": 216.62,
+          "max": 216.62,
+          "values": [
+            216.62
+          ]
+        },
+        "selectAZP50": {
+          "median": 3598.76,
+          "min": 3598.76,
+          "max": 3598.76,
+          "values": [
+            3598.76
+          ]
+        },
+        "selectAZP95": {
+          "median": 4135.05,
+          "min": 4135.05,
+          "max": 4135.05,
+          "values": [
+            4135.05
+          ]
+        },
+        "selectAZMax": {
+          "median": 4135.05,
+          "min": 4135.05,
+          "max": 4135.05,
+          "values": [
+            4135.05
+          ]
+        },
+        "selectAZHeavyMs": {
+          "median": 4912.8,
+          "min": 4912.8,
+          "max": 4912.8,
+          "values": [
+            4912.8
+          ]
+        },
+        "selectCount": {
+          "median": 50,
+          "min": 50,
+          "max": 50,
+          "values": [
+            50
+          ]
+        },
+        "resizeP50": {
+          "median": 316.01,
+          "min": 316.01,
+          "max": 316.01,
+          "values": [
+            316.01
+          ]
+        },
+        "resizeP95": {
+          "median": 566.35,
+          "min": 566.35,
+          "max": 566.35,
+          "values": [
+            566.35
+          ]
+        },
+        "resizeMax": {
+          "median": 633.39,
+          "min": 633.39,
+          "max": 633.39,
+          "values": [
+            633.39
+          ]
+        },
+        "collapseP50": {
+          "median": 1285.82,
+          "min": 1285.82,
+          "max": 1285.82,
+          "values": [
+            1285.82
+          ]
+        },
+        "expandP50": {
+          "median": 2013.5,
+          "min": 2013.5,
+          "max": 2013.5,
+          "values": [
+            2013.5
+          ]
+        },
+        "collapseAllP50": null,
+        "expandAllP50": null,
+        "collapseOps": {
+          "median": 35,
+          "min": 35,
+          "max": 35,
+          "values": [
+            35
+          ]
+        },
+        "filterSelectiveP50": {
+          "median": 74.4,
+          "min": 74.4,
+          "max": 74.4,
+          "values": [
+            74.4
+          ]
+        },
+        "filterBroadP50": {
+          "median": 354.3,
+          "min": 354.3,
+          "max": 354.3,
+          "values": [
+            354.3
+          ]
+        },
+        "filterClearP50": {
+          "median": 2151.5,
+          "min": 2151.5,
+          "max": 2151.5,
+          "values": [
+            2151.5
+          ]
+        },
+        "scrollSmoothP50": {
+          "median": 83.34,
+          "min": 83.34,
+          "max": 83.34,
+          "values": [
+            83.34
+          ]
+        },
+        "scrollSmoothP95": {
+          "median": 150.49,
+          "min": 150.49,
+          "max": 150.49,
+          "values": [
+            150.49
+          ]
+        },
+        "scrollSmoothMax": {
+          "median": 733.31,
+          "min": 733.31,
+          "max": 733.31,
+          "values": [
+            733.31
+          ]
+        },
+        "scrollJumpsP50": {
+          "median": 116.72,
+          "min": 116.72,
+          "max": 116.72,
+          "values": [
+            116.72
+          ]
+        },
+        "scrollJumpsP95": {
+          "median": 199.91,
+          "min": 199.91,
+          "max": 199.91,
+          "values": [
+            199.91
+          ]
+        },
+        "scrollJumpsMax": {
+          "median": 466.72,
+          "min": 466.72,
+          "max": 466.72,
+          "values": [
+            466.72
+          ]
+        },
+        "longTasks": {
+          "median": 1127,
+          "min": 1127,
+          "max": 1127,
+          "values": [
+            1127
+          ]
+        },
+        "longTaskMs": {
+          "median": 348861,
+          "min": 348861,
+          "max": 348861,
+          "values": [
+            348861
+          ]
+        },
+        "jsHeapEndMB": {
+          "median": 24.596527099609375,
+          "min": 24.596527099609375,
+          "max": 24.596527099609375,
+          "values": [
+            24.596527099609375
+          ]
+        },
+        "jsHeapDataMB": {
+          "median": 25.11031436920166,
+          "min": 25.11031436920166,
+          "max": 25.11031436920166,
+          "values": [
+            25.11031436920166
+          ]
+        },
+        "jsHeapRenderMB": {
+          "median": 23.935543060302734,
+          "min": 23.935543060302734,
+          "max": 23.935543060302734,
+          "values": [
+            23.935543060302734
+          ]
+        },
+        "probeCpuStartMs": {
+          "median": 3.96,
+          "min": 3.96,
+          "max": 3.96,
+          "values": [
+            3.96
+          ]
+        },
+        "probeCpuEndMs": {
+          "median": 7.85,
+          "min": 7.85,
+          "max": 7.85,
+          "values": [
+            7.85
+          ]
+        },
+        "probePipelineP95Ms": {
+          "median": 17.03,
+          "min": 17.03,
+          "max": 17.03,
+          "values": [
+            17.03
+          ]
+        },
+        "wallSec": {
+          "median": 375.348,
+          "min": 375.348,
+          "max": 375.348,
+          "values": [
+            375.348
+          ]
+        }
+      }
+    },
+    "20000": {
+      "runs": 1,
+      "usable": 1,
+      "files": [
+        "current-n20000.run1.json"
+      ],
+      "statuses": [
+        "partial"
+      ],
+      "zoomDnf": true,
+      "metrics": {
+        "spans": {
+          "median": 20000,
+          "min": 20000,
+          "max": 20000,
+          "values": [
+            20000
+          ]
+        },
+        "events": {
+          "median": 67068,
+          "min": 67068,
+          "max": 67068,
+          "values": [
+            67068
+          ]
+        },
+        "domElements": {
+          "median": 227115,
+          "min": 227115,
+          "max": 227115,
+          "values": [
+            227115
+          ]
+        },
+        "firstRenderJsMs": {
+          "median": 2370.6,
+          "min": 2370.6,
+          "max": 2370.6,
+          "values": [
+            2370.6
+          ]
+        },
+        "firstRenderToFrameMs": {
+          "median": 3756.7,
+          "min": 3756.7,
+          "max": 3756.7,
+          "values": [
+            3756.7
+          ]
+        },
+        "wheelZoomP50": null,
+        "wheelZoomP95": null,
+        "wheelZoomMax": null,
+        "wheelZoomFrames": null,
+        "wheelZoomOver33": null,
+        "dragPanP50": null,
+        "dragPanP95": null,
+        "dragPanMax": null,
+        "dragPanFrames": null,
+        "dragPanZoom": null,
+        "hoverP50": {
+          "median": 150,
+          "min": 150,
+          "max": 150,
+          "values": [
+            150
+          ]
+        },
+        "hoverP95": {
+          "median": 316.89,
+          "min": 316.89,
+          "max": 316.89,
+          "values": [
+            316.89
+          ]
+        },
+        "hoverMax": {
+          "median": 416.5,
+          "min": 416.5,
+          "max": 416.5,
+          "values": [
+            416.5
+          ]
+        },
+        "selectP50": {
+          "median": 304.21,
+          "min": 304.21,
+          "max": 304.21,
+          "values": [
+            304.21
+          ]
+        },
+        "selectP95": {
+          "median": 700.6,
+          "min": 700.6,
+          "max": 700.6,
+          "values": [
+            700.6
+          ]
+        },
+        "selectMax": {
+          "median": 726.3,
+          "min": 726.3,
+          "max": 726.3,
+          "values": [
+            726.3
+          ]
+        },
+        "selectHeavyMs": {
+          "median": 990,
+          "min": 990,
+          "max": 990,
+          "values": [
+            990
+          ]
+        },
+        "selectHeavyNodes": {
+          "median": 50045,
+          "min": 50045,
+          "max": 50045,
+          "values": [
+            50045
+          ]
+        },
+        "selectTypicalNodes": {
+          "median": 70,
+          "min": 70,
+          "max": 70,
+          "values": [
+            70
+          ]
+        },
+        "hoverAZP50": null,
+        "hoverAZP95": null,
+        "hoverAZMax": null,
+        "selectAZP50": null,
+        "selectAZP95": null,
+        "selectAZMax": null,
+        "selectAZHeavyMs": null,
+        "selectCount": {
+          "median": 50,
+          "min": 50,
+          "max": 50,
+          "values": [
+            50
+          ]
+        },
+        "resizeP50": {
+          "median": 683.14,
+          "min": 683.14,
+          "max": 683.14,
+          "values": [
+            683.14
+          ]
+        },
+        "resizeP95": {
+          "median": 1266.74,
+          "min": 1266.74,
+          "max": 1266.74,
+          "values": [
+            1266.74
+          ]
+        },
+        "resizeMax": {
+          "median": 1400.03,
+          "min": 1400.03,
+          "max": 1400.03,
+          "values": [
+            1400.03
+          ]
+        },
+        "collapseP50": {
+          "median": 2264.18,
+          "min": 2264.18,
+          "max": 2264.18,
+          "values": [
+            2264.18
+          ]
+        },
+        "expandP50": {
+          "median": 4467.38,
+          "min": 4467.38,
+          "max": 4467.38,
+          "values": [
+            4467.38
+          ]
+        },
+        "collapseAllP50": null,
+        "expandAllP50": null,
+        "collapseOps": {
+          "median": 18,
+          "min": 18,
+          "max": 18,
+          "values": [
+            18
+          ]
+        },
+        "filterSelectiveP50": {
+          "median": 468.9,
+          "min": 468.9,
+          "max": 468.9,
+          "values": [
+            468.9
+          ]
+        },
+        "filterBroadP50": {
+          "median": 1049.9,
+          "min": 1049.9,
+          "max": 1049.9,
+          "values": [
+            1049.9
+          ]
+        },
+        "filterClearP50": {
+          "median": 3991.7,
+          "min": 3991.7,
+          "max": 3991.7,
+          "values": [
+            3991.7
+          ]
+        },
+        "scrollSmoothP50": {
+          "median": 166.66,
+          "min": 166.66,
+          "max": 166.66,
+          "values": [
+            166.66
+          ]
+        },
+        "scrollSmoothP95": {
+          "median": 283.35,
+          "min": 283.35,
+          "max": 283.35,
+          "values": [
+            283.35
+          ]
+        },
+        "scrollSmoothMax": {
+          "median": 516.73,
+          "min": 516.73,
+          "max": 516.73,
+          "values": [
+            516.73
+          ]
+        },
+        "scrollJumpsP50": {
+          "median": 233.28,
+          "min": 233.28,
+          "max": 233.28,
+          "values": [
+            233.28
+          ]
+        },
+        "scrollJumpsP95": {
+          "median": 416.71,
+          "min": 416.71,
+          "max": 416.71,
+          "values": [
+            416.71
+          ]
+        },
+        "scrollJumpsMax": {
+          "median": 633.64,
+          "min": 633.64,
+          "max": 633.64,
+          "values": [
+            633.64
+          ]
+        },
+        "longTasks": {
+          "median": 781,
+          "min": 781,
+          "max": 781,
+          "values": [
+            781
+          ]
+        },
+        "longTaskMs": {
+          "median": 231600,
+          "min": 231600,
+          "max": 231600,
+          "values": [
+            231600
+          ]
+        },
+        "jsHeapEndMB": {
+          "median": 64.4566593170166,
+          "min": 64.4566593170166,
+          "max": 64.4566593170166,
+          "values": [
+            64.4566593170166
+          ]
+        },
+        "jsHeapDataMB": {
+          "median": 49.7328462600708,
+          "min": 49.7328462600708,
+          "max": 49.7328462600708,
+          "values": [
+            49.7328462600708
+          ]
+        },
+        "jsHeapRenderMB": {
+          "median": 71.33008098602295,
+          "min": 71.33008098602295,
+          "max": 71.33008098602295,
+          "values": [
+            71.33008098602295
+          ]
+        },
+        "probeCpuStartMs": {
+          "median": 4.1,
+          "min": 4.1,
+          "max": 4.1,
+          "values": [
+            4.1
+          ]
+        },
+        "probeCpuEndMs": {
+          "median": 8.19,
+          "min": 8.19,
+          "max": 8.19,
+          "values": [
+            8.19
+          ]
+        },
+        "probePipelineP95Ms": {
+          "median": 16.79,
+          "min": 16.79,
+          "max": 16.79,
+          "values": [
+            16.79
+          ]
+        },
+        "wallSec": {
+          "median": 248.48,
+          "min": 248.48,
+          "max": 248.48,
+          "values": [
+            248.48
+          ]
+        }
+      }
+    },
+    "50000": {
+      "runs": 1,
+      "usable": 1,
+      "files": [
+        "current-n50000.run1.json"
+      ],
+      "statuses": [
+        "partial"
+      ],
+      "zoomDnf": true,
+      "metrics": {
+        "spans": {
+          "median": 50000,
+          "min": 50000,
+          "max": 50000,
+          "values": [
+            50000
+          ]
+        },
+        "events": {
+          "median": 152284,
+          "min": 152284,
+          "max": 152284,
+          "values": [
+            152284
+          ]
+        },
+        "domElements": {
+          "median": 552331,
+          "min": 552331,
+          "max": 552331,
+          "values": [
+            552331
+          ]
+        },
+        "firstRenderJsMs": {
+          "median": 7615.5,
+          "min": 7615.5,
+          "max": 7615.5,
+          "values": [
+            7615.5
+          ]
+        },
+        "firstRenderToFrameMs": {
+          "median": 11661.3,
+          "min": 11661.3,
+          "max": 11661.3,
+          "values": [
+            11661.3
+          ]
+        },
+        "wheelZoomP50": null,
+        "wheelZoomP95": null,
+        "wheelZoomMax": null,
+        "wheelZoomFrames": null,
+        "wheelZoomOver33": null,
+        "dragPanP50": null,
+        "dragPanP95": null,
+        "dragPanMax": null,
+        "dragPanFrames": null,
+        "dragPanZoom": null,
+        "hoverP50": {
+          "median": 366.63,
+          "min": 366.63,
+          "max": 366.63,
+          "values": [
+            366.63
+          ]
+        },
+        "hoverP95": {
+          "median": 433.35,
+          "min": 433.35,
+          "max": 433.35,
+          "values": [
+            433.35
+          ]
+        },
+        "hoverMax": {
+          "median": 750,
+          "min": 750,
+          "max": 750,
+          "values": [
+            750
+          ]
+        },
+        "selectP50": {
+          "median": 656.58,
+          "min": 656.58,
+          "max": 656.58,
+          "values": [
+            656.58
+          ]
+        },
+        "selectP95": {
+          "median": 827.54,
+          "min": 827.54,
+          "max": 827.54,
+          "values": [
+            827.54
+          ]
+        },
+        "selectMax": {
+          "median": 1485.31,
+          "min": 1485.31,
+          "max": 1485.31,
+          "values": [
+            1485.31
+          ]
+        },
+        "selectHeavyMs": {
+          "median": 1069.8,
+          "min": 1069.8,
+          "max": 1069.8,
+          "values": [
+            1069.8
+          ]
+        },
+        "selectHeavyNodes": {
+          "median": 50051,
+          "min": 50051,
+          "max": 50051,
+          "values": [
+            50051
+          ]
+        },
+        "selectTypicalNodes": {
+          "median": 145,
+          "min": 145,
+          "max": 145,
+          "values": [
+            145
+          ]
+        },
+        "hoverAZP50": null,
+        "hoverAZP95": null,
+        "hoverAZMax": null,
+        "selectAZP50": null,
+        "selectAZP95": null,
+        "selectAZMax": null,
+        "selectAZHeavyMs": null,
+        "selectCount": {
+          "median": 50,
+          "min": 50,
+          "max": 50,
+          "values": [
+            50
+          ]
+        },
+        "resizeP50": {
+          "median": 1483.34,
+          "min": 1483.34,
+          "max": 1483.34,
+          "values": [
+            1483.34
+          ]
+        },
+        "resizeP95": {
+          "median": 1916.67,
+          "min": 1916.67,
+          "max": 1916.67,
+          "values": [
+            1916.67
+          ]
+        },
+        "resizeMax": {
+          "median": 1967.04,
+          "min": 1967.04,
+          "max": 1967.04,
+          "values": [
+            1967.04
+          ]
+        },
+        "collapseP50": {
+          "median": 9037.63,
+          "min": 9037.63,
+          "max": 9037.63,
+          "values": [
+            9037.63
+          ]
+        },
+        "expandP50": {
+          "median": 10983.78,
+          "min": 10983.78,
+          "max": 10983.78,
+          "values": [
+            10983.78
+          ]
+        },
+        "collapseAllP50": null,
+        "expandAllP50": null,
+        "collapseOps": {
+          "median": 7,
+          "min": 7,
+          "max": 7,
+          "values": [
+            7
+          ]
+        },
+        "filterSelectiveP50": {
+          "median": 455.5,
+          "min": 455.5,
+          "max": 455.5,
+          "values": [
+            455.5
+          ]
+        },
+        "filterBroadP50": {
+          "median": 3602.4,
+          "min": 3602.4,
+          "max": 3602.4,
+          "values": [
+            3602.4
+          ]
+        },
+        "filterClearP50": {
+          "median": 25122.8,
+          "min": 25122.8,
+          "max": 25122.8,
+          "values": [
+            25122.8
+          ]
+        },
+        "scrollSmoothP50": {
+          "median": 433.6,
+          "min": 433.6,
+          "max": 433.6,
+          "values": [
+            433.6
+          ]
+        },
+        "scrollSmoothP95": {
+          "median": 699.54,
+          "min": 699.54,
+          "max": 699.54,
+          "values": [
+            699.54
+          ]
+        },
+        "scrollSmoothMax": {
+          "median": 1350.05,
+          "min": 1350.05,
+          "max": 1350.05,
+          "values": [
+            1350.05
+          ]
+        },
+        "scrollJumpsP50": {
+          "median": 566.88,
+          "min": 566.88,
+          "max": 566.88,
+          "values": [
+            566.88
+          ]
+        },
+        "scrollJumpsP95": {
+          "median": 849.72,
+          "min": 849.72,
+          "max": 849.72,
+          "values": [
+            849.72
+          ]
+        },
+        "scrollJumpsMax": {
+          "median": 966.51,
+          "min": 966.51,
+          "max": 966.51,
+          "values": [
+            966.51
+          ]
+        },
+        "longTasks": {
+          "median": 561,
+          "min": 561,
+          "max": 561,
+          "values": [
+            561
+          ]
+        },
+        "longTaskMs": {
+          "median": 383379,
+          "min": 383379,
+          "max": 383379,
+          "values": [
+            383379
+          ]
+        },
+        "jsHeapEndMB": {
+          "median": 88.83985900878906,
+          "min": 88.83985900878906,
+          "max": 88.83985900878906,
+          "values": [
+            88.83985900878906
+          ]
+        },
+        "jsHeapDataMB": {
+          "median": 143.57124519348145,
+          "min": 143.57124519348145,
+          "max": 143.57124519348145,
+          "values": [
+            143.57124519348145
+          ]
+        },
+        "jsHeapRenderMB": {
+          "median": 235.4222526550293,
+          "min": 235.4222526550293,
+          "max": 235.4222526550293,
+          "values": [
+            235.4222526550293
+          ]
+        },
+        "probeCpuStartMs": {
+          "median": 3.84,
+          "min": 3.84,
+          "max": 3.84,
+          "values": [
+            3.84
+          ]
+        },
+        "probeCpuEndMs": {
+          "median": 8.17,
+          "min": 8.17,
+          "max": 8.17,
+          "values": [
+            8.17
+          ]
+        },
+        "probePipelineP95Ms": {
+          "median": 17.22,
+          "min": 17.22,
+          "max": 17.22,
+          "values": [
+            17.22
+          ]
+        },
+        "wallSec": {
+          "median": 419.073,
+          "min": 419.073,
+          "max": 419.073,
+          "values": [
+            419.073
+          ]
+        }
+      }
+    }
+  },
+  "source": {
+    "note": "Median/min/max over the runs listed per size; per-run files are current-n<N>.run<k>.json. At 20000 and 50000 spans zoom and pan did not finish (current-n<N>.zoom-dnf.json); the other scenarios ran once, with only= excluding zoom, pan and the after-zoom repeats.",
+    "commit": "38df9e68d022a33f6512dcf6fdb3e054e8aecb4a",
+    "version": "1.0.0-RC2",
+    "bundle": {
+      "url": "./dist/log2trace.min.js",
+      "bytes": 67597,
+      "sha256": "bce764d8513bf7a68d4b2686a652ef4241ccef6d52f06aa1efa46d424f5ffbf5"
+    },
+    "harness": {
+      "demo/perf.html sha256 (when the runs were taken)": "a7e8e8c099d1955bcc0287ab269b13259b9f641006a8c39ea51231c8c3c3ab8e",
+      "demo/perf.html sha256 (committed; differs only in one comment)": "41e8eb62b405db043542278b5483957e8ad4ab42d445444616c0efad5a0f3361",
+      "demo/perf-gen.js sha256": "c98882b3b8a315491837153de686c90876c629c1a0be816047f9310573507917",
+      "generatorVersion": 1,
+      "datasetParams": {
+        "n": 1000,
+        "seed": 1,
+        "ns": 1,
+        "heavy": 0.001,
+        "heavyMin": 500,
+        "heavyMax": 2000,
+        "ev": 2,
+        "depthMean": 9,
+        "depthMax": 14,
+        "chainDepth": 30,
+        "errorRate": 0.02,
+        "leafMedianUs": 450
+      }
+    },
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.4212.0 Chrome/152.0.7977.167 Safari/537.36 MSIX",
+      "hardwareConcurrency": 20,
+      "deviceMemoryGb": 32,
+      "gpu": {
+        "webgl": true,
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "screen": {
+        "width": 2560,
+        "height": 1440,
+        "availWidth": 2560,
+        "availHeight": 1392,
+        "colorDepth": 24
+      },
+      "viewport": {
+        "innerWidth": 537,
+        "innerHeight": 550,
+        "outerWidth": 915,
+        "outerHeight": 708
+      },
+      "devicePixelRatio": 1.5,
+      "refresh": {
+        "medianMs": 16.66,
+        "p95Ms": 17.02,
+        "maxMs": 17.25,
+        "hz": 60,
+        "samples": 60
+      },
+      "crossOriginIsolated": true,
+      "stage": {
+        "widthCss": 521,
+        "mode": "flow"
+      }
+    },
+    "units": "milliseconds unless the metric name says otherwise"
+  }
+}
