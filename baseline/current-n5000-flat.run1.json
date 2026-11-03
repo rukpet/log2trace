@@ -1,0 +1,1657 @@
+{
+  "schema": "log2trace-perf/1",
+  "status": "partial",
+  "label": "baseline-flat",
+  "rev": "38df9e68d022a33f6512dcf6fdb3e054e8aecb4a",
+  "impl": "current",
+  "params": {
+    "impl": "current",
+    "n": 5000,
+    "flat": true,
+    "ns": 1,
+    "seed": 1,
+    "heavy": 0.001,
+    "ev": 2,
+    "only": null,
+    "wdSec": 60,
+    "budgetSec": 900,
+    "bundle": "./dist/log2trace.min.js",
+    "manual": false,
+    "hud": false
+  },
+  "startedAt": "2026-11-03T02:28:19.333Z",
+  "finishedAt": "2026-11-03T02:31:59.185Z",
+  "bundle": {
+    "url": "./dist/log2trace.min.js",
+    "bytes": 67597,
+    "sha256": "bce764d8513bf7a68d4b2686a652ef4241ccef6d52f06aa1efa46d424f5ffbf5"
+  },
+  "env": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.4212.0 Chrome/152.0.7977.167 Safari/537.36 MSIX",
+    "uaData": {
+      "brands": [
+        {
+          "brand": "Not?A_Brand",
+          "version": "24.0.0.0"
+        },
+        {
+          "brand": "Chromium",
+          "version": "152.0.7977.167"
+        }
+      ],
+      "platform": "Windows",
+      "platformVersion": "19.0.0",
+      "architecture": "x86",
+      "bitness": "64",
+      "mobile": false
+    },
+    "hardwareConcurrency": 20,
+    "deviceMemoryGb": 32,
+    "devicePixelRatio": 1.5,
+    "screen": {
+      "width": 2560,
+      "height": 1440,
+      "availWidth": 2560,
+      "availHeight": 1392,
+      "colorDepth": 24
+    },
+    "viewport": {
+      "innerWidth": 537,
+      "innerHeight": 550,
+      "outerWidth": 915,
+      "outerHeight": 708
+    },
+    "crossOriginIsolated": true,
+    "secureContext": true,
+    "gpu": {
+      "webgl": true,
+      "vendor": "Google Inc. (Intel)",
+      "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "refresh": {
+      "medianMs": 16.66,
+      "p95Ms": 17.38,
+      "maxMs": 23.11,
+      "hz": 60,
+      "samples": 60
+    },
+    "visibility": {
+      "state": "visible",
+      "hasFocus": false
+    },
+    "observers": {
+      "longtask": true,
+      "loaf": true,
+      "event": true
+    },
+    "language": "uk",
+    "timeZone": "Europe/Kiev",
+    "url": "http://localhost:3017/perf.html#impl=current&n=5000&flat=1&auto=1&label=baseline-flat&rev=38df9e68d022a33f6512dcf6fdb3e054e8aecb4a&sink=http://localhost:3918/save",
+    "probe": {
+      "cpu": {
+        "minMs": 3.71,
+        "p50Ms": 3.85,
+        "maxMs": 6.06
+      },
+      "pipeline": {
+        "frames": 89,
+        "p50": 16.66,
+        "p95": 16.77,
+        "p99": 17.07,
+        "max": 17.07,
+        "overRefresh1_5": 0
+      }
+    },
+    "stage": {
+      "widthCss": 521,
+      "mode": "flow"
+    }
+  },
+  "dataset": {
+    "spans": 5000,
+    "traceId": "f6228291e2645772cea62c53bae80134",
+    "roots": 5000,
+    "precision": "ms",
+    "depth": {
+      "mean": 0,
+      "max": 0,
+      "histogram": [
+        5000
+      ]
+    },
+    "fanout": {
+      "internal": 0,
+      "leaves": 5000,
+      "mean": 0,
+      "max": 0,
+      "classesPct": {
+        "1-3": 0,
+        "4-12": 0,
+        "13-19": 0,
+        "20-60": 0,
+        "61+": 0
+      },
+      "classCounts": {
+        "1-3": 0,
+        "4-12": 0,
+        "13-19": 0,
+        "20-60": 0,
+        "61+": 0
+      }
+    },
+    "kinds": {
+      "0": 5000
+    },
+    "services": {
+      "count": 5,
+      "topShare": 0.2
+    },
+    "names": {
+      "distinct": 10,
+      "maxLength": 16,
+      "nonLatin": 0
+    },
+    "errors": {
+      "total": 5000,
+      "share": 1
+    },
+    "events": {
+      "total": 10000,
+      "perSpan": 2,
+      "spansWithEvents": 5000,
+      "max": 2,
+      "heavySpans": 0
+    },
+    "durations": {
+      "traceMs": 2497999,
+      "rootMs": 1500,
+      "p10Us": 1500000,
+      "medianUs": 1500000,
+      "p90Us": 1500000,
+      "p99Us": 1500000,
+      "maxMs": 1500,
+      "under1msShare": 0,
+      "zeroShare": 0
+    },
+    "hot": {
+      "root": {
+        "spanId": "cfdbfedf080c4300",
+        "name": "handleRequest",
+        "depth": 0,
+        "descendants": 0
+      },
+      "bigSubtree": null,
+      "heavyEvents": {
+        "spanId": "cfdbfedf080c4300",
+        "name": "handleRequest",
+        "depth": 0,
+        "events": 2
+      },
+      "widestFanout": {
+        "spanId": "cfdbfedf080c4300",
+        "name": "handleRequest",
+        "depth": 0,
+        "children": 0
+      },
+      "deepest": {
+        "spanId": "cfdbfedf080c4300",
+        "name": "handleRequest",
+        "depth": 0
+      }
+    },
+    "generator": {
+      "kind": "flat",
+      "logs": 10000,
+      "genLogsMs": 7.9,
+      "transformMs": 38.1
+    },
+    "buildMs": 51
+  },
+  "checkpoints": [
+    {
+      "label": "dataReady",
+      "atMs": 3330,
+      "jsHeapUsed": 13160479,
+      "jsHeapTotal": 74874411,
+      "jsHeapLimit": 4395630592,
+      "ua": "error: Failed to execute 'measureUserAgentSpecificMemory' on 'Performance': performance.measureUserAgentSpecificMemory is not available.",
+      "uaMs": 0
+    },
+    {
+      "label": "afterFirstRender",
+      "atMs": 4344,
+      "jsHeapUsed": 16431594,
+      "jsHeapTotal": 40567802,
+      "jsHeapLimit": 4395630592,
+      "ua": "error: Failed to execute 'measureUserAgentSpecificMemory' on 'Performance': performance.measureUserAgentSpecificMemory is not available.",
+      "uaMs": 0
+    },
+    {
+      "label": "end",
+      "atMs": 218577,
+      "jsHeapUsed": 15314002,
+      "jsHeapTotal": 16585098,
+      "jsHeapLimit": 4395630592,
+      "ua": "error: Failed to execute 'measureUserAgentSpecificMemory' on 'Performance': performance.measureUserAgentSpecificMemory is not available.",
+      "uaMs": 0
+    }
+  ],
+  "scenarios": {
+    "first-render": {
+      "status": "ok",
+      "jsMs": 544.1,
+      "toFirstFrameMs": 840.7,
+      "doubleRafMs": 848.3,
+      "stageHeightPx": 175296,
+      "timings": {
+        "userTiming": {
+          "log2trace:buildSpanIndex": {
+            "count": 1,
+            "totalMs": 3,
+            "maxMs": 3
+          },
+          "log2trace:render": {
+            "count": 1,
+            "totalMs": 75.3,
+            "maxMs": 75.3
+          }
+        },
+        "virtualScrollWindow": {
+          "startIndex": 0,
+          "endIndex": 5000,
+          "rendered": 5000,
+          "total": 5000
+        }
+      },
+      "headline": {
+        "label": "first render (js sync / to first frame)",
+        "unit": "ms",
+        "p50": 544,
+        "p95": 841,
+        "max": 848
+      },
+      "wallMs": 849,
+      "longTasks": {
+        "count": 1,
+        "totalMs": 296,
+        "maxMs": 296
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50047,
+        "nodes": 75069,
+        "shadowRoots": 1,
+        "walkMs": 6
+      }
+    },
+    "hover": {
+      "status": "ok",
+      "framesDone": 300,
+      "wallMs": 9923,
+      "frames": {
+        "n": 300,
+        "mean": 32.06,
+        "min": 15.7,
+        "p50": 33.32,
+        "p95": 50.07,
+        "p99": 70.8,
+        "max": 115.03,
+        "over16_7": 84.7,
+        "over20": 79.3,
+        "over33": 56.3,
+        "overRefresh1_5": 79.3
+      },
+      "handler": {
+        "n": 300,
+        "mean": 0.21,
+        "min": 0.04,
+        "p50": 0.21,
+        "p95": 0.33,
+        "p99": 0.42,
+        "max": 0.71,
+        "totalMs": 63.6
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 33.32,
+        "p95": 50.07,
+        "p99": 70.8,
+        "max": 115.03
+      },
+      "framesRequested": 300,
+      "visibleRows": [
+        1664,
+        1680
+      ],
+      "longTasks": {
+        "count": 15,
+        "totalMs": 1022,
+        "maxMs": 109
+      },
+      "loaf": {
+        "count": 13,
+        "totalMs": 889.7,
+        "maxMs": 105.8,
+        "blockingMs": 238.5,
+        "renderMs": 887.7,
+        "styleLayoutMs": 882.7,
+        "forcedStyleLayoutMs": 0,
+        "top": [
+          {
+            "at": 9910,
+            "durationMs": 105.8,
+            "blockingMs": 55.6,
+            "renderMs": 105.3,
+            "styleLayoutMs": 105,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          },
+          {
+            "at": 14247,
+            "durationMs": 96.2,
+            "blockingMs": 46.1,
+            "renderMs": 96.1,
+            "styleLayoutMs": 95.7,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          },
+          {
+            "at": 9084,
+            "durationMs": 70,
+            "blockingMs": 19.9,
+            "renderMs": 69.9,
+            "styleLayoutMs": 69.5,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50065,
+        "nodes": 75105,
+        "shadowRoots": 1,
+        "walkMs": 6
+      }
+    },
+    "select": {
+      "status": "ok",
+      "samples": 49,
+      "handler": {
+        "n": 49,
+        "mean": 3.56,
+        "min": 2.46,
+        "p50": 2.99,
+        "p95": 7.85,
+        "p99": 8.4,
+        "max": 8.4
+      },
+      "toFrame": {
+        "n": 49,
+        "mean": 66.06,
+        "min": 46.21,
+        "p50": 60.21,
+        "p95": 114.58,
+        "p99": 173.13,
+        "max": 173.13
+      },
+      "headline": {
+        "label": "action -> next frame",
+        "unit": "ms",
+        "p50": 60.21,
+        "p95": 114.58,
+        "p99": 173.13,
+        "max": 173.13
+      },
+      "selected": 50,
+      "heavySpan": {
+        "events": 2,
+        "handlerMs": 3.7,
+        "toFrameMs": 63.4,
+        "detailNodes": 98
+      },
+      "detailNodesTypical": 98,
+      "wallMs": 5930,
+      "longTasks": {
+        "count": 15,
+        "totalMs": 1113,
+        "maxMs": 166
+      },
+      "loaf": {
+        "count": 42,
+        "totalMs": 2680.1,
+        "maxMs": 156.4,
+        "blockingMs": 338.2,
+        "renderMs": 1999.7,
+        "styleLayoutMs": 1996.1,
+        "forcedStyleLayoutMs": 0,
+        "top": [
+          {
+            "at": 14979,
+            "durationMs": 156.4,
+            "blockingMs": 106.3,
+            "renderMs": 149.8,
+            "styleLayoutMs": 149.8,
+            "forcedStyleLayoutMs": 0,
+            "scripts": [
+              {
+                "invoker": "MessagePort.onmessage",
+                "fn": "",
+                "src": "perf.html",
+                "ms": 6.5,
+                "forcedMs": 0
+              }
+            ]
+          },
+          {
+            "at": 15469,
+            "durationMs": 110.7,
+            "blockingMs": 53,
+            "renderMs": 94.9,
+            "styleLayoutMs": 94.7,
+            "forcedStyleLayoutMs": 0,
+            "scripts": [
+              {
+                "invoker": "MessagePort.onmessage",
+                "fn": "",
+                "src": "perf.html",
+                "ms": 8.1,
+                "forcedMs": 0
+              }
+            ]
+          },
+          {
+            "at": 15681,
+            "durationMs": 103.8,
+            "blockingMs": 53.7,
+            "renderMs": 95.5,
+            "styleLayoutMs": 95.4,
+            "forcedStyleLayoutMs": 0,
+            "scripts": [
+              {
+                "invoker": "MessagePort.onmessage",
+                "fn": "",
+                "src": "perf.html",
+                "ms": 8.1,
+                "forcedMs": 0
+              }
+            ]
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50169,
+        "nodes": 75294,
+        "shadowRoots": 1,
+        "walkMs": 5
+      }
+    },
+    "resize": {
+      "status": "ok",
+      "framesDone": 40,
+      "wallMs": 5550,
+      "frames": {
+        "n": 40,
+        "mean": 132.5,
+        "min": 16.61,
+        "p50": 133.34,
+        "p95": 166.68,
+        "p99": 216.59,
+        "max": 216.59,
+        "over16_7": 97.5,
+        "over20": 97.5,
+        "over33": 97.5,
+        "overRefresh1_5": 97.5
+      },
+      "handler": {
+        "n": 40,
+        "mean": 0.02,
+        "min": 0.01,
+        "p50": 0.02,
+        "p95": 0.03,
+        "p99": 0.06,
+        "max": 0.06,
+        "totalMs": 0.7
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 133.34,
+        "p95": 166.68,
+        "p99": 216.59,
+        "max": 216.59
+      },
+      "framesRequested": 40,
+      "widthsPx": [
+        521,
+        365
+      ],
+      "longTasks": {
+        "count": 41,
+        "totalMs": 5429,
+        "maxMs": 211
+      },
+      "loaf": {
+        "count": 40,
+        "totalMs": 4863.5,
+        "maxMs": 197.4,
+        "blockingMs": 2841.6,
+        "renderMs": 4840.3,
+        "styleLayoutMs": 4837.4,
+        "forcedStyleLayoutMs": 0,
+        "top": [
+          {
+            "at": 22925,
+            "durationMs": 197.4,
+            "blockingMs": 147.4,
+            "renderMs": 197.4,
+            "styleLayoutMs": 197.3,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          },
+          {
+            "at": 22342,
+            "durationMs": 158.7,
+            "blockingMs": 108.6,
+            "renderMs": 158.6,
+            "styleLayoutMs": 158.5,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          },
+          {
+            "at": 25232,
+            "durationMs": 150.3,
+            "blockingMs": 99.7,
+            "renderMs": 149.6,
+            "styleLayoutMs": 149.3,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50163,
+        "nodes": 75285,
+        "shadowRoots": 1,
+        "walkMs": 3
+      }
+    },
+    "collapse": {
+      "status": "skipped",
+      "reason": "dataset has no collapsible subtree",
+      "wallMs": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50163,
+        "nodes": 75285,
+        "shadowRoots": 1,
+        "walkMs": 3
+      }
+    },
+    "filter": {
+      "status": "ok",
+      "queries": {
+        "selective": {
+          "text": "handlerequest",
+          "share": 0.1,
+          "matches": 500
+        },
+        "broad": {
+          "text": "handlerequest",
+          "share": 0.1,
+          "matches": 500
+        }
+      },
+      "setup": {
+        "enableFilterSyncMs": 422.7
+      },
+      "steps": [
+        {
+          "label": "selective",
+          "text": "handlerequest",
+          "debounceMs": 0.1,
+          "renderMs": 65.6,
+          "toFrameMs": 94.3,
+          "rowsAfter": 500
+        },
+        {
+          "label": "broad",
+          "text": "handlerequest",
+          "debounceMs": 0,
+          "renderMs": 35.6,
+          "toFrameMs": 46.3,
+          "rowsAfter": 500
+        },
+        {
+          "label": "clear",
+          "text": "",
+          "debounceMs": 0.1,
+          "renderMs": 404.9,
+          "toFrameMs": 656.8,
+          "rowsAfter": 5000
+        },
+        {
+          "label": "selective",
+          "text": "handlerequest",
+          "debounceMs": 0.1,
+          "renderMs": 62.2,
+          "toFrameMs": 91.2,
+          "rowsAfter": 500
+        },
+        {
+          "label": "broad",
+          "text": "handlerequest",
+          "debounceMs": 0.1,
+          "renderMs": 77.4,
+          "toFrameMs": 88.4,
+          "rowsAfter": 500
+        },
+        {
+          "label": "clear",
+          "text": "",
+          "debounceMs": 0.1,
+          "renderMs": 523.5,
+          "toFrameMs": 906.7,
+          "rowsAfter": 5000
+        },
+        {
+          "label": "selective",
+          "text": "handlerequest",
+          "debounceMs": 0.1,
+          "renderMs": 76.8,
+          "toFrameMs": 111.3,
+          "rowsAfter": 500
+        },
+        {
+          "label": "broad",
+          "text": "handlerequest",
+          "debounceMs": 0.1,
+          "renderMs": 39.9,
+          "toFrameMs": 52.3,
+          "rowsAfter": 500
+        },
+        {
+          "label": "clear",
+          "text": "",
+          "debounceMs": 0.1,
+          "renderMs": 512.1,
+          "toFrameMs": 840.8,
+          "rowsAfter": 5000
+        }
+      ],
+      "selective": {
+        "n": 3,
+        "mean": 98.93,
+        "min": 91.2,
+        "p50": 94.3,
+        "p95": 111.3,
+        "p99": 111.3,
+        "max": 111.3
+      },
+      "broad": {
+        "n": 3,
+        "mean": 62.33,
+        "min": 46.3,
+        "p50": 52.3,
+        "p95": 88.4,
+        "p99": 88.4,
+        "max": 88.4
+      },
+      "clear": {
+        "n": 3,
+        "mean": 801.43,
+        "min": 656.8,
+        "p50": 840.8,
+        "p95": 906.7,
+        "p99": 906.7,
+        "max": 906.7
+      },
+      "headline": {
+        "label": "filter input -> next frame",
+        "unit": "ms",
+        "p50": 94.3,
+        "p95": 906.7,
+        "p99": 906.7,
+        "max": 906.7
+      },
+      "wallMs": 3686,
+      "longTasks": {
+        "count": 12,
+        "totalMs": 3175,
+        "maxMs": 523
+      },
+      "loaf": {
+        "count": 8,
+        "totalMs": 3211.4,
+        "maxMs": 890.6,
+        "blockingMs": 2810.3,
+        "renderMs": 1063.7,
+        "styleLayoutMs": 1063.3,
+        "forcedStyleLayoutMs": 957.8,
+        "top": [
+          {
+            "at": 28991,
+            "durationMs": 890.6,
+            "blockingMs": 840.4,
+            "renderMs": 366.8,
+            "styleLayoutMs": 366.8,
+            "forcedStyleLayoutMs": 258.5,
+            "scripts": [
+              {
+                "invoker": "TimerHandler:setTimeout",
+                "fn": "",
+                "src": "log2trace.min.js",
+                "ms": 523.5,
+                "forcedMs": 258.5
+              },
+              {
+                "invoker": "ResizeObserverCallback",
+                "fn": "",
+                "src": "log2trace.min.js",
+                "ms": 15.5,
+                "forcedMs": 0
+              }
+            ]
+          },
+          {
+            "at": 30074,
+            "durationMs": 825.9,
+            "blockingMs": 775.6,
+            "renderMs": 313.4,
+            "styleLayoutMs": 313.4,
+            "forcedStyleLayoutMs": 236.2,
+            "scripts": [
+              {
+                "invoker": "TimerHandler:setTimeout",
+                "fn": "",
+                "src": "log2trace.min.js",
+                "ms": 512.2,
+                "forcedMs": 236.2
+              }
+            ]
+          },
+          {
+            "at": 28144,
+            "durationMs": 644.6,
+            "blockingMs": 594.5,
+            "renderMs": 239.5,
+            "styleLayoutMs": 239.5,
+            "forcedStyleLayoutMs": 181.5,
+            "scripts": [
+              {
+                "invoker": "TimerHandler:setTimeout",
+                "fn": "",
+                "src": "log2trace.min.js",
+                "ms": 405,
+                "forcedMs": 181.5
+              }
+            ]
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50054,
+        "nodes": 75082,
+        "shadowRoots": 1,
+        "walkMs": 6
+      }
+    },
+    "scroll": {
+      "status": "ok",
+      "rows": 5000,
+      "smooth": {
+        "status": "ok",
+        "framesDone": 200,
+        "wallMs": 7323,
+        "frames": {
+          "n": 200,
+          "mean": 36.58,
+          "min": 16.28,
+          "p50": 33.32,
+          "p95": 66.72,
+          "p99": 83.63,
+          "max": 116.73,
+          "over16_7": 94.5,
+          "over20": 80,
+          "over33": 58.5,
+          "overRefresh1_5": 80
+        },
+        "handler": {
+          "n": 200,
+          "mean": 33.48,
+          "min": 23.69,
+          "p50": 28.15,
+          "p95": 62.74,
+          "p99": 75.82,
+          "max": 105.79,
+          "totalMs": 6695.7
+        },
+        "headline": {
+          "label": "frame interval",
+          "unit": "ms",
+          "p50": 33.32,
+          "p95": 66.72,
+          "p99": 83.63,
+          "max": 116.73
+        }
+      },
+      "jumps": {
+        "status": "ok",
+        "framesDone": 50,
+        "wallMs": 3712,
+        "frames": {
+          "n": 50,
+          "mean": 74,
+          "min": 32.95,
+          "p50": 66.66,
+          "p95": 133.38,
+          "p99": 183.41,
+          "max": 183.41,
+          "over16_7": 100,
+          "over20": 100,
+          "over33": 92,
+          "overRefresh1_5": 100
+        },
+        "handler": {
+          "n": 50,
+          "mean": 41.3,
+          "min": 26.93,
+          "p50": 35.15,
+          "p95": 70.74,
+          "p99": 104.85,
+          "max": 104.85,
+          "totalMs": 2064.8
+        },
+        "headline": {
+          "label": "frame interval",
+          "unit": "ms",
+          "p50": 66.66,
+          "p95": 133.38,
+          "p99": 183.41,
+          "max": 183.41
+        }
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 33.32,
+        "p95": 66.72,
+        "p99": 83.63,
+        "max": 116.73
+      },
+      "wallMs": 11169,
+      "longTasks": {
+        "count": 64,
+        "totalMs": 4818,
+        "maxMs": 191
+      },
+      "loaf": {
+        "count": 32,
+        "totalMs": 2473.1,
+        "maxMs": 376.2,
+        "blockingMs": 533,
+        "renderMs": 2042,
+        "styleLayoutMs": 3.8,
+        "forcedStyleLayoutMs": 0,
+        "top": [
+          {
+            "at": 42407,
+            "durationMs": 376.2,
+            "blockingMs": 0,
+            "renderMs": 0.1,
+            "styleLayoutMs": 0,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          },
+          {
+            "at": 36052,
+            "durationMs": 106.2,
+            "blockingMs": 56.2,
+            "renderMs": 106.1,
+            "styleLayoutMs": 0.1,
+            "forcedStyleLayoutMs": 0,
+            "scripts": [
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "onFrame",
+                "src": "perf.html",
+                "ms": 106,
+                "forcedMs": 0
+              }
+            ]
+          },
+          {
+            "at": 42100,
+            "durationMs": 105.4,
+            "blockingMs": 55.3,
+            "renderMs": 105.2,
+            "styleLayoutMs": 0.2,
+            "forcedStyleLayoutMs": 0,
+            "scripts": [
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "onFrame",
+                "src": "perf.html",
+                "ms": 104.9,
+                "forcedMs": 0
+              }
+            ]
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50054,
+        "nodes": 75082,
+        "shadowRoots": 1,
+        "walkMs": 4
+      }
+    },
+    "wheel-zoom": {
+      "status": "timeout",
+      "framesDone": 71,
+      "wallMs": 60748,
+      "frames": {
+        "n": 71,
+        "mean": 851.41,
+        "min": 16.63,
+        "p50": 783.38,
+        "p95": 1366.68,
+        "p99": 2449.92,
+        "max": 2449.92,
+        "over16_7": 98.6,
+        "over20": 98.6,
+        "over33": 98.6,
+        "overRefresh1_5": 98.6
+      },
+      "handler": {
+        "n": 71,
+        "mean": 49.67,
+        "min": 0.58,
+        "p50": 38.9,
+        "p95": 87.99,
+        "p99": 184.71,
+        "max": 184.71,
+        "totalMs": 3526.3
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 783.38,
+        "p95": 1366.68,
+        "p99": 2449.92,
+        "max": 2449.92
+      },
+      "framesRequested": 120,
+      "zoomAfter": 1,
+      "longTasks": {
+        "count": 78,
+        "totalMs": 60378,
+        "maxMs": 2451
+      },
+      "loaf": {
+        "count": 73,
+        "totalMs": 35713.8,
+        "maxMs": 2236.6,
+        "blockingMs": 31593.9,
+        "renderMs": 27464.2,
+        "styleLayoutMs": 20571.7,
+        "forcedStyleLayoutMs": 1642.4,
+        "top": [
+          {
+            "at": 43260,
+            "durationMs": 2236.6,
+            "blockingMs": 2186.3,
+            "renderMs": 2235.5,
+            "styleLayoutMs": 2174.6,
+            "forcedStyleLayoutMs": 0.4,
+            "scripts": [
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "onFrame",
+                "src": "perf.html",
+                "ms": 60.9,
+                "forcedMs": 0.4
+              }
+            ]
+          },
+          {
+            "at": 56321,
+            "durationMs": 1102.4,
+            "blockingMs": 1046.9,
+            "renderMs": 789.6,
+            "styleLayoutMs": 456.1,
+            "forcedStyleLayoutMs": 118.8,
+            "scripts": [
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "onFrame",
+                "src": "perf.html",
+                "ms": 184.8,
+                "forcedMs": 118.8
+              }
+            ]
+          },
+          {
+            "at": 63552,
+            "durationMs": 763,
+            "blockingMs": 662.9,
+            "renderMs": 536.9,
+            "styleLayoutMs": 463.4,
+            "forcedStyleLayoutMs": 0.2,
+            "scripts": [
+              {
+                "invoker": "PerformanceObserverCallback",
+                "fn": "",
+                "src": "perf.html",
+                "ms": 114.6,
+                "forcedMs": 0
+              },
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "onFrame",
+                "src": "perf.html",
+                "ms": 39,
+                "forcedMs": 0.2
+              }
+            ]
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50054,
+        "nodes": 75082,
+        "shadowRoots": 1,
+        "walkMs": 4
+      }
+    },
+    "drag-pan": {
+      "status": "timeout",
+      "framesDone": 89,
+      "wallMs": 74275,
+      "frames": {
+        "n": 89,
+        "mean": 676.59,
+        "min": 549.98,
+        "p50": 650.29,
+        "p95": 817.43,
+        "p99": 899.98,
+        "max": 899.98,
+        "over16_7": 100,
+        "over20": 100,
+        "over33": 100,
+        "overRefresh1_5": 100
+      },
+      "handler": {
+        "n": 89,
+        "mean": 15.52,
+        "min": 11.86,
+        "p50": 14.17,
+        "p95": 29.48,
+        "p99": 40.56,
+        "max": 40.56,
+        "totalMs": 1381.1
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 650.29,
+        "p95": 817.43,
+        "p99": 899.98,
+        "max": 899.98
+      },
+      "framesRequested": 120,
+      "zoomRequested": 20,
+      "zoomAchieved": 10,
+      "longTasks": {
+        "count": 97,
+        "totalMs": 71837,
+        "maxMs": 3303
+      },
+      "loaf": {
+        "count": 70,
+        "totalMs": 11856.3,
+        "maxMs": 3025.7,
+        "blockingMs": 8324.2,
+        "renderMs": 11390.1,
+        "styleLayoutMs": 3411.2,
+        "forcedStyleLayoutMs": 3448.2,
+        "top": [
+          {
+            "at": 112557,
+            "durationMs": 3025.7,
+            "blockingMs": 2975.2,
+            "renderMs": 2793.8,
+            "styleLayoutMs": 314.6,
+            "forcedStyleLayoutMs": 1355.1,
+            "scripts": [
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "",
+                "src": "perf.html",
+                "ms": 2333,
+                "forcedMs": 1355.1
+              }
+            ]
+          },
+          {
+            "at": 109270,
+            "durationMs": 2848.3,
+            "blockingMs": 2797.3,
+            "renderMs": 2847.2,
+            "styleLayoutMs": 612.2,
+            "forcedStyleLayoutMs": 1335.6,
+            "scripts": [
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "",
+                "src": "perf.html",
+                "ms": 2038.5,
+                "forcedMs": 1335.6
+              }
+            ]
+          },
+          {
+            "at": 115861,
+            "durationMs": 1529,
+            "blockingMs": 1478.8,
+            "renderMs": 1433.4,
+            "styleLayoutMs": 270.7,
+            "forcedStyleLayoutMs": 718.3,
+            "scripts": [
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "",
+                "src": "perf.html",
+                "ms": 1092.1,
+                "forcedMs": 718.3
+              }
+            ]
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50052,
+        "nodes": 75079,
+        "shadowRoots": 1,
+        "walkMs": 4
+      }
+    },
+    "hover-after-zoom": {
+      "status": "ok",
+      "framesDone": 150,
+      "wallMs": 16385,
+      "frames": {
+        "n": 150,
+        "mean": 98.33,
+        "min": 66.39,
+        "p50": 83.48,
+        "p95": 154.61,
+        "p99": 201.63,
+        "max": 216.82,
+        "over16_7": 100,
+        "over20": 100,
+        "over33": 100,
+        "overRefresh1_5": 100
+      },
+      "handler": {
+        "n": 150,
+        "mean": 0.31,
+        "min": 0.04,
+        "p50": 0.25,
+        "p95": 0.48,
+        "p99": 1.99,
+        "max": 2.21,
+        "totalMs": 46.9
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 83.48,
+        "p95": 154.61,
+        "p99": 201.63,
+        "max": 216.82
+      },
+      "framesRequested": 150,
+      "visibleRows": [
+        1664,
+        1680
+      ],
+      "longTasks": {
+        "count": 155,
+        "totalMs": 15828,
+        "maxMs": 366
+      },
+      "loaf": {
+        "count": 91,
+        "totalMs": 6815,
+        "maxMs": 229.2,
+        "blockingMs": 2229.4,
+        "renderMs": 6721,
+        "styleLayoutMs": 4140.2,
+        "forcedStyleLayoutMs": 3.9,
+        "top": [
+          {
+            "at": 180632,
+            "durationMs": 229.2,
+            "blockingMs": 174.5,
+            "renderMs": 191.9,
+            "styleLayoutMs": 143,
+            "forcedStyleLayoutMs": 3.9,
+            "scripts": [
+              {
+                "invoker": "TimerHandler:setTimeout",
+                "fn": "",
+                "src": "",
+                "ms": 32.6,
+                "forcedMs": 3.9
+              }
+            ]
+          },
+          {
+            "at": 181031,
+            "durationMs": 211.6,
+            "blockingMs": 161.4,
+            "renderMs": 189.9,
+            "styleLayoutMs": 93.1,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          },
+          {
+            "at": 192873,
+            "durationMs": 117.8,
+            "blockingMs": 67.2,
+            "renderMs": 117.2,
+            "styleLayoutMs": 76.2,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50072,
+        "nodes": 75118,
+        "shadowRoots": 1,
+        "walkMs": 9
+      }
+    },
+    "select-after-zoom": {
+      "status": "ok",
+      "samples": 11,
+      "handler": {
+        "n": 11,
+        "mean": 4.57,
+        "min": 3.26,
+        "p50": 4.23,
+        "p95": 7.4,
+        "p99": 7.4,
+        "max": 7.4
+      },
+      "toFrame": {
+        "n": 11,
+        "mean": 943.15,
+        "min": 722.12,
+        "p50": 853.36,
+        "p95": 1242.96,
+        "p99": 1242.96,
+        "max": 1242.96
+      },
+      "headline": {
+        "label": "action -> next frame",
+        "unit": "ms",
+        "p50": 853.36,
+        "p95": 1242.96,
+        "p99": 1242.96,
+        "max": 1242.96
+      },
+      "selected": 12,
+      "heavySpan": {
+        "events": 2,
+        "handlerMs": 3.8,
+        "toFrameMs": 833.1,
+        "detailNodes": 98
+      },
+      "detailNodesTypical": 98,
+      "wallMs": 21340,
+      "longTasks": {
+        "count": 24,
+        "totalMs": 20069,
+        "maxMs": 1228
+      },
+      "loaf": {
+        "count": 12,
+        "totalMs": 1346.5,
+        "maxMs": 415.7,
+        "blockingMs": 362.9,
+        "renderMs": 902.8,
+        "styleLayoutMs": 901.6,
+        "forcedStyleLayoutMs": 0,
+        "top": [
+          {
+            "at": 206740,
+            "durationMs": 415.7,
+            "blockingMs": 44.1,
+            "renderMs": 90.6,
+            "styleLayoutMs": 90.4,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          },
+          {
+            "at": 198007,
+            "durationMs": 234.6,
+            "blockingMs": 174.4,
+            "renderMs": 219.9,
+            "styleLayoutMs": 219.8,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          },
+          {
+            "at": 211962,
+            "durationMs": 104.8,
+            "blockingMs": 51.8,
+            "renderMs": 97.4,
+            "styleLayoutMs": 97.2,
+            "forcedStyleLayoutMs": 0,
+            "scripts": []
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 50176,
+        "nodes": 75307,
+        "shadowRoots": 1,
+        "walkMs": 4
+      }
+    }
+  },
+  "warnings": [],
+  "watchdog": null,
+  "visibilityChanges": [],
+  "probeEnd": {
+    "cpu": {
+      "minMs": 6.92,
+      "p50Ms": 7.25,
+      "maxMs": 9.84
+    },
+    "pipeline": {
+      "frames": 89,
+      "p50": 16.67,
+      "p95": 17.05,
+      "p99": 17.73,
+      "max": 17.73,
+      "overRefresh1_5": 0
+    }
+  },
+  "totalMs": 219852,
+  "rafStalls": 0,
+  "summary": {
+    "status": "partial",
+    "spans": 5000,
+    "events": 10000,
+    "firstRender": {
+      "jsMs": 544.1,
+      "toFirstFrameMs": 840.7,
+      "doubleRafMs": 848.3,
+      "domElements": 50047
+    },
+    "wheelZoom": {
+      "p50": 783.38,
+      "p95": 1366.68,
+      "p99": 2449.92,
+      "max": 2449.92,
+      "over16_7": 98.6,
+      "over20": 98.6,
+      "over33": 98.6,
+      "framesDone": 71,
+      "status": "timeout"
+    },
+    "dragPan": {
+      "p50": 650.29,
+      "p95": 817.43,
+      "p99": 899.98,
+      "max": 899.98,
+      "over16_7": 100,
+      "over20": 100,
+      "over33": 100,
+      "framesDone": 89,
+      "status": "timeout"
+    },
+    "scrollSmooth": {
+      "p50": 33.32,
+      "p95": 66.72,
+      "p99": 83.63,
+      "max": 116.73,
+      "over16_7": 94.5,
+      "over20": 80,
+      "over33": 58.5,
+      "framesDone": 200,
+      "status": "ok"
+    },
+    "scrollJumps": {
+      "p50": 66.66,
+      "p95": 133.38,
+      "p99": 183.41,
+      "max": 183.41,
+      "over16_7": 100,
+      "over20": 100,
+      "over33": 92,
+      "framesDone": 50,
+      "status": "ok"
+    },
+    "hover": {
+      "p50": 33.32,
+      "p95": 50.07,
+      "p99": 70.8,
+      "max": 115.03,
+      "over16_7": 84.7,
+      "over20": 79.3,
+      "over33": 56.3,
+      "framesDone": 300,
+      "status": "ok"
+    },
+    "select": {
+      "p50": 60.21,
+      "p95": 114.58,
+      "max": 173.13,
+      "heavyToFrameMs": 63.4,
+      "heavyDetailNodes": 98,
+      "status": "ok"
+    },
+    "hoverAfterZoom": {
+      "p50": 83.48,
+      "p95": 154.61,
+      "p99": 201.63,
+      "max": 216.82,
+      "over16_7": 100,
+      "over20": 100,
+      "over33": 100,
+      "framesDone": 150,
+      "status": "ok"
+    },
+    "selectAfterZoom": {
+      "p50": 853.36,
+      "p95": 1242.96,
+      "max": 1242.96,
+      "heavyToFrameMs": 833.1,
+      "status": "ok"
+    },
+    "resize": {
+      "p50": 133.34,
+      "p95": 166.68,
+      "p99": 216.59,
+      "max": 216.59,
+      "over16_7": 97.5,
+      "over20": 97.5,
+      "over33": 97.5,
+      "framesDone": 40,
+      "status": "ok"
+    },
+    "collapse": null,
+    "filter": {
+      "selectiveP50": 94.3,
+      "broadP50": 52.3,
+      "clearP50": 840.8,
+      "status": "ok"
+    },
+    "memoryMB": {
+      "dataReady": 12.6,
+      "afterFirstRender": 15.7,
+      "end": 14.6,
+      "source": "performance.memory (JS heap only)"
+    }
+  }
+}

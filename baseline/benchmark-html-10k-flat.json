@@ -1,0 +1,246 @@
+{
+  "schema": "log2trace-benchmark-html/1",
+  "page": "demo/benchmark.html",
+  "note": "One click on \"Run Benchmark\" (WARMUP=0, SAMPLES=1 in the page, so every number is a single noisy sample). Flat synthetic logs: N logs make N/2 spans, so the 10 000 column is a 5 000-span trace without hierarchy. The page clips the rendered component in a 400 px high box (DOM render stages) and uses the dev defaults of benchmark.html.",
+  "startedAt": "2026-11-03T01:44:57.161Z",
+  "rev": "38df9e68d022a33f6512dcf6fdb3e054e8aecb4a",
+  "scales": [
+    100,
+    500,
+    1000,
+    5000,
+    10000
+  ],
+  "stages": {
+    "Transform (logs → OTel)": [
+      {
+        "logs": 100,
+        "ms": 0.925,
+        "meetsTarget": true
+      },
+      {
+        "logs": 500,
+        "ms": 1.35,
+        "meetsTarget": true
+      },
+      {
+        "logs": 1000,
+        "ms": 4.27,
+        "meetsTarget": true
+      },
+      {
+        "logs": 5000,
+        "ms": 21.79,
+        "meetsTarget": true
+      },
+      {
+        "logs": 10000,
+        "ms": 43.73,
+        "meetsTarget": true
+      }
+    ],
+    "Tree build": [
+      {
+        "logs": 100,
+        "ms": 0.029,
+        "meetsTarget": true
+      },
+      {
+        "logs": 500,
+        "ms": 0.118,
+        "meetsTarget": true
+      },
+      {
+        "logs": 1000,
+        "ms": 0.232,
+        "meetsTarget": true
+      },
+      {
+        "logs": 5000,
+        "ms": 1.6,
+        "meetsTarget": true
+      },
+      {
+        "logs": 10000,
+        "ms": 2.88,
+        "meetsTarget": true
+      }
+    ],
+    "HTML generate": [
+      {
+        "logs": 100,
+        "ms": 0.239,
+        "meetsTarget": true
+      },
+      {
+        "logs": 500,
+        "ms": 0.733,
+        "meetsTarget": true
+      },
+      {
+        "logs": 1000,
+        "ms": 2.15,
+        "meetsTarget": true
+      },
+      {
+        "logs": 5000,
+        "ms": 11.6,
+        "meetsTarget": true
+      },
+      {
+        "logs": 10000,
+        "ms": 28.85,
+        "meetsTarget": true
+      }
+    ],
+    "DOM render (JS)": [
+      {
+        "logs": 100,
+        "ms": 7.8,
+        "meetsTarget": true
+      },
+      {
+        "logs": 500,
+        "ms": 34.85,
+        "meetsTarget": true
+      },
+      {
+        "logs": 1000,
+        "ms": 78.16,
+        "meetsTarget": true
+      },
+      {
+        "logs": 5000,
+        "ms": 451.77,
+        "meetsTarget": true
+      },
+      {
+        "logs": 10000,
+        "ms": 774.5,
+        "meetsTarget": true
+      }
+    ],
+    "DOM render (+ paint)": [
+      {
+        "logs": 100,
+        "ms": 17.93,
+        "meetsTarget": null
+      },
+      {
+        "logs": 500,
+        "ms": 49.71,
+        "meetsTarget": null
+      },
+      {
+        "logs": 1000,
+        "ms": 91.13,
+        "meetsTarget": null
+      },
+      {
+        "logs": 5000,
+        "ms": 208.76,
+        "meetsTarget": null
+      },
+      {
+        "logs": 10000,
+        "ms": 447.88,
+        "meetsTarget": null
+      }
+    ],
+    "Zoom (wheel)": [
+      {
+        "logs": 100,
+        "ms": 33.57,
+        "meetsTarget": true
+      },
+      {
+        "logs": 500,
+        "ms": 46.13,
+        "meetsTarget": true
+      },
+      {
+        "logs": 1000,
+        "ms": 119.77,
+        "meetsTarget": false
+      },
+      {
+        "logs": 5000,
+        "ms": 478.75,
+        "meetsTarget": false
+      },
+      {
+        "logs": 10000,
+        "ms": 1523.67,
+        "meetsTarget": false
+      }
+    ],
+    "Pan (drag)": [
+      {
+        "logs": 100,
+        "ms": 33.36,
+        "meetsTarget": true
+      },
+      {
+        "logs": 500,
+        "ms": 33.4,
+        "meetsTarget": true
+      },
+      {
+        "logs": 1000,
+        "ms": 49.54,
+        "meetsTarget": true
+      },
+      {
+        "logs": 5000,
+        "ms": 261.05,
+        "meetsTarget": false
+      },
+      {
+        "logs": 10000,
+        "ms": 1166.95,
+        "meetsTarget": false
+      }
+    ],
+    "Total pipeline": [
+      {
+        "logs": 100,
+        "ms": 19.12,
+        "meetsTarget": true
+      },
+      {
+        "logs": 500,
+        "ms": 51.91,
+        "meetsTarget": true
+      },
+      {
+        "logs": 1000,
+        "ms": 97.78,
+        "meetsTarget": true
+      },
+      {
+        "logs": 5000,
+        "ms": 243.74,
+        "meetsTarget": true
+      },
+      {
+        "logs": 10000,
+        "ms": 523.35,
+        "meetsTarget": true
+      }
+    ]
+  },
+  "log": "[    4240.7 ms] Benchmark started\n[    4243.0 ms] JIT warmup (full pipeline, untimed)…\n[    4419.2 ms] JIT warmup done\n[    4473.4 ms] ─── 100 logs (batch=50) ───\n[    4474.2 ms]   Generated 100 synthetic logs\n[    4474.6 ms]   Transform: warming up…\n[    4521.1 ms]   Transform: 925 µs  [925 µs]\n[    4521.5 ms]   Index build: warming up…\n[    4523.2 ms]   Tree build: 29 µs  [29 µs]\n[    4523.4 ms]   HTML gen: warming up…\n[    4535.8 ms]   HTML gen:   239 µs  [239 µs]\n[    4536.1 ms]   DOM render: warming up…\n[    4927.5 ms]   DOM render: sample 1/1 = 7.80 ms\n[    4928.3 ms]   DOM render (JS): 7.80 ms  (median of 1)\n[    4928.9 ms]   DOM paint: measuring…\n[    4951.6 ms]   DOM paint: sample 1/1 = 17.93 ms\n[    4952.3 ms]   DOM paint: 17.93 ms  (median of 1)\n[    4952.8 ms]   Zoom: measuring…\n[    5016.9 ms]   Zoom: sample 1/1 = 33.57 ms\n[    5018.0 ms]   Zoom: 33.57 ms  (median of 1)\n[    5018.5 ms]   Pan: measuring…\n[    5083.6 ms]   Pan: sample 1/1 = 33.36 ms\n[    5084.6 ms]   Pan: 33.36 ms  (median of 1)\n[    5117.1 ms]   Total: 19.12 ms\n[    5176.3 ms] ─── 500 logs (batch=20) ───\n[    5178.2 ms]   Generated 500 synthetic logs\n[    5178.6 ms]   Transform: warming up…\n[    5206.0 ms]   Transform: 1.35 ms  [1.35 ms]\n[    5206.6 ms]   Index build: warming up…\n[    5209.5 ms]   Tree build: 118 µs  [118 µs]\n[    5209.9 ms]   HTML gen: warming up…\n[    5225.0 ms]   HTML gen:   733 µs  [733 µs]\n[    5225.7 ms]   DOM render: warming up…\n[    5925.1 ms]   DOM render: sample 1/1 = 34.85 ms\n[    5927.2 ms]   DOM render (JS): 34.85 ms  (median of 1)\n[    5928.8 ms]   DOM paint: measuring…\n[    6000.1 ms]   DOM paint: sample 1/1 = 49.71 ms\n[    6002.2 ms]   DOM paint: 49.71 ms  (median of 1)\n[    6004.1 ms]   Zoom: measuring…\n[    6101.4 ms]   Zoom: sample 1/1 = 46.13 ms\n[    6105.6 ms]   Zoom: 46.13 ms  (median of 1)\n[    6107.4 ms]   Pan: measuring…\n[    6201.4 ms]   Pan: sample 1/1 = 33.40 ms\n[    6206.1 ms]   Pan: 33.40 ms  (median of 1)\n[    6234.8 ms]   Total: 51.91 ms\n[    6291.7 ms] ─── 1 000 logs (batch=10) ───\n[    6300.0 ms]   Generated 1 000 synthetic logs\n[    6302.4 ms]   Transform: warming up…\n[    6347.3 ms]   Transform: 4.27 ms  [4.27 ms]\n[    6349.8 ms]   Index build: warming up…\n[    6354.2 ms]   Tree build: 232 µs  [232 µs]\n[    6356.4 ms]   HTML gen: warming up…\n[    6380.1 ms]   HTML gen:   2.15 ms  [2.15 ms]\n[    6382.7 ms]   DOM render: warming up…\n[    7175.3 ms]   DOM render: sample 1/1 = 78.16 ms\n[    7179.5 ms]   DOM render (JS): 78.16 ms  (median of 1)\n[    7182.6 ms]   DOM paint: measuring…\n[    7320.2 ms]   DOM paint: sample 1/1 = 91.13 ms\n[    7326.7 ms]   DOM paint: 91.13 ms  (median of 1)\n[    7333.8 ms]   Zoom: measuring…\n[    7593.3 ms]   Zoom: sample 1/1 = 119.77 ms\n[    7611.9 ms]   Zoom: 119.77 ms  (median of 1)\n[    7621.3 ms]   Pan: measuring…\n[    7870.3 ms]   Pan: sample 1/1 = 49.54 ms\n[    7880.8 ms]   Pan: 49.54 ms  (median of 1)\n[    7953.9 ms]   Total: 97.78 ms\n[    8015.1 ms] ─── 5 000 logs (batch=3) ───\n[    8028.3 ms]   Generated 5 000 synthetic logs\n[    8032.5 ms]   Transform: warming up…\n[    8102.6 ms]   Transform: 21.79 ms  [21.79 ms]\n[    8107.3 ms]   Index build: warming up…\n[    8116.1 ms]   Tree build: 1.60 ms  [1.60 ms]\n[    8120.2 ms]   HTML gen: warming up…\n[    8159.0 ms]   HTML gen:   11.60 ms  [11.60 ms]\n[    8163.6 ms]   DOM render: warming up…\n[    9554.3 ms]   DOM render: sample 1/1 = 451.77 ms\n[    9574.0 ms]   DOM render (JS): 451.77 ms  (median of 1)\n[    9589.4 ms]   DOM paint: measuring…\n[   10017.1 ms]   DOM paint: sample 1/1 = 208.76 ms\n[   10032.4 ms]   DOM paint: 208.76 ms  (median of 1)\n[   10047.4 ms]   Zoom: measuring…\n[   11140.6 ms]   Zoom: sample 1/1 = 478.75 ms\n[   11163.5 ms]   Zoom: 478.75 ms  (median of 1)\n[   11179.9 ms]   Pan: measuring…\n[   12045.6 ms]   Pan: sample 1/1 = 261.05 ms\n[   12091.2 ms]   Pan: 261.05 ms  (median of 1)\n[   12391.8 ms]   Total: 243.74 ms\n[   12470.0 ms] ─── 10 000 logs (batch=3) ───\n[   12502.6 ms]   Generated 10 000 synthetic logs\n[   12523.1 ms]   Transform: warming up…\n[   12674.2 ms]   Transform: 43.73 ms  [43.73 ms]\n[   12693.9 ms]   Index build: warming up…\n[   12722.2 ms]   Tree build: 2.88 ms  [2.88 ms]\n[   12741.4 ms]   HTML gen: warming up…\n[   12847.5 ms]   HTML gen:   28.85 ms  [28.85 ms]\n[   12927.9 ms]   DOM render: warming up…\n[   15518.3 ms]   DOM render: sample 1/1 = 774.50 ms\n[   15560.9 ms]   DOM render (JS): 774.50 ms  (median of 1)\n[   15590.2 ms]   DOM paint: measuring…\n[   16486.5 ms]   DOM paint: sample 1/1 = 447.88 ms\n[   16516.1 ms]   DOM paint: 447.88 ms  (median of 1)\n[   16544.4 ms]   Zoom: measuring…\n[   20251.5 ms]   Zoom: sample 1/1 = 1523.67 ms\n[   20292.7 ms]   Zoom: 1523.67 ms  (median of 1)\n[   20325.9 ms]   Pan: measuring…\n[   22762.9 ms]   Pan: sample 1/1 = 1166.95 ms\n[   22810.6 ms]   Pan: 1166.95 ms  (median of 1)\n[   23317.7 ms]   Total: 523.35 ms\n[   23939.6 ms] Benchmark complete.\n",
+  "env": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.4212.0 Chrome/152.0.7977.167 Safari/537.36 MSIX",
+    "devicePixelRatio": 1.5,
+    "viewport": {
+      "innerWidth": 537,
+      "innerHeight": 550,
+      "outerWidth": 915,
+      "outerHeight": 708
+    },
+    "crossOriginIsolated": true,
+    "url": "http://localhost:3017/benchmark.html",
+    "hardwareConcurrency": 20
+  }
+}

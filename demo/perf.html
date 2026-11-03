@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performance Harness</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; color: #222; background: #fff; }
+    #stage { width: 100%; margin: 0 auto; background: #fff; }
+    #stage.fixed { contain: strict; overflow: hidden; border: 1px solid #ccc; }
+
+    /* The HUD is fixed-size and contained, so updating it never invalidates the layout of the stage. */
+    #hud {
+      position: fixed; right: 8px; bottom: 8px; width: 430px; height: 330px; z-index: 2147483647;
+      contain: strict; overflow: auto; padding: 8px 10px; border-radius: 8px;
+      background: rgba(20, 20, 32, 0.95); color: #d8d8e8;
+      font: 12px/1.45 ui-monospace, Consolas, monospace;
+    }
+    #hud.min { width: 150px; height: 30px; overflow: hidden; }
+    #hud .head { display: flex; justify-content: space-between; align-items: center; }
+    #hud button, #hud input {
+      font: inherit; padding: 1px 7px; margin: 2px 2px 0 0; border-radius: 4px;
+      border: 1px solid #5b6b9a; background: #2a3556; color: #e8ecff; cursor: pointer;
+    }
+    #hud input { cursor: text; width: 150px; background: #1a2038; }
+    #hud button:disabled { opacity: 0.45; cursor: default; }
+    #hud table { border-collapse: collapse; width: 100%; margin-top: 6px; }
+    #hud td, #hud th { padding: 1px 4px; text-align: right; white-space: nowrap; border-bottom: 1px solid #333a55; }
+    #hud td:first-child, #hud th:first-child { text-align: left; }
+    #hud .ok { color: #7bd88f; } #hud .bad { color: #ff7b7b; } #hud .dim { color: #8a90a8; }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <div id="hud">
+    <div class="head"><b>log2trace perf harness</b><button id="btn-min" title="Minimize">&ndash;</button></div>
+    <div id="hud-meta" class="dim"></div>
+    <div id="hud-status">starting&hellip;</div>
+    <div>
+      <button id="btn-run">Run</button>
+      <input id="only" placeholder="scenarios (all)" title="comma-separated: first-render,hover,select,resize,collapse,filter,scroll,wheel-zoom,drag-pan,hover-after-zoom,select-after-zoom">
+      <button id="btn-manual" title="Record frames, long tasks and Event Timing for 15 s while you interact by hand">Manual 15 s</button>
+      <button id="btn-dl" disabled>Download JSON</button>
+      <button id="btn-copy" disabled>Copy JSON</button>
+      <button id="btn-reload" title="Reload for a fresh run">Reload</button>
+    </div>
+    <table id="hud-table"></table>
+  </div>
+
+  <script type="module">
+    /**
+     * Performance harness for log2trace.
+     *
+     * One page load = one run = one JSON result (console line `PERF_RESULT {...}`,
+     * `window.__PERF_RESULT`, Download/Copy buttons, optional POST to `sink`).
+     * Reload the page for every run; the numbers are only comparable between
+     * fresh loads of a visible tab (hidden tabs throttle requestAnimationFrame).
+     *
+     * Flags go in the query string or, for the unmodified demo/server.js (which 404s on
+     * query strings), in the fragment: perf.html?impl=current&n=10000 == perf.html#impl=current&n=10000
+     *   impl=current|canvas|dom   which adapter drives the visualizer (default current)
+     *   n=<spans>  seed=  ns=0  flat=1  heavy=  ev=    dataset, see perf-gen.js
+     *   auto=1                    start as soon as the page loads
+     *   only=a,b                  run only these scenarios (first-render always runs)
+     *   wd=60                     per-scenario watchdog in seconds; also the silence
+     *                             limit after which a worker declares the page hung
+     *   budget=900                whole-run cap in seconds; later scenarios are skipped
+     *   bundle=./dist/log2trace.min.js   bundle that registers the element
+     *   sink=<url>                POST progress beacons and the final result here
+     *   mem=0                     skip measureUserAgentSpecificMemory
+     *   hud=1                     keep the overlay visible during the run. By default it is hidden
+     *                             while measuring, so that nothing but the page under test is on screen
+     *   probe=1                   only measure the environment (noise-floor probes), no dataset
+     *   manual=1                  mount, then record 15 s of hand-driven interaction instead of
+     *                             the scripted scenarios (frames, long tasks, Event Timing)
+     *   raw=1                     keep per-frame arrays in the JSON
+     *   w=, h=                    stage size for fixed-size adapters
+     *   rev=, label=              free-form tags copied into the JSON (git sha, run label)
+     *
+     * Adapter interface (one per implementation; scenarios only use these)
+     *   name, implemented, stageMode: 'flow' (page scroll) | 'fixed' (own scroller)
+     *   load(ctx)                      import bundle / register elements
+     *   mount(stage, traceData)        build the element and hand it the data; the
+     *                                  synchronous part is what first-render times
+     *   unmount()
+     *   rowCount() rowHeight() visibleRowRange() rowOfSpan(id)
+     *   surfaceRect()                  interaction surface in client coordinates
+     *   wheelZoom(deltaY, x, y)  zoomTo(factor) -> achieved  readZoom()  resetZoom()
+     *   panBegin(x, y) panMove(x, y) panEnd()
+     *   scrollToRow(row)
+     *   hoverRow(row, x, y)  hoverEnd()
+     *   selectRow(row)  detailNodeCount()
+     *   toggleCollapse(id)  collapseAll()  expandAll()
+     *   enableFilter()  setFilter(text) -> Promise<{debounceMs, renderMs}>
+     *   resize(widthPx)
+     *   reset()                        zoom 1, scroll 0, panel closed, all expanded, no filter
+     *   timings()                      implementation-specific breakdown for first-render
+     *
+     * Timing notes
+     *   - frame deltas are differences of requestAnimationFrame timestamps while one
+     *     synthetic input is applied per frame;
+     *   - "toFrame" latency = from the start of an action to the end of the main-thread
+     *     work of the next frame (rAF callback, then a MessageChannel task), so it
+     *     includes waiting for the next frame but not compositor/GPU presentation;
+     *   - Event Timing only reports trusted input; the synthetic events used here show
+     *     up as synchronous handler time instead (use "Manual 15 s" for real input).
+     */
+    import {
+      generateTrace, generateFlatLogs, FLAT_TRANSFORM_CONFIG, optionsFromParams, analyzeTrace, mulberry32,
+    } from './perf-gen.js';
+
+    const SCHEMA = 'log2trace-perf/1';
+    const IMPLS = ['current', 'canvas', 'dom'];
+    const q = new URLSearchParams(location.search);
+    // demo/server.js resolves files from the raw request URL, so "perf.html?n=1000" is a 404 there;
+    // the fragment never reaches the server, so "perf.html#n=1000" works with it as well.
+    for (const [key, value] of new URLSearchParams(location.hash.replace(/^#\??/, ''))) if (!q.has(key)) q.set(key, value);
+    const P = {
+      impl: IMPLS.includes(q.get('impl')) ? q.get('impl') : 'current',
+      auto: q.get('auto') === '1',
+      only: q.get('only') ? q.get('only').split(',').map((s) => s.trim()).filter(Boolean) : null,
+      wd: (Number(q.get('wd')) || 60) * 1000,
+      budget: (Number(q.get('budget')) || 900) * 1000,
+      bundle: q.get('bundle') || './dist/log2trace.min.js',
+      sink: q.get('sink') || '',
+      mem: q.get('mem') !== '0',
+      raw: q.get('raw') === '1',
+      probeOnly: q.get('probe') === '1',
+      manual: q.get('manual') === '1',
+      hud: q.get('hud') === '1',
+      w: Number(q.get('w')) || 0,
+      h: Number(q.get('h')) || 0,
+      rev: q.get('rev') || '',
+      label: q.get('label') || '',
+      gen: optionsFromParams(q),
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const stage = $('stage');
+    const rnd = (x, d = 2) => (Number.isFinite(x) ? Math.round(x * 10 ** d) / 10 ** d : null);
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    // -----------------------------------------------------------------------
+    // Frame helpers
+    // -----------------------------------------------------------------------
+
+    let rafStalls = 0;
+
+    /**
+     * Resolves with the rAF timestamp. Gives up (NaN) when no frame arrives for `timeout` ms and the
+     * page is hidden, or always when `strict` (used by the start-up probe, where a missing frame means
+     * a background tab); a visible page that is merely slow is otherwise waited for.
+     */
+    function nextFrame(timeout = 3000, strict = false) {
+      return new Promise((resolve) => {
+        let done = false;
+        let timer = 0;
+        const check = () => {
+          if (done) return;
+          if (!strict && document.visibilityState === 'visible') { timer = setTimeout(check, timeout); return; }
+          done = true;
+          rafStalls++;
+          resolve(NaN);
+        };
+        timer = setTimeout(check, timeout);
+        requestAnimationFrame((ts) => { if (!done) { done = true; clearTimeout(timer); resolve(ts); } });
+      });
+    }
+
+    /** Resolves after the main-thread work of the next frame (rAF callbacks, style, layout, paint). */
+    async function afterFrame() {
+      await nextFrame();
+      await new Promise((resolve) => {
+        const ch = new MessageChannel();
+        ch.port1.onmessage = () => { ch.port1.close(); resolve(); };
+        ch.port2.postMessage(0);
+      });
+      return performance.now();
+    }
+
+    async function settle() {
+      await afterFrame();
+      await afterFrame();
+      await sleep(120);
+    }
+
+    // -----------------------------------------------------------------------
+    // Statistics
+    // -----------------------------------------------------------------------
+
+    function stats(values) {
+      const n = values.length;
+      if (!n) return { n: 0 };
+      const a = Float64Array.from(values).sort();
+      const at = (p) => a[Math.min(n - 1, Math.max(0, Math.ceil(p * n) - 1))];
+      let sum = 0;
+      for (const v of a) sum += v;
+      return { n, mean: rnd(sum / n), min: rnd(a[0]), p50: rnd(at(0.5)), p95: rnd(at(0.95)), p99: rnd(at(0.99)), max: rnd(a[n - 1]) };
+    }
+
+    let refreshMs = 16.7;   // measured at startup
+
+    /**
+     * Frame-interval summary. `over16_7` and `over33` are the literal thresholds; at 60 Hz idle
+     * rAF deltas already jitter up to ~16.85 ms, so `over16_7` has a noise floor of a few percent.
+     * `over20` is the plan's per-frame budget; `overRefresh1_5` counts frames that missed a vsync.
+     */
+    function frameStats(dts) {
+      const s = stats(dts);
+      const pct = (limit) => rnd((100 * dts.filter((d) => d > limit).length) / Math.max(1, dts.length), 1);
+      return { ...s, over16_7: pct(16.7), over20: pct(20), over33: pct(33.3), overRefresh1_5: pct(1.5 * refreshMs) };
+    }
+
+    // -----------------------------------------------------------------------
+    // Observers: long tasks, long animation frames, Event Timing
+    // -----------------------------------------------------------------------
+
+    const entries = { longtask: [], loaf: [], event: [] };
+    const observers = [];
+    const supported = {};
+
+    function startObservers() {
+      const add = (type, bucket, opts = {}) => {
+        try {
+          if (!PerformanceObserver.supportedEntryTypes || !PerformanceObserver.supportedEntryTypes.includes(type)) return false;
+          const po = new PerformanceObserver((list) => { for (const e of list.getEntries()) entries[bucket].push(e); });
+          po.observe({ type, ...opts });
+          observers.push([po, bucket]);
+          return true;
+        } catch { return false; }
+      };
+      supported.longtask = add('longtask', 'longtask');
+      supported.loaf = add('long-animation-frame', 'loaf');
+      supported.event = add('event', 'event', { durationThreshold: 16 });
+    }
+
+    function flushObservers() {
+      for (const [po, bucket] of observers) for (const e of po.takeRecords()) entries[bucket].push(e);
+    }
+
+    const within = (list, t0, t1) => list.filter((e) => e.startTime >= t0 && e.startTime <= t1);
+    const shortUrl = (u) => (u ? u.split('/').slice(-1)[0].slice(0, 60) : '');
+
+    function summarizeLongTasks(list) {
+      const durations = list.map((e) => e.duration);
+      return {
+        count: list.length,
+        totalMs: rnd(durations.reduce((a, b) => a + b, 0), 1),
+        maxMs: rnd(Math.max(0, ...durations), 1),
+      };
+    }
+
+    function summarizeLoaf(list) {
+      const sum = (f) => rnd(list.reduce((a, e) => a + f(e), 0), 1);
+      const renderMs = (e) => (e.renderStart ? e.startTime + e.duration - e.renderStart : 0);
+      const styleLayoutMs = (e) => (e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0);
+      const forced = (e) => e.scripts.reduce((a, s) => a + (s.forcedStyleAndLayoutDuration || 0), 0);
+      const top = [...list].sort((a, b) => b.duration - a.duration).slice(0, 3).map((e) => ({
+        at: rnd(e.startTime, 0),
+        durationMs: rnd(e.duration, 1),
+        blockingMs: rnd(e.blockingDuration, 1),
+        renderMs: rnd(renderMs(e), 1),
+        styleLayoutMs: rnd(styleLayoutMs(e), 1),
+        forcedStyleLayoutMs: rnd(forced(e), 1),
+        scripts: [...e.scripts].sort((a, b) => b.duration - a.duration).slice(0, 3).map((s) => ({
+          invoker: s.invoker, fn: s.sourceFunctionName, src: shortUrl(s.sourceURL), ms: rnd(s.duration, 1),
+          forcedMs: rnd(s.forcedStyleAndLayoutDuration || 0, 1),
+        })),
+      }));
+      return {
+        count: list.length,
+        totalMs: sum((e) => e.duration),
+        maxMs: rnd(Math.max(0, ...list.map((e) => e.duration)), 1),
+        blockingMs: sum((e) => e.blockingDuration),
+        renderMs: sum(renderMs),
+        styleLayoutMs: sum(styleLayoutMs),
+        forcedStyleLayoutMs: sum(forced),
+        top,
+      };
+    }
+
+    function summarizeEvents(list) {
+      const durations = list.map((e) => e.duration);
+      const inputDelay = list.map((e) => e.processingStart - e.startTime);
+      const interactions = list.filter((e) => e.interactionId > 0).map((e) => e.duration);
+      return {
+        count: list.length,
+        duration: stats(durations),
+        inputDelay: stats(inputDelay),
+        interactions: interactions.length,
+        inpMs: interactions.length ? stats(interactions).p95 : null,
+        byName: list.reduce((acc, e) => { acc[e.name] = (acc[e.name] || 0) + 1; return acc; }, {}),
+      };
+    }
+
+    // -----------------------------------------------------------------------
+    // DOM node count and memory
+    // -----------------------------------------------------------------------
+
+    function countNodes(root) {
+      const t0 = performance.now();
+      let elements = 0, nodes = 0, shadowRoots = 0;
+      const roots = [root];
+      while (roots.length) {
+        const r = roots.pop();
+        const walker = document.createTreeWalker(r, NodeFilter.SHOW_ALL);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          nodes++;
+          if (node.nodeType === 1) {
+            elements++;
+            const sr = node.shadowRoot;
+            if (sr) { shadowRoots++; roots.push(sr); }
+          }
+        }
+      }
+      return { elements, nodes, shadowRoots, walkMs: rnd(performance.now() - t0, 0) };
+    }
+
+    async function memorySnapshot(label) {
+      const snap = { label, atMs: rnd(performance.now(), 0) };
+      const pm = performance.memory;
+      if (pm) { snap.jsHeapUsed = pm.usedJSHeapSize; snap.jsHeapTotal = pm.totalJSHeapSize; snap.jsHeapLimit = pm.jsHeapSizeLimit; }
+      if (!P.mem) { snap.ua = 'skipped (mem=0)'; return snap; }
+      if (!self.crossOriginIsolated || !performance.measureUserAgentSpecificMemory) {
+        snap.ua = `unavailable (crossOriginIsolated=${self.crossOriginIsolated})`;
+        return snap;
+      }
+      const t0 = performance.now();
+      try {
+        const m = await Promise.race([
+          performance.measureUserAgentSpecificMemory(),
+          sleep(30000).then(() => { throw new Error('timed out after 30 s'); }),
+        ]);
+        snap.uaBytes = m.bytes;
+        snap.uaByType = {};
+        for (const b of m.breakdown) {
+          const key = (b.types && b.types.join('+')) || 'other';
+          snap.uaByType[key] = (snap.uaByType[key] || 0) + b.bytes;
+        }
+      } catch (e) { snap.ua = `error: ${e && e.message ? e.message : e}`; }
+      snap.uaMs = rnd(performance.now() - t0, 0);
+      return snap;
+    }
+
+    // -----------------------------------------------------------------------
+    // Environment
+    // -----------------------------------------------------------------------
+
+    function gpuInfo() {
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) return { webgl: false };
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        return {
+          webgl: true,
+          vendor: ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
+          renderer: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+        };
+      } catch (e) { return { error: String(e) }; }
+    }
+
+    async function measureRefresh(frames = 60) {
+      const ts = [];
+      for (let i = 0; i <= frames; i++) {
+        const t = await nextFrame(2500, true);
+        if (Number.isNaN(t)) return { stalled: true };
+        ts.push(t);
+      }
+      const d = [];
+      for (let i = 1; i < ts.length; i++) d.push(ts[i] - ts[i - 1]);
+      const s = stats(d);
+      return { medianMs: s.p50, p95Ms: s.p95, maxMs: s.max, hz: rnd(1000 / s.p50, 1), samples: d.length };
+    }
+
+    async function captureEnv() {
+      const nav = navigator;
+      let uaData = null;
+      try {
+        if (nav.userAgentData) {
+          uaData = await nav.userAgentData.getHighEntropyValues(['platformVersion', 'architecture', 'bitness', 'fullVersionList']);
+          uaData = { brands: uaData.fullVersionList || nav.userAgentData.brands, platform: uaData.platform, platformVersion: uaData.platformVersion, architecture: uaData.architecture, bitness: uaData.bitness, mobile: uaData.mobile };
+        }
+      } catch { /* optional */ }
+      const refresh = await measureRefresh();
+      if (refresh.medianMs) refreshMs = refresh.medianMs;
+      return {
+        userAgent: nav.userAgent,
+        uaData,
+        hardwareConcurrency: nav.hardwareConcurrency,
+        deviceMemoryGb: nav.deviceMemory ?? null,
+        devicePixelRatio: window.devicePixelRatio,
+        screen: { width: screen.width, height: screen.height, availWidth: screen.availWidth, availHeight: screen.availHeight, colorDepth: screen.colorDepth },
+        viewport: { innerWidth, innerHeight, outerWidth, outerHeight },
+        crossOriginIsolated: self.crossOriginIsolated,
+        secureContext: self.isSecureContext,
+        gpu: gpuInfo(),
+        refresh,
+        visibility: { state: document.visibilityState, hasFocus: document.hasFocus() },
+        observers: { ...supported },
+        language: nav.language,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        url: location.href,
+      };
+    }
+
+    /**
+     * Noise-floor probes, run on an empty page before the dataset exists and again after teardown.
+     * Frame intervals depend heavily on the window, display and machine load (the same trivial
+     * hover scenario measured 17 ms in one window and 83 ms in another), so every result carries
+     * these numbers to show whether two runs are comparable.
+     */
+    let probeSink = 0;
+    function cpuProbe() {
+      const times = [];
+      for (let k = 0; k < 7; k++) {
+        const t0 = performance.now();
+        let x = 0;
+        for (let i = 1; i <= 2e6; i++) x += Math.sqrt(i) / (1 + (i & 7));
+        probeSink += x;
+        times.push(performance.now() - t0);
+      }
+      const s = stats(times);
+      return { minMs: s.min, p50Ms: s.p50, maxMs: s.max };
+    }
+
+    async function pipelineProbe(frames = 90) {
+      const dot = document.createElement('div');
+      Object.assign(dot.style, { position: 'fixed', left: '0px', top: '0px', width: '40px', height: '40px', background: '#2a7', zIndex: '2147483646', contain: 'strict', color: '#fff', font: '10px monospace' });
+      document.body.appendChild(dot);
+      const dts = [];
+      let last = null;
+      for (let i = 0; i < frames; i++) {
+        const ts = await nextFrame(2500, true);
+        if (Number.isNaN(ts)) { dot.remove(); return { stalled: true }; }
+        if (last !== null) dts.push(ts - last);
+        last = ts;
+        dot.style.left = `${(i * 7) % 300}px`;
+        dot.textContent = String(i);
+      }
+      dot.remove();
+      const f = frameStats(dts);
+      return { frames: dts.length, p50: f.p50, p95: f.p95, p99: f.p99, max: f.max, overRefresh1_5: f.overRefresh1_5 };
+    }
+
+    async function bundleInfo(url) {
+      try {
+        const res = await fetch(url);
+        const buf = await res.arrayBuffer();
+        const digest = await crypto.subtle.digest('SHA-256', buf);
+        const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+        return { url, bytes: buf.byteLength, sha256 };
+      } catch (e) { return { url, error: String(e) }; }
+    }
+
+    // -----------------------------------------------------------------------
+    // Sink, watchdog worker, HUD
+    // -----------------------------------------------------------------------
+
+    function post(kind, payload, { keepalive = true } = {}) {
+      if (!P.sink) return;
+      fetch(P.sink, {
+        method: 'POST', mode: 'cors', keepalive,
+        headers: { 'content-type': 'text/plain' },
+        body: JSON.stringify({ kind, at: new Date().toISOString(), impl: P.impl, n: P.gen.n, ...payload }),
+      }).catch(() => {});
+    }
+
+    let watchdogFired = null;
+    let worker = null;
+    function startWatchdog() {
+      const src = `
+        let last = Date.now(), info = {}, limit = ${P.wd}, fired = false;
+        const sink = ${JSON.stringify(P.sink)};
+        onmessage = (e) => { last = Date.now(); info = e.data; fired = false; };
+        setInterval(() => {
+          const silent = Date.now() - last;
+          if (!fired && silent > limit) {
+            fired = true;
+            postMessage({ type: 'hang', info, silentMs: silent });
+            if (sink) fetch(sink, { method: 'POST', mode: 'cors', headers: { 'content-type': 'text/plain' }, keepalive: true,
+              body: JSON.stringify({ kind: 'hang', at: new Date().toISOString(), info, silentMs: silent }) }).catch(() => {});
+          }
+        }, 1000);`;
+      try {
+        worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+        worker.onmessage = (e) => { if (e.data && e.data.type === 'hang') watchdogFired = { silentMs: e.data.silentMs, info: e.data.info, at: new Date().toISOString() }; };
+      } catch { worker = null; }
+      setInterval(() => beat(), 1000);
+    }
+    let beatInfo = { phase: 'init' };
+    function beat(info) {
+      if (info) beatInfo = info;
+      if (worker) worker.postMessage(beatInfo);
+    }
+
+    const hud = { root: $('hud'), status: $('hud-status'), meta: $('hud-meta'), table: $('hud-table') };
+    const setStatus = (text) => { hud.status.textContent = text; };
+
+    function renderHud(result) {
+      const rows = ['<tr><th>scenario</th><th>status</th><th>p50</th><th>p95</th><th>max</th><th>LT</th></tr>'];
+      for (const [name, s] of Object.entries(result.scenarios)) {
+        const h = s.headline || {};
+        const cls = s.status === 'ok' ? 'ok' : s.status === 'skipped' ? 'dim' : 'bad';
+        rows.push(`<tr title="${h.label || ''} (${h.unit || ''})"><td>${name}</td><td class="${cls}">${s.status}</td><td>${h.p50 ?? ''}</td><td>${h.p95 ?? ''}</td><td>${h.max ?? ''}</td><td>${s.longTasks ? s.longTasks.count : ''}</td></tr>`);
+      }
+      hud.table.innerHTML = rows.join('');
+    }
+
+    // -----------------------------------------------------------------------
+    // Frame driver and discrete actions
+    // -----------------------------------------------------------------------
+
+    /**
+     * Apply one step per frame, `frames` times. Records requestAnimationFrame
+     * deltas and the synchronous time of every step. Stops early at `deadline`.
+     */
+    function runFrames({ frames, step, deadline }) {
+      return new Promise((resolve) => {
+        const dts = [];
+        const handler = [];
+        let i = 0;
+        let last = null;
+        let timedOut = false;
+        let lastBeat = 0;
+        const wall0 = performance.now();
+        let lastFrameAt = wall0;
+        const stall = setInterval(() => {
+          // a hidden tab never calls back; give up instead of hanging the run (a slow visible page is waited for)
+          if (document.visibilityState !== 'visible' && performance.now() - lastFrameAt > 5000) {
+            clearInterval(stall);
+            resolve({ dts, handler, timedOut: true, stalled: true, framesDone: i, wallMs: performance.now() - wall0 });
+          }
+        }, 1000);
+        const finish = () => { clearInterval(stall); resolve({ dts, handler, timedOut, stalled: false, framesDone: i, wallMs: performance.now() - wall0 }); };
+        const onFrame = (ts) => {
+          lastFrameAt = performance.now();
+          if (last !== null) dts.push(ts - last);
+          last = ts;
+          if (i >= frames) return finish();
+          if (performance.now() > deadline) { timedOut = true; return finish(); }
+          if (lastFrameAt - lastBeat > 500) { lastBeat = lastFrameAt; beat({ phase: 'frames', i, of: frames }); }
+          const t = performance.now();
+          step(i);
+          handler.push(performance.now() - t);
+          i++;
+          requestAnimationFrame(onFrame);
+        };
+        requestAnimationFrame(onFrame);
+      });
+    }
+
+    function frameResult(res) {
+      const frames = frameStats(res.dts);
+      return {
+        status: res.stalled ? 'stalled' : res.timedOut ? 'timeout' : 'ok',
+        framesDone: res.framesDone,
+        wallMs: rnd(res.wallMs, 0),
+        frames,
+        handler: { ...stats(res.handler), totalMs: rnd(res.handler.reduce((a, b) => a + b, 0), 1) },
+        headline: { label: 'frame interval', unit: 'ms', p50: frames.p50, p95: frames.p95, p99: frames.p99, max: frames.max },
+        ...(P.raw ? { raw: { dts: res.dts.map((d) => rnd(d, 2)), handler: res.handler.map((d) => rnd(d, 2)) } } : {}),
+      };
+    }
+
+    /** Run `fn` synchronously and report handler time and time until the next frame has been produced. */
+    async function timedAction(fn) {
+      await afterFrame();
+      const t0 = performance.now();
+      fn();
+      const t1 = performance.now();
+      const tf = await afterFrame();
+      return { handlerMs: t1 - t0, toFrameMs: tf - t0 };
+    }
+
+    function latencyResult(list, extra = {}) {
+      const lat = stats(list.map((r) => r.toFrameMs));
+      return {
+        samples: list.length,
+        handler: stats(list.map((r) => r.handlerMs)),
+        toFrame: lat,
+        headline: { label: 'action -> next frame', unit: 'ms', p50: lat.p50, p95: lat.p95, p99: lat.p99, max: lat.max },
+        ...extra,
+      };
+    }
+
+    // -----------------------------------------------------------------------
+    // Adapters
+    // -----------------------------------------------------------------------
+
+    /**
+     * Drives the existing `<trace-visualizer>` through its public/shadow-DOM hooks:
+     *   [data-role="timeline-container"]  wheel / mouse events (zoom, pan)
+     *   [data-span-id]                    click (select), mouseenter (hover)
+     *   [data-collapse-id]                click (collapse/expand)
+     *   [title*="Reset"]                  reset zoom
+     * plus page scroll. The element has no collapse-all UI: collapseAll/expandAll
+     * go through `viewModel` + `_rerender()`. Zoom is capped at 10x by the element.
+     */
+    class CurrentAdapter {
+      constructor() {
+        this.name = 'current';
+        this.implemented = true;
+        this.stageMode = 'flow';
+        this.el = null;
+        this._bars = null;
+        this._row0 = null;
+        this._hovered = null;
+        this._panelOpen = false;
+        this._collapsed = false;
+        this._filtered = false;
+        this._pan = null;
+        this.chevronClicks = 0;
+        this.chevronFallbacks = 0;
+        this._zoomTouched = false;
+      }
+
+      async load(ctx) {
+        if (!ctx.lib) throw new Error('bundle did not load');
+        await customElements.whenDefined('trace-visualizer');
+      }
+
+      get shadow() { return this.el.shadowRoot; }
+      get container() { return this.shadow.querySelector('[data-role="timeline-container"]'); }
+
+      mount(stageEl, traceData) {
+        const el = document.createElement('trace-visualizer');
+        el.setAttribute('full-width', '');
+        el.setAttribute('show-legend', '');
+        stageEl.appendChild(el);
+        this.el = el;
+        el.traceData = traceData;   // builds the index and renders synchronously
+        this._invalidate();
+        return {};
+      }
+
+      unmount() { if (this.el) this.el.remove(); this.el = null; this._invalidate(); }
+
+      _invalidate() { this._bars = null; this._row0 = null; this._hovered = null; }
+
+      get bars() {
+        if (!this._bars) this._bars = this.shadow.querySelectorAll('[data-span-id]');
+        return this._bars;
+      }
+
+      rowCount() { return this.bars.length; }
+      rowHeight() { return 35; }   // span height 30 + padding 5 (element defaults)
+
+      _row0Top() {
+        if (this._row0 === null) {
+          const first = this.bars[0];
+          this._row0 = first ? first.getBoundingClientRect().top + window.scrollY : 0;
+        }
+        return this._row0;
+      }
+
+      visibleRowRange() {
+        const first = Math.max(0, Math.floor((window.scrollY - this._row0Top()) / this.rowHeight()));
+        const count = Math.ceil(window.innerHeight / this.rowHeight());
+        return [first, Math.min(this.rowCount() - 1, first + count)];
+      }
+
+      rowOfSpan(id) {
+        const el = this.shadow.querySelector(`[data-span-id="${id}"]`);
+        return el ? Array.prototype.indexOf.call(this.bars, el) : -1;
+      }
+
+      surfaceRect() {
+        const clip = this.container.parentElement;   // the clip box, untransformed
+        const r = clip.getBoundingClientRect();
+        return { left: r.left, top: Math.max(0, r.top), width: r.width, height: Math.min(r.height, window.innerHeight) };
+      }
+
+      wheelZoom(deltaY, x, y) {
+        this._zoomTouched = true;
+        this.container.dispatchEvent(new WheelEvent('wheel', { deltaY, clientX: x, clientY: y, bubbles: true, cancelable: true, composed: true }));
+      }
+
+      readZoom() {
+        const m = /scaleX\(([\d.eE+-]+)\)/.exec(this.container.style.transform || '');
+        return m ? Number(m[1]) : 1;
+      }
+
+      async zoomTo(target, until = Infinity) {
+        const r = this.surfaceRect();
+        let z = this.readZoom();
+        for (let guard = 0; guard < 80 && z < target && performance.now() < until; guard++) {
+          this.wheelZoom(-100, r.left + r.width / 2, r.top + r.height / 2);
+          const z2 = this.readZoom();
+          if (z2 <= z) break;   // capped
+          z = z2;
+          if (guard % 5 === 4) await nextFrame();
+        }
+        return rnd(z, 3);
+      }
+
+      resetZoom() {
+        const btn = this.shadow.querySelector('[title*="Reset"]');
+        if (btn) btn.click();
+      }
+
+      panBegin(x, y) {
+        this._zoomTouched = true;
+        this._pan = { x, y };
+        this.container.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: x, clientY: y, bubbles: true, cancelable: true, composed: true }));
+      }
+      panMove(x, y) {
+        this.container.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true, cancelable: true, composed: true }));
+      }
+      panEnd() {
+        this.container.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true }));
+        this._pan = null;
+      }
+
+      scrollToRow(row) {
+        const top = this._row0Top() + row * this.rowHeight() - 40;
+        document.scrollingElement.scrollTop = Math.max(0, top);
+      }
+
+      hoverRow(row, x, y) {
+        const bars = this.bars;
+        const bar = bars[Math.min(bars.length - 1, Math.max(0, row))];
+        if (!bar) return;
+        if (this._hovered && this._hovered !== bar) this._hovered.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false, clientX: x, clientY: y }));
+        if (this._hovered !== bar) bar.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, clientX: x, clientY: y }));
+        bar.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, composed: true, clientX: x, clientY: y }));
+        this._hovered = bar;
+      }
+      hoverEnd() {
+        if (this._hovered) this._hovered.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+        this._hovered = null;
+      }
+
+      selectRow(row) {
+        const bar = this.bars[row];
+        if (!bar) throw new Error(`no bar at row ${row}`);
+        bar.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
+        this._panelOpen = true;
+      }
+
+      detailNodeCount() {
+        const close = this.shadow.querySelector('[title="Close"]');
+        const panel = close && close.parentElement && close.parentElement.parentElement;
+        const content = panel && panel.lastElementChild;
+        return content ? content.getElementsByTagName('*').length : 0;
+      }
+
+      /**
+       * Click the chevron. In the element as shipped the chevrons that are in the DOM after the
+       * initial render of more than 200 spans have no click handler (virtual scrolling replaces the
+       * labels that were wired), so a click can do nothing; then fall back to what the handler
+       * does, `viewModel.toggleCollapse(id)` + `_rerender()`, and count it.
+       */
+      toggleCollapse(id) {
+        const chevron = this.shadow.querySelector(`[data-collapse-id="${id}"]`);
+        if (!chevron) throw new Error(`no collapse chevron for span ${id}`);
+        const vm = this.el.viewModel;
+        const before = vm.collapsedIds.has(id);
+        chevron.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
+        if (vm.collapsedIds.has(id) === before) {
+          this.chevronFallbacks++;
+          vm.toggleCollapse(id);
+          this.el._rerender();
+        } else {
+          this.chevronClicks++;
+        }
+        this._invalidate();
+        this._collapsed = true;
+        this._panelOpen = false;   // a full re-render rebuilds the panel
+      }
+      notes() { return { chevronClicksEffective: this.chevronClicks, chevronClicksDeadFallbackUsed: this.chevronFallbacks }; }
+      collapseAll() {
+        this.el.viewModel.collapseAll();
+        this.el._rerender();
+        this._invalidate();
+        this._collapsed = true;
+        this._panelOpen = false;
+      }
+      expandAll() {
+        this.el.viewModel.expandAll();
+        this.el._rerender();
+        this._invalidate();
+        this._collapsed = false;
+        this._panelOpen = false;
+      }
+
+      enableFilter() {
+        this.el.config = {
+          filterConfigs: [{
+            field: 'spanName', label: 'Name', type: 'text', source: 'local', target: 'span', required: false,
+            options: [], optionsSource: 'static', placeholder: '', debounce: 0, width: 0, autoRange: false,
+          }],
+        };
+        this._invalidate();
+        this._panelOpen = false;
+      }
+
+      setFilter(text) {
+        const input = this.shadow.querySelector('input[data-filter-type="text"]');
+        if (!input) throw new Error('filter input not found; call enableFilter() first');
+        this._filtered = text !== '';
+        return new Promise((resolve) => {
+          const t0 = performance.now();
+          let tEvent = t0;
+          const onChanged = () => { tEvent = performance.now(); this.el.removeEventListener('filter-changed', onChanged); };
+          this.el.addEventListener('filter-changed', onChanged);
+          const mo = new MutationObserver(() => {
+            mo.disconnect();
+            this._invalidate();
+            resolve({ debounceMs: tEvent - t0, renderMs: performance.now() - tEvent });
+          });
+          mo.observe(this.shadow, { childList: true });
+          input.value = text;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+      }
+
+      resize(widthPx) { stage.style.width = `${widthPx}px`; }
+
+      async reset() {
+        if (this._filtered) await this.setFilter('');
+        if (this._collapsed) this.expandAll();
+        if (this._panelOpen) {
+          const close = this.shadow.querySelector('[title="Close"]');
+          if (close) close.click();
+          this._panelOpen = false;
+        }
+        this.hoverEnd();
+        // Only touch the zoom when it was used: the element writes an inline transform on every duration
+        // label and event marker the first time it zooms or resets (even to 100%), and from then on every
+        // frame is much slower (select at 5K spans: ~50 ms -> ~700 ms). Scenarios that are not about zoom
+        // must not be the ones that trigger it.
+        if (this._zoomTouched || this.readZoom() !== 1) { this.resetZoom(); this._zoomTouched = false; }
+        document.scrollingElement.scrollTop = 0;
+      }
+
+      /** Library User Timing entries (`log2trace:*`) plus the virtual-scroll window the element ended up rendering. */
+      timings() {
+        const out = {};
+        for (const m of performance.getEntriesByType('measure')) {
+          if (!m.name.startsWith('log2trace:')) continue;
+          const o = out[m.name] || (out[m.name] = { count: 0, totalMs: 0, maxMs: 0 });
+          o.count++; o.totalMs += m.duration; o.maxMs = Math.max(o.maxMs, m.duration);
+        }
+        for (const o of Object.values(out)) { o.totalMs = rnd(o.totalMs, 1); o.maxMs = rnd(o.maxMs, 1); }
+        const windows = performance.getEntriesByName('log2trace:virtual-scroll-window');
+        const last = windows[windows.length - 1];
+        return { userTiming: out, virtualScrollWindow: last ? last.detail : null };
+      }
+    }
+
+    class NotImplemented extends Error {}
+
+    /**
+     * Placeholder for the `canvas` and `dom` implementations of the new view.
+     * Both will expose the interaction surface as `[part="plot"]` in an open shadow
+     * root; every method below says how to implement it against that hook.
+     */
+    class StubAdapter {
+      constructor(name) {
+        this.name = name;
+        this.implemented = false;
+        this.stageMode = 'fixed';
+      }
+      _todo(what) { throw new NotImplemented(`${this.name} adapter: ${what} is not implemented yet`); }
+      async load() { /* TODO: import the bundle that registers the new element */ }
+      // TODO: el = document.createElement('trace-visualizer-next'); el.setAttribute('renderer', this.name);
+      //       stage.appendChild(el); el.traceData = traceData; await first frame (painter stats / ready event).
+      mount() { this._todo('mount'); }
+      unmount() { this._todo('unmount'); }
+      rowCount() { this._todo('rowCount'); }          // TODO: model row count (view state or a11y rowcount)
+      rowHeight() { this._todo('rowHeight'); }        // TODO: spanHeight + spanPadding
+      visibleRowRange() { this._todo('visibleRowRange'); }
+      rowOfSpan() { this._todo('rowOfSpan'); }        // TODO: model.rowOf(spanId)
+      surfaceRect() { this._todo('surfaceRect'); }    // TODO: shadowRoot.querySelector('[part="plot"]').getBoundingClientRect()
+      wheelZoom() { this._todo('wheelZoom'); }        // TODO: WheelEvent{ctrlKey:true, deltaY, clientX, clientY} on [part="plot"]
+      zoomTo() { this._todo('zoomTo'); }              // TODO: wheel until the readout reaches the factor (20x)
+      readZoom() { this._todo('readZoom'); }
+      resetZoom() { this._todo('resetZoom'); }        // TODO: dblclick on empty plot space or key '0'
+      panBegin() { this._todo('panBegin'); }          // TODO: pointerdown on [part="plot"]
+      panMove() { this._todo('panMove'); }            // TODO: pointermove (past the 3 px threshold)
+      panEnd() { this._todo('panEnd'); }              // TODO: pointerup
+      scrollToRow() { this._todo('scrollToRow'); }    // TODO: scrollTop of the plot scroller
+      hoverRow() { this._todo('hoverRow'); }          // TODO: pointermove over the row
+      hoverEnd() { this._todo('hoverEnd'); }
+      selectRow() { this._todo('selectRow'); }        // TODO: pointerdown + pointerup without movement on the bar
+      detailNodeCount() { this._todo('detailNodeCount'); }
+      toggleCollapse() { this._todo('toggleCollapse'); }
+      collapseAll() { this._todo('collapseAll'); }
+      expandAll() { this._todo('expandAll'); }
+      enableFilter() { this._todo('enableFilter'); }
+      setFilter() { this._todo('setFilter'); }
+      resize() { this._todo('resize'); }
+      reset() { this._todo('reset'); }
+      timings() { return {}; }                        // TODO: painter stats()
+      notes() { return {}; }
+    }
+
+    function createAdapter(impl) {
+      return impl === 'current' ? new CurrentAdapter() : new StubAdapter(impl);
+    }
+
+    // -----------------------------------------------------------------------
+    // Dataset
+    // -----------------------------------------------------------------------
+
+    async function buildDataset(lib) {
+      const g = P.gen;
+      if (g.flat) {
+        if (!lib || !lib.transformLogs) throw new Error('flat=1 needs transformLogs from the bundle');
+        const t0 = performance.now();
+        const logs = generateFlatLogs(g.n * 2, g.seed);
+        const t1 = performance.now();
+        const traceData = lib.transformLogs(logs, FLAT_TRANSFORM_CONFIG);
+        const t2 = performance.now();
+        const meta = analyzeTrace(traceData);
+        meta.generator = { kind: 'flat', logs: logs.length, genLogsMs: rnd(t1 - t0, 1), transformMs: rnd(t2 - t1, 1) };
+        return { traceData, meta };
+      }
+      return generateTrace({ n: g.n, seed: g.seed, ns: g.ns, heavy: g.heavy, ev: g.ev });
+    }
+
+    /** Pick two substrings of span names: one matching ~2% of spans, one matching ~half. */
+    function pickFilterQueries(traceData) {
+      const counts = new Map();
+      let total = 0;
+      for (const rs of traceData.resourceSpans) for (const ss of rs.scopeSpans) for (const s of ss.spans) {
+        counts.set(s.name, (counts.get(s.name) || 0) + 1);
+        total++;
+      }
+      const tokens = new Set();
+      for (const name of counts.keys()) {
+        for (const w of name.toLowerCase().split(/[^\p{L}\p{N}]+/u)) if (w.length >= 4) tokens.add(w);
+      }
+      const share = (token) => {
+        let c = 0;
+        for (const [name, k] of counts) if (name.toLowerCase().includes(token)) c += k;
+        return c / Math.max(1, total);
+      };
+      const scored = [...tokens].map((t) => ({ text: t, share: share(t) })).filter((t) => t.share > 0);
+      const closest = (target) => scored.reduce((best, t) => (!best || Math.abs(t.share - target) < Math.abs(best.share - target) ? t : best), null);
+      const fallback = { text: 'a', share: share('a') };
+      const pickOne = (target) => { const t = closest(target) || fallback; return { text: t.text, share: rnd(t.share, 4), matches: Math.round(t.share * total) }; };
+      return { selective: pickOne(0.02), broad: pickOne(0.5) };
+    }
+
+    // -----------------------------------------------------------------------
+    // Scenarios
+    // -----------------------------------------------------------------------
+
+    async function scFirstRender(ctx) {
+      const { adapter } = ctx;
+      flushObservers();
+      const t0 = performance.now();
+      await adapter.mount(stage, ctx.data.traceData);
+      const tSync = performance.now();
+      const tFrame = await afterFrame();
+      await nextFrame();
+      const tDouble = performance.now();
+      const jsMs = tSync - t0;
+      const frameMs = tFrame - t0;
+      const doubleRafMs = tDouble - t0;
+      return {
+        status: 'ok',
+        jsMs: rnd(jsMs, 1),
+        toFirstFrameMs: rnd(frameMs, 1),
+        doubleRafMs: rnd(doubleRafMs, 1),
+        stageHeightPx: rnd(stage.getBoundingClientRect().height, 0),
+        timings: adapter.timings(),
+        headline: { label: 'first render (js sync / to first frame)', unit: 'ms', p50: rnd(jsMs, 0), p95: rnd(frameMs, 0), max: rnd(doubleRafMs, 0) },
+      };
+    }
+
+    async function scWheelZoom(ctx) {
+      const { adapter } = ctx;
+      await adapter.reset();
+      await settle();
+      const frames = 120;
+      const rect = adapter.surfaceRect();
+      ctx.startMeasure();
+      const res = await runFrames({
+        frames, deadline: ctx.deadline,
+        step: (i) => {
+          const dir = Math.floor(i / 12) % 2 === 0 ? -1 : 1;           // 12 frames in, 12 frames out, ...
+          const x = rect.left + rect.width * (0.15 + (0.7 * i) / (frames - 1));   // anchor sweeps left to right
+          adapter.wheelZoom(dir * 100, x, rect.top + rect.height / 2);
+        },
+      });
+      return { ...frameResult(res), framesRequested: frames, zoomAfter: adapter.readZoom() };
+    }
+
+    async function scDragPan(ctx) {
+      const { adapter } = ctx;
+      await adapter.reset();
+      const zoomAchieved = await adapter.zoomTo(20, performance.now() + P.wd / 2);   // each step is slow on big traces: cap the setup
+      await settle();
+      const rect = adapter.surfaceRect();
+      const x0 = rect.left + rect.width * 0.6;
+      const y = rect.top + rect.height / 2;
+      const frames = 120;
+      adapter.panBegin(x0, y);
+      ctx.startMeasure();
+      const res = await runFrames({
+        frames, deadline: ctx.deadline,
+        step: (i) => adapter.panMove(x0 - (i < 60 ? i : frames - i) * 10, y),   // 600 px out, 600 px back
+      });
+      adapter.panEnd();
+      return { ...frameResult(res), framesRequested: frames, zoomRequested: 20, zoomAchieved };
+    }
+
+    async function scScroll(ctx) {
+      const { adapter, rng } = ctx;
+      await adapter.reset();
+      await settle();
+      const rows = adapter.rowCount();
+      const span = Math.max(1, rows - 20);
+      ctx.startMeasure();
+      const smooth = await runFrames({ frames: 200, deadline: ctx.deadline, step: (i) => adapter.scrollToRow((i * 2) % span) });
+      const jumps = Array.from({ length: 50 }, () => Math.floor(rng() * span));
+      ctx.startMeasure();
+      const jumpRes = await runFrames({ frames: 50, deadline: ctx.deadline, step: (i) => adapter.scrollToRow(jumps[i]) });
+      const a = frameResult(smooth);
+      const b = frameResult(jumpRes);
+      return {
+        status: a.status === 'ok' && b.status === 'ok' ? 'ok' : (a.status !== 'ok' ? a.status : b.status),
+        rows,
+        smooth: a,
+        jumps: b,
+        headline: a.headline,
+      };
+    }
+
+    async function scHover(ctx, { frames: frameCount = 300 } = {}) {
+      const { adapter, rng } = ctx;
+      await adapter.reset();
+      await settle();
+      adapter.scrollToRow(Math.floor(adapter.rowCount() / 3));
+      await settle();
+      const [first, last] = adapter.visibleRowRange();
+      const rect = adapter.surfaceRect();
+      const picks = Array.from({ length: frameCount }, () => ({
+        row: first + Math.floor(rng() * (last - first + 1)),
+        x: rect.left + rng() * rect.width,
+        y: rect.top + rng() * rect.height,
+      }));
+      ctx.startMeasure();
+      const res = await runFrames({ frames: frameCount, deadline: ctx.deadline, step: (i) => adapter.hoverRow(picks[i].row, picks[i].x, picks[i].y) });
+      adapter.hoverEnd();
+      return { ...frameResult(res), framesRequested: frameCount, visibleRows: [first, last] };
+    }
+
+    async function scSelect(ctx, { count = 50 } = {}) {
+      const { adapter, rng, data } = ctx;
+      await adapter.reset();
+      await settle();
+      const rows = adapter.rowCount();
+      const heavyId = data.meta.hot.heavyEvents ? data.meta.hot.heavyEvents.spanId : null;
+      const heavyRow = heavyId ? adapter.rowOfSpan(heavyId) : -1;
+      const picks = Array.from({ length: heavyRow >= 0 ? count - 1 : count }, () => Math.floor(rng() * rows));
+      if (heavyRow >= 0) picks.splice(Math.floor(count / 2), 0, heavyRow);
+      const list = [];
+      let heavy = null;
+      let timedOut = false;
+      ctx.startMeasure();
+      for (let k = 0; k < picks.length; k++) {
+        if (performance.now() > ctx.deadline) { timedOut = true; break; }
+        beat({ phase: 'select', k });
+        adapter.scrollToRow(Math.max(0, picks[k] - 5));
+        await afterFrame();
+        const r = await timedAction(() => adapter.selectRow(picks[k]));
+        if (picks[k] === heavyRow && heavy === null) heavy = { ...r, events: data.meta.events.max, detailNodes: adapter.detailNodeCount() };
+        else list.push(r);
+      }
+      const all = heavy ? [...list, heavy] : list;
+      return {
+        status: timedOut ? 'timeout' : 'ok',
+        ...latencyResult(list),
+        selected: all.length,
+        heavySpan: heavy && { events: heavy.events, handlerMs: rnd(heavy.handlerMs, 1), toFrameMs: rnd(heavy.toFrameMs, 1), detailNodes: heavy.detailNodes },
+        detailNodesTypical: list.length ? adapter.detailNodeCount() : null,
+      };
+    }
+
+    async function scResize(ctx) {
+      const { adapter } = ctx;
+      await adapter.reset();
+      await settle();
+      const base = stage.getBoundingClientRect().width;
+      const frames = 40;
+      ctx.startMeasure();
+      const res = await runFrames({ frames, deadline: ctx.deadline, step: (i) => adapter.resize(Math.round(base * (i % 2 ? 0.7 : 1))) });
+      adapter.resize(Math.round(base));
+      return { ...frameResult(res), framesRequested: frames, widthsPx: [Math.round(base), Math.round(base * 0.7)] };
+    }
+
+    async function scCollapse(ctx) {
+      const { adapter, data } = ctx;
+      const hot = data.meta.hot.bigSubtree;
+      if (!hot) return { status: 'skipped', reason: 'dataset has no collapsible subtree' };
+      await adapter.reset();
+      await settle();
+      const ops = [];
+      const rowsAfter = {};
+      let timedOut = false;
+      const run = async (label, fn) => {
+        if (performance.now() > ctx.deadline) { timedOut = true; return false; }
+        beat({ phase: 'collapse', label, done: ops.length });
+        const r = await timedAction(fn);
+        ops.push({ label, ...r });
+        return true;
+      };
+      const rowsBefore = adapter.rowCount();
+      ctx.startMeasure();
+      for (let k = 0; k < 20; k++) {
+        if (!(await run('collapse', () => adapter.toggleCollapse(hot.spanId)))) break;
+        if (k === 0) rowsAfter.collapsed = adapter.rowCount();
+        if (!(await run('expand', () => adapter.toggleCollapse(hot.spanId)))) break;
+        if (k === 0) rowsAfter.expanded = adapter.rowCount();
+      }
+      for (let k = 0; k < 3 && !timedOut; k++) {
+        if (!(await run('collapseAll', () => adapter.collapseAll()))) break;
+        if (k === 0) rowsAfter.allCollapsed = adapter.rowCount();
+        if (!(await run('expandAll', () => adapter.expandAll()))) break;
+      }
+      const of = (label) => ops.filter((o) => o.label === label);
+      const part = (label) => { const l = of(label); return l.length ? { samples: l.length, handler: stats(l.map((o) => o.handlerMs)), toFrame: stats(l.map((o) => o.toFrameMs)) } : null; };
+      const sub = ops.filter((o) => o.label === 'collapse' || o.label === 'expand');
+      return {
+        status: timedOut ? 'timeout' : 'ok',
+        target: { spanId: hot.spanId, descendants: hot.descendants, depth: hot.depth },
+        rows: { before: rowsBefore, ...rowsAfter },
+        opsDone: ops.length,
+        adapterNotes: adapter.notes(),
+        collapse: part('collapse'), expand: part('expand'), collapseAll: part('collapseAll'), expandAll: part('expandAll'),
+        ...latencyResult(sub),
+      };
+    }
+
+    async function scFilter(ctx) {
+      const { adapter, data } = ctx;
+      await adapter.reset();
+      await settle();
+      const queries = pickFilterQueries(data.traceData);
+      const tSetup = performance.now();
+      adapter.enableFilter();
+      const tSetupEnd = performance.now();
+      await afterFrame();
+      await settle();
+      const steps = [];
+      let timedOut = false;
+      ctx.startMeasure();
+      const apply = async (label, text) => {
+        if (performance.now() > ctx.deadline) { timedOut = true; return false; }
+        beat({ phase: 'filter', label });
+        await afterFrame();
+        const t0 = performance.now();
+        const r = await adapter.setFilter(text);
+        const tf = await afterFrame();
+        steps.push({ label, text, debounceMs: rnd(r.debounceMs, 1), renderMs: rnd(r.renderMs, 1), toFrameMs: rnd(tf - t0, 1), rowsAfter: adapter.rowCount() });
+        return true;
+      };
+      const round = async () => (await apply('selective', queries.selective.text)) && (await apply('broad', queries.broad.text)) && (await apply('clear', ''));
+      await round();
+      const slowest = Math.max(0, ...steps.map((s) => s.toFrameMs));
+      if (!timedOut && slowest < 1500) { await round(); await round(); }
+      const byLabel = (label) => steps.filter((s) => s.label === label);
+      const lat = stats(steps.map((s) => s.toFrameMs));
+      return {
+        status: timedOut ? 'timeout' : 'ok',
+        queries,
+        setup: { enableFilterSyncMs: rnd(tSetupEnd - tSetup, 1) },
+        steps,
+        selective: stats(byLabel('selective').map((s) => s.toFrameMs)),
+        broad: stats(byLabel('broad').map((s) => s.toFrameMs)),
+        clear: stats(byLabel('clear').map((s) => s.toFrameMs)),
+        headline: { label: 'filter input -> next frame', unit: 'ms', p50: lat.p50, p95: lat.p95, p99: lat.p99, max: lat.max },
+      };
+    }
+
+    // Order matters: the scenarios share one mounted view. The current element writes an inline transform on
+    // every duration label and event marker the first time anything zooms or resets (even back to 100%), and
+    // from then on every frame is much slower (select at 5K spans: ~50 ms before, ~700 ms after; hover and
+    // scroll likewise). So the scenarios that are not about zoom run first, on the pristine DOM (collapse and
+    // filter rebuild it anyway), zoom and pan come last, and hover/select are repeated afterwards to show
+    // the after-zoom state. An implementation without such state shows the same numbers in both places.
+    const SCENARIOS = [
+      ['first-render', scFirstRender],
+      ['hover', scHover],
+      ['select', scSelect],
+      ['resize', scResize],
+      ['collapse', scCollapse],
+      ['filter', scFilter],
+      ['scroll', scScroll],
+      ['wheel-zoom', scWheelZoom],
+      ['drag-pan', scDragPan],
+      ['hover-after-zoom', (ctx) => scHover(ctx, { frames: 150 })],
+      ['select-after-zoom', (ctx) => scSelect(ctx, { count: 12 })],
+    ];
+
+    // -----------------------------------------------------------------------
+    // Run
+    // -----------------------------------------------------------------------
+
+    const result = {
+      schema: SCHEMA,
+      status: 'idle',
+      label: P.label,
+      rev: P.rev,
+      impl: P.impl,
+      params: {
+        impl: P.impl, n: P.gen.n, flat: P.gen.flat, ns: P.gen.ns, seed: P.gen.seed, heavy: P.gen.heavy, ev: P.gen.ev,
+        only: P.only, wdSec: P.wd / 1000, budgetSec: P.budget / 1000, bundle: P.bundle,
+      },
+      startedAt: null,
+      finishedAt: null,
+      bundle: null,
+      env: null,
+      dataset: null,
+      checkpoints: [],
+      scenarios: {},
+      warnings: [],
+      watchdog: null,
+      visibilityChanges: [],
+    };
+    window.__PERF_RESULT = result;
+    document.addEventListener('visibilitychange', () => {
+      result.visibilityChanges.push({ atMs: rnd(performance.now(), 0), state: document.visibilityState });
+    });
+
+    const fileName = () => {
+      if (P.probeOnly) return 'probe';
+      const g = P.gen;
+      const parts = [P.impl, `n${g.n}`];
+      if (g.flat) parts.push('flat');
+      if (g.ns === 0) parts.push('ns0');
+      if (g.heavy !== 0.001 && !g.flat) parts.push(`heavy${g.heavy}`);
+      return parts.join('-');
+    };
+
+    function publish(final) {
+      result.watchdog = watchdogFired;
+      const json = JSON.stringify(result);
+      if (final) {
+        console.log(`PERF_SUMMARY ${JSON.stringify(result.summary)}`);
+        console.log(`PERF_RESULT ${json}`);
+        $('btn-dl').disabled = false;
+        $('btn-copy').disabled = false;
+        post('result', { name: fileName(), result }, { keepalive: false });
+      }
+      renderHud(result);
+    }
+
+    function summarize() {
+      const s = result.scenarios;
+      const pick = (name, f) => (s[name] && s[name].status !== 'skipped' ? f(s[name]) : null);
+      const fr = (x) => x && x.frames && { p50: x.frames.p50, p95: x.frames.p95, p99: x.frames.p99, max: x.frames.max, over16_7: x.frames.over16_7, over20: x.frames.over20, over33: x.frames.over33, framesDone: x.framesDone, status: x.status };
+      const cp = Object.fromEntries(result.checkpoints.map((c) => [c.label, c]));
+      const mb = (b) => (b == null ? null : rnd(b / 1048576, 1));
+      return {
+        status: result.status,
+        spans: result.dataset && result.dataset.spans,
+        events: result.dataset && result.dataset.events && result.dataset.events.total,
+        firstRender: pick('first-render', (x) => ({ jsMs: x.jsMs, toFirstFrameMs: x.toFirstFrameMs, doubleRafMs: x.doubleRafMs, domElements: x.dom && x.dom.elements })),
+        wheelZoom: pick('wheel-zoom', fr),
+        dragPan: pick('drag-pan', fr),
+        scrollSmooth: pick('scroll', (x) => fr(x.smooth)),
+        scrollJumps: pick('scroll', (x) => fr(x.jumps)),
+        hover: pick('hover', fr),
+        select: pick('select', (x) => ({ p50: x.toFrame && x.toFrame.p50, p95: x.toFrame && x.toFrame.p95, max: x.toFrame && x.toFrame.max, heavyToFrameMs: x.heavySpan && x.heavySpan.toFrameMs, heavyDetailNodes: x.heavySpan && x.heavySpan.detailNodes, status: x.status })),
+        hoverAfterZoom: pick('hover-after-zoom', fr),
+        selectAfterZoom: pick('select-after-zoom', (x) => ({ p50: x.toFrame && x.toFrame.p50, p95: x.toFrame && x.toFrame.p95, max: x.toFrame && x.toFrame.max, heavyToFrameMs: x.heavySpan && x.heavySpan.toFrameMs, status: x.status })),
+        resize: pick('resize', fr),
+        collapse: pick('collapse', (x) => ({ collapseP50: x.collapse && x.collapse.toFrame.p50, expandP50: x.expand && x.expand.toFrame.p50, collapseAllMs: x.collapseAll && x.collapseAll.toFrame.p50, expandAllMs: x.expandAll && x.expandAll.toFrame.p50, opsDone: x.opsDone, status: x.status })),
+        filter: pick('filter', (x) => ({ selectiveP50: x.selective && x.selective.p50, broadP50: x.broad && x.broad.p50, clearP50: x.clear && x.clear.p50, status: x.status })),
+        memoryMB: {
+          dataReady: mb(cp.dataReady && (cp.dataReady.uaBytes ?? cp.dataReady.jsHeapUsed)),
+          afterFirstRender: mb(cp.afterFirstRender && (cp.afterFirstRender.uaBytes ?? cp.afterFirstRender.jsHeapUsed)),
+          end: mb(cp.end && (cp.end.uaBytes ?? cp.end.jsHeapUsed)),
+          source: cp.dataReady && cp.dataReady.uaBytes != null ? 'measureUserAgentSpecificMemory' : 'performance.memory (JS heap only)',
+        },
+      };
+    }
+
+    let running = false;
+    let adapter = null;
+    let runStarted = 0;
+
+    async function runScenario(name, fn, data, rng) {
+      const entry = { status: 'ok' };
+      beat({ phase: 'scenario', name });
+      post('progress', { phase: 'scenario-start', name });
+      setStatus(`${name}…`);
+      await afterFrame();
+      if (name !== 'first-render') await settle();
+      flushObservers();
+      const t0 = performance.now();
+      // startMeasure() is called by a scenario once its setup is done, so slow setup does not eat the watchdog budget
+      const ctx = { adapter, data, rng, deadline: t0 + P.wd, startMeasure() { ctx.deadline = performance.now() + P.wd; } };
+      let out;
+      try {
+        out = await fn(ctx);
+      } catch (e) {
+        out = { status: e instanceof NotImplemented ? 'not-implemented' : 'error', error: String((e && e.stack) || e) };
+      }
+      const t1 = performance.now();
+      await settle();
+      flushObservers();
+      Object.assign(entry, out);
+      entry.wallMs = rnd(t1 - t0, 0);
+      entry.longTasks = summarizeLongTasks(within(entries.longtask, t0, t1 + 150));
+      entry.loaf = summarizeLoaf(within(entries.loaf, t0, t1 + 150));
+      entry.eventTiming = summarizeEvents(within(entries.event, t0, t1 + 150));
+      entry.dom = countNodes(stage);
+      return entry;
+    }
+
+    /** `manual`: mount the visualizer, then record 15 s of frames, long tasks and Event Timing while someone interacts by hand. */
+    async function run({ manual = false } = {}) {
+      if (running) return;
+      running = true;
+      $('btn-run').disabled = true;
+      $('btn-manual').disabled = true;
+      result.params.manual = manual;
+      result.params.hud = P.hud;
+      result.startedAt = new Date().toISOString();
+      runStarted = performance.now();
+      result.status = 'running';
+      if (!P.hud && !manual) hud.root.style.display = 'none';   // see the hud=1 flag
+      else if (manual) hud.root.classList.add('min');
+      try {
+        startWatchdog();
+        startObservers();
+        post('start', { params: result.params });
+        setStatus('measuring the environment…');
+        result.env = await captureEnv();
+        if (document.visibilityState !== 'visible') result.warnings.push('page was not visible at start: timings are unreliable');
+        if (result.env.refresh.stalled) throw new Error('requestAnimationFrame does not fire: the tab is hidden or throttled');
+        if (!result.env.crossOriginIsolated) result.warnings.push('not cross-origin isolated: no precise timers, no measureUserAgentSpecificMemory');
+        setStatus('probing the noise floor…');
+        await settle();
+        result.env.probe = { cpu: cpuProbe(), pipeline: await pipelineProbe() };
+        if (result.env.probe.pipeline.stalled) throw new Error('requestAnimationFrame stopped during the pipeline probe');
+        post('progress', { phase: 'env', env: result.env });   // so a run that later hangs or crashes still records where it ran
+        if (P.probeOnly) {
+          result.status = 'complete';
+          setStatus(`probe: cpu ${result.env.probe.cpu.p50Ms} ms, frames p50/p95/max ${result.env.probe.pipeline.p50}/${result.env.probe.pipeline.p95}/${result.env.probe.pipeline.max} ms`);
+          return;
+        }
+        result.bundle = P.impl === 'current' ? await bundleInfo(P.bundle) : null;
+
+        adapter = createAdapter(P.impl);
+        stage.style.width = `${P.w || Math.min(1400, innerWidth - 16)}px`;
+        if (adapter.stageMode === 'fixed') {
+          stage.classList.add('fixed');
+          stage.style.height = `${P.h || Math.min(800, innerHeight - 20)}px`;
+        }
+        result.env.stage = { widthCss: stage.getBoundingClientRect().width, mode: adapter.stageMode };
+        if (adapter.stageMode === 'fixed') result.env.stage.heightCss = stage.getBoundingClientRect().height;
+        hud.meta.textContent = `${P.impl} n=${P.gen.n}${P.gen.flat ? ' flat' : ''}${P.gen.ns === 0 ? ' ns=0' : ''} dpr=${devicePixelRatio} ${result.env.refresh.hz} Hz probe ${result.env.probe.pipeline.p50}/${result.env.probe.pipeline.p95} ms`;
+
+        if (!adapter.implemented) {
+          result.status = 'not-implemented';
+          result.reason = `the ${P.impl} adapter is a stub: implement StubAdapter against [part="plot"] (see the interface comment in perf.html)`;
+          setStatus(result.reason);
+          result.summary = summarize();
+          publish(true);
+          return;
+        }
+
+        let lib = null;
+        if (P.impl === 'current' || P.gen.flat) {
+          setStatus('loading the bundle…');
+          lib = await import(P.bundle);
+        }
+        await adapter.load({ lib });
+
+        setStatus('generating the dataset…');
+        await afterFrame();
+        const t0 = performance.now();
+        const data = await buildDataset(lib);
+        data.meta.buildMs = rnd(performance.now() - t0, 0);
+        result.dataset = data.meta;
+        const rng = mulberry32(P.gen.seed + 1000);
+        const only = P.only ? new Set(P.only) : null;
+
+        setStatus('memory snapshot (data)…');
+        await settle();
+        result.checkpoints.push(await memorySnapshot('dataReady'));
+        post('progress', { phase: 'data-ready', spans: data.meta.spans, events: data.meta.events.total, dataset: data.meta });
+
+        for (const [name, fn] of SCENARIOS) {
+          if (name !== 'first-render' && ((only && !only.has(name)) || manual)) continue;
+          if (performance.now() - runStarted > P.budget) {
+            result.scenarios[name] = { status: 'skipped', reason: `run budget of ${P.budget / 1000} s exceeded` };
+            continue;
+          }
+          result.scenarios[name] = await runScenario(name, fn, data, rng);
+          if (name === 'first-render') {
+            setStatus('memory snapshot (after render)…');
+            result.checkpoints.push(await memorySnapshot('afterFirstRender'));
+            if (result.scenarios[name].status !== 'ok') break;   // nothing to drive
+          }
+          publish(false);
+          post('progress', { phase: 'scenario-done', name, status: result.scenarios[name].status, headline: result.scenarios[name].headline });
+        }
+        const mounted = result.scenarios['first-render'] && result.scenarios['first-render'].status === 'ok';
+        if (manual && mounted) result.scenarios.manual = await recordManual();
+        setStatus('memory snapshot (end)…');
+        await settle();
+        result.checkpoints.push(await memorySnapshot('end'));
+        if (mounted) {
+          // tear down and probe again: shows whether the machine drifted during the run
+          setStatus('tearing down, probing again…');
+          adapter.unmount();
+          await settle();
+          result.probeEnd = { cpu: cpuProbe(), pipeline: await pipelineProbe() };
+        }
+        const statuses = Object.values(result.scenarios).map((s) => s.status);
+        result.status = statuses.every((s) => s === 'ok') ? 'complete' : 'partial';
+        const hiddenDuring = result.visibilityChanges.filter((v) => v.atMs >= runStarted);   // a new tab flips hidden/visible while loading
+        if (hiddenDuring.length) result.warnings.push(`page visibility changed during the run (${hiddenDuring.length}x): timings may be invalid`);
+      } catch (e) {
+        result.status = 'error';
+        result.error = String((e && e.stack) || e);
+        setStatus(`error: ${e && e.message ? e.message : e}`);
+      } finally {
+        result.finishedAt = new Date().toISOString();
+        result.totalMs = rnd(performance.now() - runStarted, 0);
+        result.rafStalls = rafStalls;
+        result.summary = summarize();
+        if (worker) worker.postMessage({ stop: true });
+        if (result.status === 'complete' || result.status === 'partial') setStatus(`${result.status} in ${rnd(result.totalMs / 1000, 1)} s`);
+        hud.root.style.display = '';
+        hud.root.classList.remove('min');
+        publish(true);
+        running = false;
+      }
+    }
+
+    /** 15 s of frames, long tasks and Event Timing (trusted input only) while someone interacts with the mounted view by hand. */
+    async function recordManual() {
+      await settle();
+      flushObservers();
+      setStatus('recording for 15 s: interact with the page now');
+      beat({ phase: 'manual' });
+      const t0 = performance.now();
+      const dts = [];
+      let last = null;
+      await new Promise((resolve) => {
+        const tick = (ts) => {
+          if (last !== null) dts.push(ts - last);
+          last = ts;
+          if (performance.now() - t0 > 15000) return resolve();
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      const t1 = performance.now();
+      await sleep(300);
+      flushObservers();
+      const frames = frameStats(dts);
+      return {
+        status: 'ok',
+        frames,
+        longTasks: summarizeLongTasks(within(entries.longtask, t0, t1 + 300)),
+        loaf: summarizeLoaf(within(entries.loaf, t0, t1 + 300)),
+        eventTiming: summarizeEvents(within(entries.event, t0, t1 + 300)),
+        dom: countNodes(stage),
+        headline: { label: 'frame interval', unit: 'ms', p50: frames.p50, p95: frames.p95, p99: frames.p99, max: frames.max },
+      };
+    }
+
+    // -----------------------------------------------------------------------
+    // UI wiring
+    // -----------------------------------------------------------------------
+
+    const resultText = () => JSON.stringify(result, null, 2);
+    $('btn-min').addEventListener('click', () => $('hud').classList.toggle('min'));
+    $('btn-reload').addEventListener('click', () => location.reload());
+    $('btn-run').addEventListener('click', () => {
+      const typed = $('only').value.split(',').map((s) => s.trim()).filter(Boolean);
+      if (typed.length) { P.only = typed; result.params.only = typed; }
+      run();
+    });
+    $('btn-manual').addEventListener('click', () => run({ manual: true }));
+    $('btn-dl').addEventListener('click', () => {
+      const blob = new Blob([resultText()], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${fileName()}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    });
+    $('btn-copy').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(resultText()); setStatus('JSON copied'); } catch {
+        const ta = document.createElement('textarea');
+        ta.value = resultText();
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        setStatus('JSON copied (fallback)');
+      }
+    });
+    if (P.only) $('only').value = P.only.join(',');
+    hud.meta.textContent = `${P.impl} n=${P.gen.n}${P.gen.flat ? ' flat' : ''}${P.gen.ns === 0 ? ' ns=0' : ''}`;
+
+    if (P.auto) {
+      setStatus('auto run starting…');
+      setTimeout(() => run({ manual: P.manual }), 400);
+    } else {
+      setStatus('ready: press Run (or add ?auto=1)');
+    }
+  </script>
+</body>
+</html>
