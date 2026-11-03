@@ -9,7 +9,7 @@
  * Replaces the old TraceTree.build() with a pure function buildSpanIndex().
  */
 
-import {
+import type {
   TraceData,
   ResourceSpans,
   Span,

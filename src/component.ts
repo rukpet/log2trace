@@ -7,7 +7,7 @@
  * CSS is injected via adoptedStyleSheets from the virtual:component-css module.
  */
 
-import { TraceData } from './opentelemetry/trace.ts';
+import type { TraceData } from './opentelemetry/trace.ts';
 import { buildSpanIndex, type SpanIndex, type IndexedSpan } from './span-index.ts';
 import { TraceViewModel, type ViewSpan } from './trace-view-model.ts';
 import { Template } from './template.ts';
@@ -1089,7 +1089,11 @@ class FilterBarController {
   private _openMultiselectField: string | null = null;
   private _clickOutsideAbort: AbortController | null = null;
 
-  constructor(private host: TraceVisualizerElement) {}
+  private host: TraceVisualizerElement;
+
+  constructor(host: TraceVisualizerElement) {
+    this.host = host;
+  }
 
   applyConfigs(configs: FilterFieldConfig[]): void {
     this.filterConfigs = configs;

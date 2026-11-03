@@ -19,9 +19,10 @@
     "build:tsc": "tsc",
     "build:bundle": "node esbuild.config.js",
     "build:docs": "typedoc",
-    "check": "tsc --noEmit",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix",
+    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" \"test/**/*.ts\" --fix",
+    "test": "node --experimental-transform-types --no-warnings --test \"test/**/*.test.ts\"",
     "demo:kill": "kill-port 3000",
     "demo:server": "node demo/server.js",
     "demo": "run-s demo:kill build demo:server",
@@ -51,6 +52,7 @@
     "url": "https://github.com/rukpet/log2trace/issues"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
     "@vanilla-extract/css": "^1.18.0",
