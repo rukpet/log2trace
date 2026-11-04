@@ -6,7 +6,7 @@
  * (declarative filter inputs), and `<span-kind-rule>` (declarative
  * span-kind classification rules). After import the component can be
  * used directly from HTML, or driven programmatically via the exports
- * below.
+ * below, which include everything the headless `log2trace-ui/core` entry offers.
  *
  * @example Declarative usage
  * ```html
@@ -34,12 +34,9 @@
 // Auto-register the component, <trace-filter>, and <span-kind-rule> elements when imported
 import './component.ts';
 
-export { transformLogs, getField } from './transform.ts';
-export { buildSpanIndex } from './span-index.ts';
+export * from './core.ts';
 export { TraceViewModel } from './trace-view-model.ts';
 export { Template } from './template.ts';
-export { filterSpanIds } from './filter.ts';
-export { resolveDisplayDefaults, normalizeOptions } from './config.ts';
-export type { SpanIndex, IndexedSpan } from './span-index.ts';
+export { resolveDisplayDefaults } from './config.ts';
 export type { ViewSpan } from './trace-view-model.ts';
-export type { TraceVisualizerConfig, TransformConfig, DisplayConfig, FilterFieldConfig, FilterOption, OptionsSource, Filter, FetchCallback, LogEntry, FieldValue } from './config.ts';
+export type { TraceVisualizerConfig, DisplayConfig } from './config.ts';

@@ -7,12 +7,13 @@
  * All CSS class names come from styles.css.ts (never raw strings).
  */
 
-import { SpanKind, spanKindName, type Span, type Event } from './opentelemetry/trace.ts';
-import type { AnyValue, KeyValue } from './opentelemetry/common.ts';
-import { nanoToMilli } from './time.ts';
+import { SpanKind, spanKindName, type Span, type Event } from './core/otel/trace.ts';
+import type { AnyValue, KeyValue } from './core/otel/common.ts';
+import { nanoToMilli } from './core/time.ts';
 import type { ViewSpan } from './trace-view-model.ts';
 import type { TraceViewModel } from './trace-view-model.ts';
-import type { DisplayConfig, FilterFieldConfig } from './config.ts';
+import type { FilterFieldConfig } from './core/config.ts';
+import type { DisplayConfig } from './config.ts';
 import * as styles from './styles.css.ts';
 
 /**

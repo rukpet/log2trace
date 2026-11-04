@@ -43,6 +43,22 @@ export default [
     },
   },
   {
+    // The headless core sits below everything else: it must not import the layers above it
+    // (kit, views, shell, element, or the legacy element). test/layers.test.ts checks every import.
+    files: ['src/core.ts', 'src/core/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: [
+            '**/kit/**', '**/views/**', '**/shell/**', '**/element/**',
+            '**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts',
+          ],
+          message: 'The headless core must not import from the layers above it.',
+        }],
+      }],
+    },
+  },
+  {
     // Legacy string renderer, deleted at the v2 cutover: report instead of failing.
     files: ['src/component.ts', 'src/template.ts'],
     rules: {

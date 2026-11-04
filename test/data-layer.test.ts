@@ -6,16 +6,16 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getField, transformLogs } from '../src/transform.ts';
-import { buildSpanIndex } from '../src/span-index.ts';
+import { getField, transformLogs } from '../src/core/transform.ts';
+import { buildSpanIndex } from '../src/core/span-index.ts';
 import {
   SpanKind,
   spanKindName,
   type ResourceSpans,
   type Span,
   type TraceData,
-} from '../src/opentelemetry/trace.ts';
-import type { KeyValue } from '../src/opentelemetry/common.ts';
+} from '../src/core/otel/trace.ts';
+import type { KeyValue } from '../src/core/otel/common.ts';
 
 function allSpans(traceData: TraceData): Span[] {
   return traceData.resourceSpans.flatMap((rs) => rs.scopeSpans.flatMap((ss) => ss.spans));

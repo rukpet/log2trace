@@ -8,10 +8,20 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/log2trace.js",
-      "types": "./dist/log2trace.d.ts"
+      "types": "./dist/log2trace.d.ts",
+      "import": "./dist/log2trace.js"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js"
     }
   },
+  "sideEffects": [
+    "./dist/log2trace.js",
+    "./dist/log2trace.min.js",
+    "./src/component.ts",
+    "./src/styles.css.ts"
+  ],
   "scripts": {
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
@@ -19,7 +29,7 @@
     "build:tsc": "tsc",
     "build:bundle": "node esbuild.config.js",
     "build:docs": "typedoc",
-    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.headless.json && tsc --noEmit -p tsconfig.test.json",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"test/**/*.ts\" --fix",
     "test": "node --experimental-transform-types --no-warnings --test \"test/**/*.test.ts\"",
