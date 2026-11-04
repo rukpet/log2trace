@@ -5,8 +5,10 @@
     "declaration": false,
     "emitDeclarationOnly": false,
     "rootDir": ".",
-    "types": ["node"]
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": true
   },
-  "include": ["test/**/*"],
+  "include": ["test/**/*", "build/**/*.js"],
   "exclude": []
 }
