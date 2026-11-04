@@ -7,20 +7,21 @@
  * CSS is injected via adoptedStyleSheets from the virtual:component-css module.
  */
 
-import type { TraceData } from './opentelemetry/trace.ts';
-import { buildSpanIndex, type SpanIndex, type IndexedSpan } from './span-index.ts';
+import type { TraceData } from './core/otel/trace.ts';
+import { buildSpanIndex, type SpanIndex, type IndexedSpan } from './core/span-index.ts';
 import { TraceViewModel, type ViewSpan } from './trace-view-model.ts';
 import { Template } from './template.ts';
-import { transformLogs, getField } from './transform.ts';
+import { transformLogs, getField } from './core/transform.ts';
+import { type TraceVisualizerConfig, type DisplayConfig, resolveDisplayDefaults } from './config.ts';
 import {
-  type TraceVisualizerConfig, type TransformConfig, type DisplayConfig,
+  type TransformConfig,
   type FilterFieldConfig, type FilterFieldType, type FilterSource, type FilterTarget,
   type FilterValue, type Filter, type FetchCallback, type OptionsSource,
   type FilterOption, type SpanKindRule, type LogEntry,
-  resolveDisplayDefaults, normalizeOptions,
-} from './config.ts';
-import { filterSpanIds, areRequiredExternalFiltersFilled, buildQueryParams } from './filter.ts';
-import { mark, measure, measureAsync } from './instrumentation.ts';
+  normalizeOptions,
+} from './core/config.ts';
+import { filterSpanIds, areRequiredExternalFiltersFilled, buildQueryParams } from './core/filter.ts';
+import { mark, measure, measureAsync } from './core/instrumentation.ts';
 import componentCss from 'virtual:component-css';
 import * as styles from './styles.css.ts';
 
@@ -435,7 +436,7 @@ export class TraceVisualizerElement extends HTMLElement {
     };
   }
 
-  private isTransformReady(config: TraceVisualizerConfig): config is TransformConfig {
+  private isTransformReady(config: TraceVisualizerConfig): config is TraceVisualizerConfig & TransformConfig {
     return [
       config.traceIdField,
       config.spanNameField,

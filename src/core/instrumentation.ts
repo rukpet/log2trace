@@ -8,16 +8,30 @@
  *
  * Consumers never need to enable or configure anything; simply open
  * DevTools → Performance → record, and timings appear automatically.
+ *
+ * The core has no DOM typings, so `performance` is looked up on `globalThis`
+ * and typed here. Where a runtime has none, the calls do nothing.
  */
 
 const PREFIX = 'log2trace';
+
+/** The part of the User Timing API used here. */
+interface UserTiming {
+  mark(name: string, options?: { detail?: unknown }): unknown;
+  measure(name: string, startMark?: string): unknown;
+  clearMarks(name?: string): void;
+}
+
+function userTiming(): UserTiming | undefined {
+  return Reflect.get(globalThis, 'performance');
+}
 
 /**
  * Place a performance mark with an optional detail payload.
  * Marks are lightweight timestamps visible in the Performance panel.
  */
 export function mark(name: string, detail?: unknown): void {
-  performance.mark(`${PREFIX}:${name}`, detail !== undefined ? { detail } : undefined);
+  userTiming()?.mark(`${PREFIX}:${name}`, detail !== undefined ? { detail } : undefined);
 }
 
 /**
@@ -25,11 +39,13 @@ export function mark(name: string, detail?: unknown): void {
  * Creates a performance.measure entry visible in DevTools.
  */
 export function measure<T>(name: string, fn: () => T): T {
+  const timing = userTiming();
+  if (!timing) return fn();
   const startMark = `${PREFIX}:${name}:start`;
-  performance.mark(startMark);
+  timing.mark(startMark);
   const result = fn();
-  performance.measure(`${PREFIX}:${name}`, startMark);
-  performance.clearMarks(startMark);
+  timing.measure(`${PREFIX}:${name}`, startMark);
+  timing.clearMarks(startMark);
   return result;
 }
 
@@ -38,10 +54,12 @@ export function measure<T>(name: string, fn: () => T): T {
  * Creates a performance.measure entry visible in DevTools.
  */
 export async function measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  const timing = userTiming();
+  if (!timing) return fn();
   const startMark = `${PREFIX}:${name}:start`;
-  performance.mark(startMark);
+  timing.mark(startMark);
   const result = await fn();
-  performance.measure(`${PREFIX}:${name}`, startMark);
-  performance.clearMarks(startMark);
+  timing.measure(`${PREFIX}:${name}`, startMark);
+  timing.clearMarks(startMark);
   return result;
 }
