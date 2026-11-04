@@ -54,6 +54,33 @@ export function trace(...groups: ReadonlyArray<readonly [service: string, spans:
   return { resourceSpans };
 }
 
+/** A span written as a tree, for tests that care about the shape. */
+export interface TreeNode {
+  readonly id: string;
+  readonly start: number;
+  readonly end: number;
+  readonly children?: readonly TreeNode[];
+  /** Event times, ms after {@link BASE_NS}. */
+  readonly events?: readonly number[];
+  readonly status?: number;
+  readonly kind?: SpanKind;
+}
+
+/** One trace, one service, from spans written as a tree (parents point at their children). */
+export function treeTrace(roots: TreeNode | readonly TreeNode[], service = 'svc'): TraceData {
+  const spans: Span[] = [];
+  const add = (node: TreeNode, parent: string | undefined): void => {
+    spans.push(span(node.id, parent, node.start, node.end, {
+      events: node.events?.map((ms, k) => event(`${node.id}-e${k}`, ms)),
+      status: node.status === undefined ? undefined : { code: node.status },
+      kind: node.kind ?? SpanKind.Internal,
+    }));
+    for (const child of node.children ?? []) add(child, node.id);
+  };
+  for (const root of Array.isArray(roots) ? roots : [roots]) add(root as TreeNode, undefined);
+  return trace([service, spans]);
+}
+
 /** Deterministic pseudo-random numbers in [0, 1): mulberry32. */
 export function random(seed: number): () => number {
   let state = seed >>> 0;
