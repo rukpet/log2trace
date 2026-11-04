@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>trace-visualizer-next</title>
+  <title>trace-visualizer</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <style>
     * { box-sizing: border-box; }
@@ -11,12 +11,12 @@
     header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
     header h1 { font-size: 16px; margin: 0 12px 0 0; }
     button, select { font: inherit; }
-    trace-visualizer-next { height: calc(100vh - 80px); }
+    trace-visualizer { height: calc(100vh - 80px); }
   </style>
 </head>
 <body>
   <header>
-    <h1>trace-visualizer-next</h1>
+    <h1>trace-visualizer</h1>
     <label>theme
       <select id="theme"><option value="">auto</option><option>light</option><option>dark</option></select>
     </label>
@@ -27,13 +27,13 @@
     <span id="info"></span>
     <span>Data: <code>#n=50000&amp;renderer=dom</code> for a generated trace (also <code>seed</code>, <code>ev</code>), otherwise the sample OTel file.</span>
   </header>
-  <trace-visualizer-next></trace-visualizer-next>
+  <trace-visualizer></trace-visualizer>
 
   <script type="module">
     import { generateTrace, optionsFromParams } from './perf-gen.js';
     await import('/dist/log2trace.js');
 
-    const el = document.querySelector('trace-visualizer-next');
+    const el = document.querySelector('trace-visualizer');
     const info = document.getElementById('info');
     const params = new URLSearchParams(location.hash.slice(1) || location.search);
 

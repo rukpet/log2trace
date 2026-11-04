@@ -13,7 +13,7 @@ import type { TraceData } from '../core/otel/trace.ts';
 import { buildSpanIndex, type SpanIndex } from '../core/span-index.ts';
 import { transformLogs } from '../core/transform.ts';
 import { measure } from '../core/instrumentation.ts';
-import { isTransformReady, type ElementConfig } from './config.ts';
+import { isTransformReady, type TraceVisualizerConfig } from './config.ts';
 
 /** The part of `fetch` the source uses. */
 export type FetchLike = (url: string) => Promise<{ readonly ok: boolean; readonly statusText: string; json(): Promise<unknown> }>;
@@ -59,7 +59,7 @@ export async function fetchFiltered(options: FilteredFetch): Promise<TraceData |
 }
 
 /** Index a payload: raw logs are transformed first when the transform fields are configured. */
-export function payloadToIndex(payload: TraceData | LogEntry[], config: ElementConfig): SpanIndex {
+export function payloadToIndex(payload: TraceData | LogEntry[], config: TraceVisualizerConfig): SpanIndex {
   if (isTransformReady(config)) {
     const traceData = measure('transformLogs', () => transformLogs(payload as LogEntry[], config as TransformConfig));
     return measure('buildSpanIndex', () => buildSpanIndex(traceData));

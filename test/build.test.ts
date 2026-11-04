@@ -5,15 +5,11 @@
  * These tests run the real plugin pair (`build/vanilla-extract.js`, the one `esbuild.config.js`
  * uses) over the fixtures in `test/fixtures/build/`, in the dev and the minified flavour: dev
  * names classes `file_export__hash`, minified `_hash`, and the CSS text and the JS must agree on
- * either. The legacy `src/styles.css.ts` must keep producing the CSS it produced before the
- * build learned about several stylesheets (`legacy/expected.*.css`, recorded from that build).
- * To pin a deliberate change to it instead, run the tests once with the environment variable
- * `UPDATE_GOLDEN=1` and review the diff of those files.
+ * either.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -25,7 +21,6 @@ const FIXTURES = join(ROOT, 'test', 'fixtures', 'build');
 const completeManifest = join(FIXTURES, 'complete', 'styles.ts');
 const reversedManifest = join(FIXTURES, 'complete', 'styles-reversed.ts');
 const incompleteManifest = join(FIXTURES, 'incomplete', 'styles.ts');
-const legacyManifest = join(FIXTURES, 'legacy', 'styles.ts');
 
 /** The classes the `complete` fixture exports; `tone` comes from `styleVariants`. */
 interface CompleteExports {
@@ -145,14 +140,6 @@ for (const minify of [false, true]) {
     // A dev build still prints a comment per stylesheet module into the companion file.
     const rules = emittedCss.map((text) => text.replace(/\/\*[\s\S]*?\*\//g, '').trim()).filter((text) => text !== '');
     assert.deepEqual(rules, []);
-  });
-
-  test(`${flavour}: src/styles.css.ts alone yields the CSS it did before`, async () => {
-    const { css } = await built(legacyManifest, minify);
-    const file = join(FIXTURES, 'legacy', `expected.${minify ? 'min' : 'dev'}.css`);
-    if (process.env.UPDATE_GOLDEN === '1') writeFileSync(file, css);
-    // Git may check the file out with CRLF line endings.
-    assert.equal(css, readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
   });
 }
 

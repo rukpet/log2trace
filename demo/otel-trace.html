@@ -40,7 +40,6 @@
       log.prepend(line);
     }
     el.addEventListener('trace-loaded', e => logEvent('trace-loaded', e.detail));
-    el.addEventListener('virtual-scroll-activated', e => logEvent('virtual-scroll-activated', e.detail));
     el.addEventListener('span-selected', e => logEvent('span-selected', { spanId: e.detail.span.spanId, name: e.detail.span.name }));
     el.addEventListener('filter-changed', e => logEvent('filter-changed', e.detail));
   </script>

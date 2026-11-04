@@ -570,30 +570,32 @@ document.querySelector('#ex3').logData = {
   <section id="ex-5">
     <h2><span class="ex-num">5</span>Display options</h2>
     <p class="desc">
-      Control visual appearance: row height, padding, background color, legend visibility,
-      and the detail panel width. All can be set as HTML attributes or via the <code>.config</code>
-      setter.
+      Control visual appearance: row height, padding, legend visibility and the detail panel
+      width. All can be set as HTML attributes or via the <code>.config</code> setter. Colours
+      are CSS custom properties on the element (<code>--l2t-color-background</code>,
+      <code>--l2t-color-accent</code>, and so on), so a page restyles the component with
+      ordinary CSS; the <code>theme</code> attribute forces <code>light</code> or <code>dark</code>
+      (by default it follows the page).
     </p>
 
     <div class="code-block">
       <div class="code-label">HTML</div>
       <pre><code class="language-html">&lt;trace-visualizer
-  full-width
   show-legend
   span-height="40"
   span-padding="8"
-  background-color="#f8f9ff"
-  detail-panel-width="35%"&gt;
+  detail-panel-width="35%"
+  style="--l2t-color-background: #f8f9ff"&gt;
 &lt;/trace-visualizer&gt;</code></pre>
     </div>
 
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex5" full-width show-legend
+      <trace-visualizer id="ex5" show-legend
         span-height="40"
         span-padding="8"
-        background-color="#f8f9ff"
-        detail-panel-width="35%">
+        detail-panel-width="35%"
+        style="--l2t-color-background: #f8f9ff">
       </trace-visualizer>
     </div>
   </section>
@@ -641,31 +643,33 @@ document.querySelector('#ex3').logData = {
   <section id="ex-7">
     <h2><span class="ex-num">7</span>Explicit <code>width</code> &amp; <code>height</code> sizing</h2>
     <p class="desc">
-      By default the component fits its content (<code>width=0</code>, <code>height=0</code>).
-      Set explicit pixel dimensions to constrain it, or use <code>full-width</code> to stretch
-      horizontally. When <code>height</code> is set, the timeline area becomes scrollable.
+      The component is a block element that fills its container and is 480&nbsp;px tall by
+      default; the rows scroll inside it. Set the <code>height</code> attribute (in pixels) or
+      size it with CSS. The <code>width</code> attribute of 1.x is gone: give the element a CSS
+      <code>width</code> instead. <code>full-width</code> is still accepted so that 1.x markup
+      keeps working, but it no longer changes anything.
     </p>
 
     <div class="code-block">
       <div class="code-label">HTML — fixed 700×250 px</div>
-      <pre><code class="language-html">&lt;trace-visualizer width="700" height="250"&gt;&lt;/trace-visualizer&gt;</code></pre>
+      <pre><code class="language-html">&lt;trace-visualizer height="250" style="width: 700px"&gt;&lt;/trace-visualizer&gt;</code></pre>
     </div>
 
     <div class="result-label">&#9654; Live result — fixed 700&times;250 px</div>
     <div class="result-box">
-      <trace-visualizer id="ex7a" width="700" height="250"></trace-visualizer>
+      <trace-visualizer id="ex7a" height="250" style="width: 700px"></trace-visualizer>
     </div>
 
     <br>
 
     <div class="code-block">
-      <div class="code-label">HTML — full-width, height auto</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;&lt;/trace-visualizer&gt;</code></pre>
+      <div class="code-label">HTML — default size</div>
+      <pre><code class="language-html">&lt;trace-visualizer&gt;&lt;/trace-visualizer&gt;</code></pre>
     </div>
 
-    <div class="result-label">&#9654; Live result — full-width</div>
+    <div class="result-label">&#9654; Live result — default size</div>
     <div class="result-box">
-      <trace-visualizer id="ex7b" full-width></trace-visualizer>
+      <trace-visualizer id="ex7b"></trace-visualizer>
     </div>
   </section>
 
@@ -1171,6 +1175,8 @@ document.querySelector('#ex3').logData = {
       <tbody>
         <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Select previous / next span</td></tr>
         <tr><td><kbd>&larr;</kbd> / <kbd>&rarr;</kbd></td><td>Pan timeline left / right</td></tr>
+        <tr><td><kbd>Shift</kbd>+<kbd>&larr;</kbd> / <kbd>&rarr;</kbd></td><td>Collapse / expand the selected span</td></tr>
+        <tr><td><kbd>PageUp</kbd> / <kbd>PageDown</kbd></td><td>Scroll one page of rows</td></tr>
         <tr><td><kbd>+</kbd> / <kbd>=</kbd></td><td>Zoom in</td></tr>
         <tr><td><kbd>-</kbd> / <kbd>_</kbd></td><td>Zoom out</td></tr>
         <tr><td><kbd>0</kbd> / <kbd>Home</kbd></td><td>Reset zoom to 100&thinsp;%</td></tr>
@@ -1180,7 +1186,7 @@ document.querySelector('#ex3').logData = {
     </table>
 
     <div class="callout">
-      <strong>Mouse interactions:</strong> scroll wheel to zoom, drag to pan, double-click to reset zoom, click a span to open its detail panel.
+      <strong>Mouse interactions:</strong> the wheel scrolls the rows, <kbd>Ctrl</kbd>/<kbd>&#8984;</kbd> + wheel (or a pinch) zooms the time axis, drag to pan, double-click to reset zoom, click a span to open its detail panel. Add the <code>wheel-zoom</code> attribute to make the plain wheel zoom as in 1.x.
     </div>
 
     <div class="result-label">&#9654; Live result — click the timeline, then use arrow keys</div>

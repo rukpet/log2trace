@@ -61,8 +61,8 @@
      * fresh loads of a visible tab (hidden tabs throttle requestAnimationFrame).
      *
      * Flags go in the query string or, for the unmodified demo/server.js (which 404s on
-     * query strings), in the fragment: perf.html?impl=current&n=10000 == perf.html#impl=current&n=10000
-     *   impl=current|canvas|dom   which adapter drives the visualizer (default current)
+     * query strings), in the fragment: perf.html?impl=dom&n=10000 == perf.html#impl=dom&n=10000
+     *   impl=canvas|dom           which painter drives the visualizer (default dom)
      *   n=<spans>  seed=  ns=0  flat=1  heavy=  ev=    dataset, see perf-gen.js
      *   auto=1                    start as soon as the page loads
      *   only=a,b                  run only these scenarios (first-render always runs)
@@ -114,13 +114,13 @@
     } from './perf-gen.js';
 
     const SCHEMA = 'log2trace-perf/1';
-    const IMPLS = ['current', 'canvas', 'dom'];
+    const IMPLS = ['canvas', 'dom'];
     const q = new URLSearchParams(location.search);
     // demo/server.js resolves files from the raw request URL, so "perf.html?n=1000" is a 404 there;
     // the fragment never reaches the server, so "perf.html#n=1000" works with it as well.
     for (const [key, value] of new URLSearchParams(location.hash.replace(/^#\??/, ''))) if (!q.has(key)) q.set(key, value);
     const P = {
-      impl: IMPLS.includes(q.get('impl')) ? q.get('impl') : 'current',
+      impl: IMPLS.includes(q.get('impl')) ? q.get('impl') : 'dom',
       auto: q.get('auto') === '1',
       only: q.get('only') ? q.get('only').split(',').map((s) => s.trim()).filter(Boolean) : null,
       wd: (Number(q.get('wd')) || 60) * 1000,
@@ -591,272 +591,10 @@
     // -----------------------------------------------------------------------
     // Adapters
     // -----------------------------------------------------------------------
-
-    /**
-     * Drives the existing `<trace-visualizer>` through its public/shadow-DOM hooks:
-     *   [data-role="timeline-container"]  wheel / mouse events (zoom, pan)
-     *   [data-span-id]                    click (select), mouseenter (hover)
-     *   [data-collapse-id]                click (collapse/expand)
-     *   [title*="Reset"]                  reset zoom
-     * plus page scroll. The element has no collapse-all UI: collapseAll/expandAll
-     * go through `viewModel` + `_rerender()`. Zoom is capped at 10x by the element.
-     */
-    class CurrentAdapter {
-      constructor() {
-        this.name = 'current';
-        this.implemented = true;
-        this.stageMode = 'flow';
-        this.el = null;
-        this._bars = null;
-        this._row0 = null;
-        this._hovered = null;
-        this._panelOpen = false;
-        this._collapsed = false;
-        this._filtered = false;
-        this._pan = null;
-        this.chevronClicks = 0;
-        this.chevronFallbacks = 0;
-        this._zoomTouched = false;
-      }
-
-      async load(ctx) {
-        if (!ctx.lib) throw new Error('bundle did not load');
-        await customElements.whenDefined('trace-visualizer');
-      }
-
-      get shadow() { return this.el.shadowRoot; }
-      get container() { return this.shadow.querySelector('[data-role="timeline-container"]'); }
-
-      mount(stageEl, traceData) {
-        const el = document.createElement('trace-visualizer');
-        el.setAttribute('full-width', '');
-        el.setAttribute('show-legend', '');
-        stageEl.appendChild(el);
-        this.el = el;
-        el.traceData = traceData;   // builds the index and renders synchronously
-        this._invalidate();
-        return {};
-      }
-
-      unmount() { if (this.el) this.el.remove(); this.el = null; this._invalidate(); }
-
-      _invalidate() { this._bars = null; this._row0 = null; this._hovered = null; }
-
-      get bars() {
-        if (!this._bars) this._bars = this.shadow.querySelectorAll('[data-span-id]');
-        return this._bars;
-      }
-
-      rowCount() { return this.bars.length; }
-      rowHeight() { return 35; }   // span height 30 + padding 5 (element defaults)
-
-      _row0Top() {
-        if (this._row0 === null) {
-          const first = this.bars[0];
-          this._row0 = first ? first.getBoundingClientRect().top + window.scrollY : 0;
-        }
-        return this._row0;
-      }
-
-      visibleRowRange() {
-        const first = Math.max(0, Math.floor((window.scrollY - this._row0Top()) / this.rowHeight()));
-        const count = Math.ceil(window.innerHeight / this.rowHeight());
-        return [first, Math.min(this.rowCount() - 1, first + count)];
-      }
-
-      rowOfSpan(id) {
-        const el = this.shadow.querySelector(`[data-span-id="${id}"]`);
-        return el ? Array.prototype.indexOf.call(this.bars, el) : -1;
-      }
-
-      surfaceRect() {
-        const clip = this.container.parentElement;   // the clip box, untransformed
-        const r = clip.getBoundingClientRect();
-        return { left: r.left, top: Math.max(0, r.top), width: r.width, height: Math.min(r.height, window.innerHeight) };
-      }
-
-      wheelZoom(deltaY, x, y) {
-        this._zoomTouched = true;
-        this.container.dispatchEvent(new WheelEvent('wheel', { deltaY, clientX: x, clientY: y, bubbles: true, cancelable: true, composed: true }));
-      }
-
-      readZoom() {
-        const m = /scaleX\(([\d.eE+-]+)\)/.exec(this.container.style.transform || '');
-        return m ? Number(m[1]) : 1;
-      }
-
-      async zoomTo(target, until = Infinity) {
-        const r = this.surfaceRect();
-        let z = this.readZoom();
-        for (let guard = 0; guard < 80 && z < target && performance.now() < until; guard++) {
-          this.wheelZoom(-100, r.left + r.width / 2, r.top + r.height / 2);
-          const z2 = this.readZoom();
-          if (z2 <= z) break;   // capped
-          z = z2;
-          if (guard % 5 === 4) await nextFrame();
-        }
-        return rnd(z, 3);
-      }
-
-      resetZoom() {
-        const btn = this.shadow.querySelector('[title*="Reset"]');
-        if (btn) btn.click();
-      }
-
-      panBegin(x, y) {
-        this._zoomTouched = true;
-        this._pan = { x, y };
-        this.container.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: x, clientY: y, bubbles: true, cancelable: true, composed: true }));
-      }
-      panMove(x, y) {
-        this.container.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true, cancelable: true, composed: true }));
-      }
-      panEnd() {
-        this.container.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true }));
-        this._pan = null;
-      }
-
-      scrollToRow(row) {
-        const top = this._row0Top() + row * this.rowHeight() - 40;
-        document.scrollingElement.scrollTop = Math.max(0, top);
-      }
-
-      hoverRow(row, x, y) {
-        const bars = this.bars;
-        const bar = bars[Math.min(bars.length - 1, Math.max(0, row))];
-        if (!bar) return;
-        if (this._hovered && this._hovered !== bar) this._hovered.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false, clientX: x, clientY: y }));
-        if (this._hovered !== bar) bar.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, clientX: x, clientY: y }));
-        bar.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, composed: true, clientX: x, clientY: y }));
-        this._hovered = bar;
-      }
-      hoverEnd() {
-        if (this._hovered) this._hovered.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
-        this._hovered = null;
-      }
-
-      selectRow(row) {
-        const bar = this.bars[row];
-        if (!bar) throw new Error(`no bar at row ${row}`);
-        bar.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
-        this._panelOpen = true;
-      }
-
-      detailNodeCount() {
-        const close = this.shadow.querySelector('[title="Close"]');
-        const panel = close && close.parentElement && close.parentElement.parentElement;
-        const content = panel && panel.lastElementChild;
-        return content ? content.getElementsByTagName('*').length : 0;
-      }
-
-      /**
-       * Click the chevron. In the element as shipped the chevrons that are in the DOM after the
-       * initial render of more than 200 spans have no click handler (virtual scrolling replaces the
-       * labels that were wired), so a click can do nothing; then fall back to what the handler
-       * does, `viewModel.toggleCollapse(id)` + `_rerender()`, and count it.
-       */
-      toggleCollapse(id) {
-        const chevron = this.shadow.querySelector(`[data-collapse-id="${id}"]`);
-        if (!chevron) throw new Error(`no collapse chevron for span ${id}`);
-        const vm = this.el.viewModel;
-        const before = vm.collapsedIds.has(id);
-        chevron.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
-        if (vm.collapsedIds.has(id) === before) {
-          this.chevronFallbacks++;
-          vm.toggleCollapse(id);
-          this.el._rerender();
-        } else {
-          this.chevronClicks++;
-        }
-        this._invalidate();
-        this._collapsed = true;
-        this._panelOpen = false;   // a full re-render rebuilds the panel
-      }
-      notes() { return { chevronClicksEffective: this.chevronClicks, chevronClicksDeadFallbackUsed: this.chevronFallbacks }; }
-      collapseAll() {
-        this.el.viewModel.collapseAll();
-        this.el._rerender();
-        this._invalidate();
-        this._collapsed = true;
-        this._panelOpen = false;
-      }
-      expandAll() {
-        this.el.viewModel.expandAll();
-        this.el._rerender();
-        this._invalidate();
-        this._collapsed = false;
-        this._panelOpen = false;
-      }
-
-      enableFilter() {
-        this.el.config = {
-          filterConfigs: [{
-            field: 'spanName', label: 'Name', type: 'text', source: 'local', target: 'span', required: false,
-            options: [], optionsSource: 'static', placeholder: '', debounce: 0, width: 0, autoRange: false,
-          }],
-        };
-        this._invalidate();
-        this._panelOpen = false;
-      }
-
-      setFilter(text) {
-        const input = this.shadow.querySelector('input[data-filter-type="text"]');
-        if (!input) throw new Error('filter input not found; call enableFilter() first');
-        this._filtered = text !== '';
-        return new Promise((resolve) => {
-          const t0 = performance.now();
-          let tEvent = t0;
-          const onChanged = () => { tEvent = performance.now(); this.el.removeEventListener('filter-changed', onChanged); };
-          this.el.addEventListener('filter-changed', onChanged);
-          const mo = new MutationObserver(() => {
-            mo.disconnect();
-            this._invalidate();
-            resolve({ debounceMs: tEvent - t0, renderMs: performance.now() - tEvent });
-          });
-          mo.observe(this.shadow, { childList: true });
-          input.value = text;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        });
-      }
-
-      resize(widthPx) { stage.style.width = `${widthPx}px`; }
-
-      async reset() {
-        if (this._filtered) await this.setFilter('');
-        if (this._collapsed) this.expandAll();
-        if (this._panelOpen) {
-          const close = this.shadow.querySelector('[title="Close"]');
-          if (close) close.click();
-          this._panelOpen = false;
-        }
-        this.hoverEnd();
-        // Only touch the zoom when it was used: the element writes an inline transform on every duration
-        // label and event marker the first time it zooms or resets (even to 100%), and from then on every
-        // frame is much slower (select at 5K spans: ~50 ms -> ~700 ms). Scenarios that are not about zoom
-        // must not be the ones that trigger it.
-        if (this._zoomTouched || this.readZoom() !== 1) { this.resetZoom(); this._zoomTouched = false; }
-        document.scrollingElement.scrollTop = 0;
-      }
-
-      /** Library User Timing entries (`log2trace:*`) plus the virtual-scroll window the element ended up rendering. */
-      timings() {
-        const out = {};
-        for (const m of performance.getEntriesByType('measure')) {
-          if (!m.name.startsWith('log2trace:')) continue;
-          const o = out[m.name] || (out[m.name] = { count: 0, totalMs: 0, maxMs: 0 });
-          o.count++; o.totalMs += m.duration; o.maxMs = Math.max(o.maxMs, m.duration);
-        }
-        for (const o of Object.values(out)) { o.totalMs = rnd(o.totalMs, 1); o.maxMs = rnd(o.maxMs, 1); }
-        const windows = performance.getEntriesByName('log2trace:virtual-scroll-window');
-        const last = windows[windows.length - 1];
-        return { userTiming: out, virtualScrollWindow: last ? last.detail : null };
-      }
-    }
-
     class NotImplemented extends Error {}
 
     /**
-     * Drives `<trace-visualizer-next>` with the `canvas` or the `dom` painter. Input goes to the
+     * Drives `<trace-visualizer>` with the `canvas` or the `dom` painter. Input goes to the
      * interaction surface `[part="plot"]` as the events a user would produce (pointer, ctrl+wheel,
      * key); reads and state changes that have no gesture (collapse, filter) go through the element's
      * store, which is what its toolbar and filter bar use.
@@ -874,7 +612,7 @@
       async load(ctx) {
         if (!ctx.lib) throw new Error('bundle did not load');
         this.lib = ctx.lib;
-        await customElements.whenDefined('trace-visualizer-next');
+        await customElements.whenDefined('trace-visualizer');
       }
 
       get plot() { return this.el.shadowRoot.querySelector('[part="plot"]'); }
@@ -882,7 +620,7 @@
       get store() { return this.el.store; }
 
       mount(stageEl, traceData) {
-        const el = document.createElement('trace-visualizer-next');
+        const el = document.createElement('trace-visualizer');
         el.setAttribute('renderer', this.renderer);
         el.style.height = '100%';
         el.style.border = '0';
@@ -1013,7 +751,7 @@
     }
 
     function createAdapter(impl) {
-      return impl === 'current' ? new CurrentAdapter() : new NextAdapter(impl);
+      return new NextAdapter(impl);
     }
 
     // -----------------------------------------------------------------------
@@ -1293,12 +1031,11 @@
       };
     }
 
-    // Order matters: the scenarios share one mounted view. The current element writes an inline transform on
-    // every duration label and event marker the first time anything zooms or resets (even back to 100%), and
-    // from then on every frame is much slower (select at 5K spans: ~50 ms before, ~700 ms after; hover and
-    // scroll likewise). So the scenarios that are not about zoom run first, on the pristine DOM (collapse and
-    // filter rebuild it anyway), zoom and pan come last, and hover/select are repeated afterwards to show
-    // the after-zoom state. An implementation without such state shows the same numbers in both places.
+    // Order matters: the scenarios share one mounted view. The 1.x element (see baseline/) wrote an inline
+    // transform on every duration label and event marker the first time anything zoomed or reset, and from
+    // then on every frame was much slower (select at 5K spans: ~50 ms before, ~700 ms after). So the scenarios
+    // that are not about zoom run first, zoom and pan come last, and hover/select are repeated afterwards to
+    // show the after-zoom state. A painter without such state shows the same numbers in both places.
     const SCENARIOS = [
       ['first-render', scFirstRender],
       ['hover', scHover],

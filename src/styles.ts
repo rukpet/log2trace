@@ -11,7 +11,6 @@
  * whose rules it overrides.
  */
 
-import './styles.css.ts';
 import './kit/theme/tokens.css.ts';
 import './kit/theme/probe.css.ts';
 import './views/waterfall/paint/dom.css.ts';

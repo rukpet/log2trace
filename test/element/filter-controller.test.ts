@@ -8,7 +8,7 @@ import { createTraceStore } from '../../src/core/store.ts';
 import type { FetchCallback, FilterFieldConfig, FilterSource, FilterValue } from '../../src/core/config.ts';
 import type { TraceData } from '../../src/core/otel/trace.ts';
 import type { FilterModel } from '../../src/core/filter-model.ts';
-import type { ElementConfig } from '../../src/element/config.ts';
+import type { TraceVisualizerConfig } from '../../src/element/config.ts';
 import { FilterController, type FilterBarEvents, type FilterBarLike } from '../../src/element/filter-controller.ts';
 import { demoOtelIndex, readDemoJson } from '../support/demo-data.ts';
 
@@ -37,14 +37,14 @@ interface Rig {
   readonly controller: FilterController;
   readonly bar: FakeBar;
   readonly store: ReturnType<typeof createTraceStore>;
-  readonly config: ElementConfig;
+  readonly config: TraceVisualizerConfig;
   readonly events: Array<{ type: string; detail: unknown }>;
   readonly calls: Array<{ url: string | undefined; params: Record<string, string | string[]> }>;
   statusChanges: number;
   callback: FetchCallback | null;
 }
 
-function rig(config: ElementConfig): Rig {
+function rig(config: TraceVisualizerConfig): Rig {
   const store = createTraceStore({ schedule: () => undefined });
   store.setData(demoOtelIndex());
   const payload = readDemoJson('otel-trace.json') as TraceData;

@@ -1,6 +1,6 @@
 {
   "name": "log2trace-ui",
-  "version": "1.0.0-RC2",
+  "version": "2.0.0-rc.1",
   "description": "Zero-dependency Web Component that renders OpenTelemetry traces as an interactive waterfall timeline, with built-in log-to-trace transformation.",
   "main": "dist/log2trace.js",
   "module": "dist/log2trace.js",
@@ -19,9 +19,9 @@
   "sideEffects": [
     "./dist/log2trace.js",
     "./dist/log2trace.min.js",
-    "./src/component.ts",
-    "./src/element/trace-visualizer-next.ts",
-    "./src/styles.css.ts"
+    "./src/**/*.css.ts",
+    "./src/element/carriers.ts",
+    "./src/element/trace-visualizer.ts"
   ],
   "scripts": {
     "clean": "rimraf dist",
@@ -70,7 +70,6 @@
     "@vanilla-extract/esbuild-plugin": "^2.3.21",
     "esbuild": "^0.27.3",
     "eslint": "^10.2.0",
-    "html-minifier-terser": "^7.2.0",
     "husky": "^9.1.7",
     "kill-port": "^2.0.1",
     "lightningcss": "^1.31.1",
