@@ -24,3 +24,7 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run build
+      # The headless bundle must load in plain Node, without a DOM.
+      - run: node --input-type=module -e "const core = await import('./dist/core.js'); if (typeof core.buildSpanIndex !== 'function') process.exit(1)"
+      # The element bundle must still register its custom elements (a wrong "sideEffects" list drops them silently).
+      - run: node -e "const code = require('node:fs').readFileSync('dist/log2trace.min.js', 'utf8'); if (!code.includes('customElements.define(\"trace-visualizer\"')) { console.error('trace-visualizer is not registered in dist/log2trace.min.js'); process.exit(1); }"

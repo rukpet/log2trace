@@ -9,7 +9,7 @@
  * access to `visibleSpans`.
  */
 
-import type { SpanIndex, IndexedSpan } from './span-index.ts';
+import type { SpanIndex, IndexedSpan } from './core/span-index.ts';
 
 /**
  * A single span ready for rendering in the waterfall.

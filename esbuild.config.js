@@ -189,48 +189,64 @@ const watchPlugin = {
   setup(build) {
     build.onEnd(result => {
       if (result.errors.length > 0) {
-        console.error('✗ Build failed with errors');
+        console.error(`✗ ${build.initialOptions.outfile} failed with errors`);
       } else {
-        logBuildResult(result);
+        logBuildResults([result]);
       }
     });
   },
 };
 
 const sharedOptions = {
-  entryPoints: ['src/log2trace.ts'],
   bundle: true,
   sourcemap: true,
   metafile: true,
   format: 'esm',
 };
 
-const minifiedOptions = {
-  ...sharedOptions,
-  minify: true,
-  outfile: 'dist/log2trace.min.js',
-  plugins: [
-    ...makeVanillaExtractPlugins(),
-    htmlMinifyPlugin,
-    ...(isWatchMode ? [watchPlugin] : []),
-  ],
-};
+const watching = isWatchMode ? [watchPlugin] : [];
 
-const devOptions = {
-  ...sharedOptions,
-  minify: false,
-  outfile: 'dist/log2trace.js',
-  plugins: [
-    ...makeVanillaExtractPlugins(),
-    ...(isWatchMode ? [watchPlugin] : []),
-  ],
-};
+// Two bundles, each in a dev and a minified flavour: the element (`log2trace`, registers
+// <trace-visualizer> and brings its styles) and the headless core (`core`, no DOM and no styles,
+// so it gets no vanilla-extract plugins and loads in Node).
+const buildOptions = [
+  {
+    ...sharedOptions,
+    entryPoints: ['src/log2trace.ts'],
+    minify: true,
+    outfile: 'dist/log2trace.min.js',
+    plugins: [...makeVanillaExtractPlugins(), htmlMinifyPlugin, ...watching],
+  },
+  {
+    ...sharedOptions,
+    entryPoints: ['src/log2trace.ts'],
+    minify: false,
+    outfile: 'dist/log2trace.js',
+    plugins: [...makeVanillaExtractPlugins(), ...watching],
+  },
+  {
+    ...sharedOptions,
+    entryPoints: ['src/core.ts'],
+    platform: 'neutral',
+    minify: true,
+    outfile: 'dist/core.min.js',
+    plugins: [...watching],
+  },
+  {
+    ...sharedOptions,
+    entryPoints: ['src/core.ts'],
+    platform: 'neutral',
+    minify: false,
+    outfile: 'dist/core.js',
+    plugins: [...watching],
+  },
+];
 
-function logBuildResult(result) {
+function logBuildResults(results) {
   console.log('✓ Build complete');
-  if (result.metafile) {
-    const outputs = Object.entries(result.metafile.outputs);
-    outputs
+  for (const result of results) {
+    if (!result.metafile) continue;
+    Object.entries(result.metafile.outputs)
       .filter(([file]) => !file.endsWith('.css') && !file.endsWith('.css.map'))
       .forEach(([file, info]) => {
         const sizeKB = (info.bytes / 1024).toFixed(1);
@@ -239,35 +255,29 @@ function logBuildResult(result) {
   }
 }
 
-const [minCtx, devCtx] = await Promise.all([
-  esbuild.context(minifiedOptions),
-  esbuild.context(devOptions),
-]);
+const contexts = await Promise.all(buildOptions.map(options => esbuild.context(options)));
+const disposeAll = () => Promise.all(contexts.map(context => context.dispose()));
 
 if (isWatchMode) {
   console.log('👀 Watching for changes...');
 
-  await Promise.all([minCtx.watch(), devCtx.watch()]);
+  await Promise.all(contexts.map(context => context.watch()));
 
   const shutdown = async () => {
     console.log('\n✓ Stopping watch mode...');
-    await Promise.all([minCtx.dispose(), devCtx.dispose()]);
+    await disposeAll();
     process.exit(0);
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 } else {
   try {
-    const [minResult, devResult] = await Promise.all([
-      minCtx.rebuild(),
-      devCtx.rebuild(),
-    ]);
-    logBuildResult(minResult);
-    logBuildResult(devResult);
-    await Promise.all([minCtx.dispose(), devCtx.dispose()]);
+    const results = await Promise.all(contexts.map(context => context.rebuild()));
+    logBuildResults(results);
+    await disposeAll();
   } catch (error) {
     console.error('✗ Build failed:', error.message);
-    await Promise.all([minCtx.dispose(), devCtx.dispose()]);
+    await disposeAll();
     process.exit(1);
   }
 }

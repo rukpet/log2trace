@@ -11,8 +11,8 @@ import {
   type ResourceSpans,
   type Span,
   type Event,
-} from './opentelemetry/trace.ts';
-import type { KeyValue } from './opentelemetry/common.ts';
+} from './otel/trace.ts';
+import type { KeyValue } from './otel/common.ts';
 import type { TransformConfig, SpanKindRule, LogEntry, FieldValue } from './config.ts';
 
 // ---------------------------------------------------------------------------
