@@ -76,6 +76,21 @@ export default [
     },
   },
   {
+    // Views sit on the kit and the core and under the shell and the element.
+    files: ['src/views/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: [
+            '**/shell/**', '**/element/**',
+            '**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts',
+          ],
+          message: 'A view must not import from the layers above it.',
+        }],
+      }],
+    },
+  },
+  {
     // Legacy string renderer, deleted at the v2 cutover: report instead of failing.
     files: ['src/component.ts', 'src/template.ts'],
     rules: {
