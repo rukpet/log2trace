@@ -7,6 +7,6 @@
     "lib": ["ESNext"],
     "types": []
   },
-  "include": ["src/core.ts", "src/core/**/*", "src/kit/geometry/**/*"],
+  "include": ["src/core.ts", "src/core/**/*", "src/kit/geometry/**/*", "src/views/waterfall/model/**/*", "src/views/waterfall/controller.ts"],
   "exclude": []
 }
