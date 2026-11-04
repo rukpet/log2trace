@@ -20,9 +20,12 @@
     <label>theme
       <select id="theme"><option value="">auto</option><option>light</option><option>dark</option></select>
     </label>
+    <label>renderer
+      <select id="renderer"><option value="">auto</option><option>canvas</option><option>dom</option></select>
+    </label>
     <label><input type="checkbox" id="wheel-zoom"> wheel zooms</label>
     <span id="info"></span>
-    <span>Data: <code>#n=50000</code> for a generated trace (also <code>seed</code>, <code>ev</code>), otherwise the sample OTel file.</span>
+    <span>Data: <code>#n=50000&amp;renderer=dom</code> for a generated trace (also <code>seed</code>, <code>ev</code>), otherwise the sample OTel file.</span>
   </header>
   <trace-visualizer-next></trace-visualizer-next>
 
@@ -37,6 +40,11 @@
     document.getElementById('theme').addEventListener('change', (e) => {
       if (e.target.value) el.setAttribute('theme', e.target.value); else el.removeAttribute('theme');
     });
+    const renderer = document.getElementById('renderer');
+    renderer.addEventListener('change', (e) => {
+      if (e.target.value) el.setAttribute('renderer', e.target.value); else el.removeAttribute('renderer');
+    });
+    if (params.get('renderer')) { el.setAttribute('renderer', params.get('renderer')); renderer.value = params.get('renderer'); }
     document.getElementById('wheel-zoom').addEventListener('change', (e) => el.toggleAttribute('wheel-zoom', e.target.checked));
 
     if (params.get('n')) {
@@ -44,7 +52,7 @@
       const { traceData, meta } = generateTrace(optionsFromParams(params));
       const t1 = performance.now();
       el.traceData = traceData;
-      info.textContent = `${meta.params.n} spans: generated in ${(t1 - t0).toFixed(0)} ms, loaded in ${(performance.now() - t1).toFixed(0)} ms`;
+      info.textContent = `${meta.params?.n ?? params.get('n')} spans: generated in ${(t1 - t0).toFixed(0)} ms, loaded in ${(performance.now() - t1).toFixed(0)} ms`;
     } else {
       el.setAttribute('data-url', './otel-trace.json');
     }

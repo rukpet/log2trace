@@ -856,52 +856,164 @@
     class NotImplemented extends Error {}
 
     /**
-     * Placeholder for the `canvas` and `dom` implementations of the new view.
-     * Both will expose the interaction surface as `[part="plot"]` in an open shadow
-     * root; every method below says how to implement it against that hook.
+     * Drives `<trace-visualizer-next>` with the `canvas` or the `dom` painter. Input goes to the
+     * interaction surface `[part="plot"]` as the events a user would produce (pointer, ctrl+wheel,
+     * key); reads and state changes that have no gesture (collapse, filter) go through the element's
+     * store, which is what its toolbar and filter bar use.
      */
-    class StubAdapter {
-      constructor(name) {
-        this.name = name;
-        this.implemented = false;
+    class NextAdapter {
+      constructor(renderer) {
+        this.name = renderer;
+        this.renderer = renderer;
+        this.implemented = true;
         this.stageMode = 'fixed';
+        this.el = null;
+        this.lib = null;
       }
-      _todo(what) { throw new NotImplemented(`${this.name} adapter: ${what} is not implemented yet`); }
-      async load() { /* TODO: import the bundle that registers the new element */ }
-      // TODO: el = document.createElement('trace-visualizer-next'); el.setAttribute('renderer', this.name);
-      //       stage.appendChild(el); el.traceData = traceData; await first frame (painter stats / ready event).
-      mount() { this._todo('mount'); }
-      unmount() { this._todo('unmount'); }
-      rowCount() { this._todo('rowCount'); }          // TODO: model row count (view state or a11y rowcount)
-      rowHeight() { this._todo('rowHeight'); }        // TODO: spanHeight + spanPadding
-      visibleRowRange() { this._todo('visibleRowRange'); }
-      rowOfSpan() { this._todo('rowOfSpan'); }        // TODO: model.rowOf(spanId)
-      surfaceRect() { this._todo('surfaceRect'); }    // TODO: shadowRoot.querySelector('[part="plot"]').getBoundingClientRect()
-      wheelZoom() { this._todo('wheelZoom'); }        // TODO: WheelEvent{ctrlKey:true, deltaY, clientX, clientY} on [part="plot"]
-      zoomTo() { this._todo('zoomTo'); }              // TODO: wheel until the readout reaches the factor (20x)
-      readZoom() { this._todo('readZoom'); }
-      resetZoom() { this._todo('resetZoom'); }        // TODO: dblclick on empty plot space or key '0'
-      panBegin() { this._todo('panBegin'); }          // TODO: pointerdown on [part="plot"]
-      panMove() { this._todo('panMove'); }            // TODO: pointermove (past the 3 px threshold)
-      panEnd() { this._todo('panEnd'); }              // TODO: pointerup
-      scrollToRow() { this._todo('scrollToRow'); }    // TODO: scrollTop of the plot scroller
-      hoverRow() { this._todo('hoverRow'); }          // TODO: pointermove over the row
-      hoverEnd() { this._todo('hoverEnd'); }
-      selectRow() { this._todo('selectRow'); }        // TODO: pointerdown + pointerup without movement on the bar
-      detailNodeCount() { this._todo('detailNodeCount'); }
-      toggleCollapse() { this._todo('toggleCollapse'); }
-      collapseAll() { this._todo('collapseAll'); }
-      expandAll() { this._todo('expandAll'); }
-      enableFilter() { this._todo('enableFilter'); }
-      setFilter() { this._todo('setFilter'); }
-      resize() { this._todo('resize'); }
-      reset() { this._todo('reset'); }
-      timings() { return {}; }                        // TODO: painter stats()
-      notes() { return {}; }
+
+      async load(ctx) {
+        if (!ctx.lib) throw new Error('bundle did not load');
+        this.lib = ctx.lib;
+        await customElements.whenDefined('trace-visualizer-next');
+      }
+
+      get plot() { return this.el.shadowRoot.querySelector('[part="plot"]'); }
+      get controller() { return this.el.internals.controller; }
+      get store() { return this.el.traceStore; }
+
+      mount(stageEl, traceData) {
+        const el = document.createElement('trace-visualizer-next');
+        el.setAttribute('renderer', this.renderer);
+        el.style.height = '100%';
+        el.style.border = '0';
+        stageEl.appendChild(el);
+        this.el = el;
+        el.traceData = traceData;   // builds the index and the model; the painter draws on the next frame
+        return {};
+      }
+
+      unmount() { if (this.el) this.el.remove(); this.el = null; }
+
+      rowCount() { return this.controller.projection.count; }
+      rowHeight() { return this.controller.layout.rowHeight; }
+
+      visibleRowRange() {
+        const { layout, state } = this.controller;
+        const first = Math.floor(state.scrollTop / layout.rowHeight);
+        const last = Math.ceil((state.scrollTop + layout.bodyHeight) / layout.rowHeight) - 1;
+        return [first, Math.min(this.rowCount() - 1, last)];
+      }
+
+      rowOfSpan(id) {
+        const span = this.controller.index.spans.get(id);
+        return span ? this.controller.projection.rowOf[span.idx] : -1;
+      }
+
+      surfaceRect() {
+        const r = this.plot.getBoundingClientRect();
+        return { left: r.left, top: r.top, width: r.width, height: r.height };
+      }
+
+      /** Client y of the middle of a row, for the current scroll position. */
+      _rowY(row) {
+        const { layout, state } = this.controller;
+        return this.plot.getBoundingClientRect().top + layout.headerHeight + row * layout.rowHeight - state.scrollTop + layout.rowHeight / 2;
+      }
+
+      _pointer(type, x, y, init = {}) {
+        this.plot.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse', button: 0, bubbles: true, cancelable: true, composed: true, ...init }));
+      }
+
+      wheelZoom(deltaY, x, y) {
+        this.plot.dispatchEvent(new WheelEvent('wheel', { deltaY, ctrlKey: true, clientX: x, clientY: y, bubbles: true, cancelable: true, composed: true }));
+      }
+
+      readZoom() {
+        const { camera } = this.controller.state;
+        return rnd(camera.total / (camera.t1 - camera.t0), 3);
+      }
+
+      async zoomTo(target, until = Infinity) {
+        const r = this.surfaceRect();
+        let z = this.readZoom();
+        for (let guard = 0; guard < 400 && z < target && performance.now() < until; guard++) {
+          this.wheelZoom(-100, r.left + r.width / 2, r.top + r.height / 2);
+          const z2 = this.readZoom();
+          if (z2 <= z) break;
+          z = z2;
+          if (guard % 10 === 9) await nextFrame();
+        }
+        return z;
+      }
+
+      resetZoom() {
+        this.plot.dispatchEvent(new KeyboardEvent('keydown', { key: '0', bubbles: true, cancelable: true, composed: true }));
+      }
+
+      panBegin(x, y) { this._pointer('pointerdown', x, y, { buttons: 1 }); }
+      panMove(x, y) { this._pointer('pointermove', x, y, { buttons: 1 }); }
+      panEnd() {
+        const { left, top } = this.surfaceRect();
+        this._pointer('pointerup', left, top);
+      }
+
+      scrollToRow(row) { this.plot.scrollTop = row * this.rowHeight(); }
+
+      hoverRow(row, x) { this._pointer('pointermove', x, this._rowY(row)); }
+      hoverEnd() { this._pointer('pointerleave', 0, 0); }
+
+      selectRow(row) {
+        // a press and release on the label column, clear of the chevron: a click on that row
+        const x = this.plot.getBoundingClientRect().left + this.controller.layout.gutterWidth - 12;
+        const y = this._rowY(row);
+        this._pointer('pointerdown', x, y);
+        this._pointer('pointerup', x, y);
+      }
+
+      detailNodeCount() {
+        const panel = this.el.shadowRoot.querySelector('aside');
+        return panel ? panel.getElementsByTagName('*').length : 0;
+      }
+
+      toggleCollapse(id) { this.store.toggleCollapse(id); this.store.flushSync(); }
+      collapseAll() { this.store.collapseAll(); this.store.flushSync(); }
+      expandAll() { this.store.expandAll(); this.store.flushSync(); }
+
+      enableFilter() { /* the filter is a store operation here, there is no bar to enable yet */ }
+
+      setFilter(text) {
+        const t0 = performance.now();
+        const needle = text.toLowerCase();
+        if (needle === '') {
+          this.store.setMatched(null);
+        } else {
+          const { index } = this.store.state.data;
+          const ids = [];
+          for (const span of index.spans.values()) if (span.span.name.toLowerCase().includes(needle)) ids.push(span.spanId);
+          this.store.setMatched(this.lib.SpanMask.of(index, ids));
+        }
+        this.store.flushSync();
+        return afterFrame().then((tf) => ({ debounceMs: 0, renderMs: tf - t0 }));
+      }
+
+      resize(widthPx) { stage.style.width = `${widthPx}px`; }
+
+      async reset() {
+        this.store.setMatched(null);
+        this.store.expandAll();
+        this.store.setSelection([]);
+        this.store.flushSync();
+        this.hoverEnd();
+        this.resetZoom();
+        this.plot.scrollTop = 0;
+      }
+
+      timings() { return { frames: this.el.frameStats() }; }
+      notes() { return { renderer: this.el.renderer, domNodes: this.el.shadowRoot.querySelectorAll('*').length }; }
     }
 
     function createAdapter(impl) {
-      return impl === 'current' ? new CurrentAdapter() : new StubAdapter(impl);
+      return impl === 'current' ? new CurrentAdapter() : new NextAdapter(impl);
     }
 
     // -----------------------------------------------------------------------
@@ -1350,7 +1462,7 @@
           setStatus(`probe: cpu ${result.env.probe.cpu.p50Ms} ms, frames p50/p95/max ${result.env.probe.pipeline.p50}/${result.env.probe.pipeline.p95}/${result.env.probe.pipeline.max} ms`);
           return;
         }
-        result.bundle = P.impl === 'current' ? await bundleInfo(P.bundle) : null;
+        result.bundle = await bundleInfo(P.bundle);
 
         adapter = createAdapter(P.impl);
         stage.style.width = `${P.w || Math.min(1400, innerWidth - 16)}px`;
@@ -1364,18 +1476,15 @@
 
         if (!adapter.implemented) {
           result.status = 'not-implemented';
-          result.reason = `the ${P.impl} adapter is a stub: implement StubAdapter against [part="plot"] (see the interface comment in perf.html)`;
+          result.reason = `the ${P.impl} adapter does not implement the harness interface (see the comment in perf.html)`;
           setStatus(result.reason);
           result.summary = summarize();
           publish(true);
           return;
         }
 
-        let lib = null;
-        if (P.impl === 'current' || P.gen.flat) {
-          setStatus('loading the bundle…');
-          lib = await import(P.bundle);
-        }
+        setStatus('loading the bundle…');
+        const lib = await import(P.bundle);   // every adapter drives an element this bundle registers
         await adapter.load({ lib });
 
         setStatus('generating the dataset…');

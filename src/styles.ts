@@ -14,5 +14,6 @@
 import './styles.css.ts';
 import './kit/theme/tokens.css.ts';
 import './kit/theme/probe.css.ts';
+import './views/waterfall/paint/dom.css.ts';
 import './shell/shell.css.ts';
 import './element/element.css.ts';
