@@ -18,7 +18,7 @@ The element accepts logs in any JSON shape. You describe your log schema once vi
 **Via CDN** (no build step required):
 
 ```html
-<script type="module" src="https://unpkg.com/log2trace-ui@1.0.0-RC1/dist/log2trace.js"></script>
+<script type="module" src="https://unpkg.com/log2trace-ui@2.0.0-rc.1/dist/log2trace.js"></script>
 ```
 
 **Via npm**:
@@ -32,7 +32,7 @@ npm install log2trace-ui
 Add the element to any HTML page and point it at your log data:
 
 ```html
-<script type="module" src="https://unpkg.com/log2trace-ui@1.0.0-RC1/dist/log2trace.js"></script>
+<script type="module" src="https://unpkg.com/log2trace-ui@2.0.0-rc.1/dist/log2trace.js"></script>
 
 <trace-visualizer
   data-url="./logs.json"
@@ -50,6 +50,29 @@ Add the element to any HTML page and point it at your log data:
 Each attribute is a dot-path into your log records (e.g. `text.Application`, `resource.attributes.host` for nested fields). The component groups logs into traces, builds a span hierarchy from parent references, and renders the result as a zoomable, pannable waterfall.
 
 You can also configure the component and feed data programmatically via the JavaScript API — see the [Interactive Demo Guide](https://rukpet.github.io/log2trace/guide.html) for live examples, or the [API Reference](https://rukpet.github.io/log2trace/api/) for full type documentation.
+
+## Performance and rendering
+
+Version 2 is built for large traces: about 50,000 spans in one diagram, with smooth zoom and pan and instant hover, selection and collapse. The element draws only the rows in view, with one of two painters behind the same model:
+
+- `renderer="dom"` (what `auto` picks today): a small pool of reused row elements, so text stays selectable and the browser's find-in-page works.
+- `renderer="canvas"`: Canvas 2D, with the least JavaScript per frame.
+
+The wheel scrolls the rows, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + wheel (or a pinch) zooms the time axis; add `wheel-zoom` to make the plain wheel zoom. `theme` (`light`, `dark`; by default it follows the page) and the `--l2t-color-*` custom properties restyle the element. Open `demo/large.html#n=50000` for a generated 50,000-span trace, and `demo/perf.html` for the measurement harness.
+
+The data side works without a DOM. `log2trace-ui/core` (transform, span index, filtering, the shared store, `describeSpan`) loads in Node and in a Worker, and it is what future views (flame graph, service graph, sequence diagram) will build on.
+
+## Upgrading from 1.x
+
+Markup, the data attributes, `<trace-filter>`, `<span-kind-rule>`, `traceData`, `logData`, `config`, `fetchCallback`, `loadTraceData()` and `loadAndTransform()` work as before. What changed:
+
+- The wheel scrolls instead of zooming; use `wheel-zoom` for the old behaviour.
+- The `width` and `background-color` attributes are gone: size and colour the element with CSS (`style="width: 700px; --l2t-color-background: #f8f9ff"`). `full-width` is accepted and does nothing, because the element always fills its container. The element is 480 px tall unless you set `height`.
+- `color-scheme` still works; `kind-colors` is its new name. Span-kind colours can also be set with the `--l2t-color-kindServer`-style custom properties (`kindInternal`, `kindClient`, …).
+- The `virtual-scroll-activated` event is gone: rows are always virtualized.
+- `span-selected` fires only for the user's own clicks and keys, not for `selectSpan()`.
+- The exports `TraceViewModel`, `Template`, `resolveDisplayDefaults`, `DisplayConfig` and `ViewSpan` are removed. `TraceVisualizerConfig` remains (without the removed display fields). The headless functions (`transformLogs`, `buildSpanIndex`, `matchSpans`, …) are unchanged.
+- The inner DOM changed (`[data-role]` hooks and the old class names are gone); style through the custom properties and the exposed `part` names (`root`, `plot`, `filter-bar`, `legend`).
 
 ## Documentation
 

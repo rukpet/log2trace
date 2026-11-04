@@ -1,14 +1,14 @@
 /**
- * Element styles: the layout of `<trace-visualizer-next>` itself.
+ * Element styles: the layout of `<trace-visualizer>` itself.
  *
- * The rules for `:host` name the element (`:host(trace-visualizer-next)`) because every element of
+ * The rules for `:host` name the element (`:host(trace-visualizer)`) because every element of
  * the library adopts the same stylesheet.
  */
 
 import { globalStyle, style, styleVariants } from '@vanilla-extract/css';
 import { vars } from '../kit/theme/tokens.css.ts';
 
-globalStyle(':host(trace-visualizer-next)', {
+globalStyle(':host(trace-visualizer)', {
   display: 'block',
   height: 480,
   minHeight: 0,

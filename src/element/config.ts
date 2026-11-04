@@ -1,5 +1,5 @@
 /**
- * Element configuration: what `<trace-visualizer-next>` is told through attributes, child
+ * Element configuration: what `<trace-visualizer>` is told through attributes, child
  * elements and the `config` property.
  *
  * Every field maps to a kebab-case attribute. The transform fields say how raw logs become
@@ -16,7 +16,7 @@ import { SpanKind } from '../core/otel/trace.ts';
 import { KIND_TOKENS, type ColorToken } from '../kit/theme/theme.ts';
 
 /** Everything configurable, all optional: one type for the attributes and the resolved result. */
-export interface ElementConfig extends Partial<TransformConfig> {
+export interface TraceVisualizerConfig extends Partial<TransformConfig> {
   /** URL to fetch trace or log data from. */
   dataUrl?: string;
   /** Height of the element in px. */
@@ -49,7 +49,7 @@ export interface AttributeSource {
 }
 
 /** The part of the config the transform needs to be present. */
-export function isTransformReady(config: ElementConfig): config is ElementConfig & TransformConfig {
+export function isTransformReady(config: TraceVisualizerConfig): config is TraceVisualizerConfig & TransformConfig {
   return [config.traceIdField, config.spanNameField, config.serviceNameField, config.timestampField].every(Boolean);
 }
 
@@ -101,8 +101,8 @@ function parseFilter(el: AttributeSource): FilterFieldConfig | null {
 }
 
 /** Read the attributes and the `<trace-filter>` and `<span-kind-rule>` children of an element. */
-export function readConfig(source: AttributeSource): ElementConfig {
-  const config: ElementConfig = {};
+export function readConfig(source: AttributeSource): TraceVisualizerConfig {
+  const config: TraceVisualizerConfig = {};
   const str = (name: string): string | undefined => source.getAttribute(name) ?? undefined;
   const csv = (name: string): string[] | undefined => {
     const value = source.getAttribute(name);
@@ -126,7 +126,7 @@ export function readConfig(source: AttributeSource): ElementConfig {
       return undefined;
     }
   };
-  const set = <K extends keyof ElementConfig>(key: K, value: ElementConfig[K]): void => {
+  const set = <K extends keyof TraceVisualizerConfig>(key: K, value: TraceVisualizerConfig[K]): void => {
     if (value !== undefined) config[key] = value;
   };
 
@@ -175,7 +175,7 @@ export function readConfig(source: AttributeSource): ElementConfig {
  * Layer the programmatic config over the one read from attributes. A single `spanGroupFields`
  * string becomes a list.
  */
-export function mergeConfig(fromAttributes: ElementConfig, programmatic: ElementConfig): ElementConfig {
+export function mergeConfig(fromAttributes: TraceVisualizerConfig, programmatic: TraceVisualizerConfig): TraceVisualizerConfig {
   const config = { ...fromAttributes, ...programmatic };
   if (typeof config.spanGroupFields === 'string') config.spanGroupFields = [config.spanGroupFields];
   return config;

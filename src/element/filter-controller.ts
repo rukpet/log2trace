@@ -15,7 +15,7 @@ import type { FetchCallback, FilterSource, FilterValue } from '../core/config.ts
 import { FilterModel } from '../core/filter-model.ts';
 import { buildSpanIndex } from '../core/span-index.ts';
 import type { TraceStore } from '../core/store.ts';
-import type { ElementConfig } from './config.ts';
+import type { TraceVisualizerConfig } from './config.ts';
 import { fetchFiltered, payloadToIndex, type FetchLike } from './data-source.ts';
 
 /** What the controller needs of the filter bar. */
@@ -34,7 +34,7 @@ export interface FilterBarEvents {
 /** What the controller needs of the element. */
 export interface FilterHost {
   readonly store: TraceStore;
-  config(): ElementConfig;
+  config(): TraceVisualizerConfig;
   fetchCallback(): FetchCallback | null;
   /** Dispatch a bubbling, composed custom event. */
   dispatch(type: string, detail: unknown): void;

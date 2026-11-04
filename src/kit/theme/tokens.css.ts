@@ -3,7 +3,7 @@
  *
  * Every colour and font the element draws with is a CSS custom property `--l2t-<name>`,
  * declared on `:host`. The host page restyles the element by setting any of them on the
- * element (`trace-visualizer-next { --l2t-color-accent: hotpink }`); nothing inside the
+ * element (`trace-visualizer { --l2t-color-accent: hotpink }`); nothing inside the
  * shadow tree needs to change. The names come from the typed contract below, so a typo in
  * a `*.css.ts` file fails the build.
  *
