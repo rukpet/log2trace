@@ -29,6 +29,8 @@ const LAYERS: readonly Layer[] = [
   { name: 'kit/geometry', paths: ['kit/geometry'], mayImport: ['core'] },
   // Everything that touches the DOM but knows nothing about a particular view.
   { name: 'kit', paths: ['kit'], mayImport: ['core', 'kit/geometry'] },
+  // Views: a headless model per view plus its painters; they know the kit but not the shell or the element.
+  { name: 'views', paths: ['views'], mayImport: ['core', 'kit/geometry', 'kit'] },
 ];
 
 /** Lists the `.ts` files under a path relative to `src/` (the path itself when it is a file). */
