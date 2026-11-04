@@ -91,6 +91,33 @@ export default [
     },
   },
   {
+    // The shell sits beside the views: it must not import a view, nor the element above it.
+    files: ['src/shell/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: [
+            '**/views/**', '**/element/**',
+            '**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts',
+          ],
+          message: 'The shell must not import a view or the element.',
+        }],
+      }],
+    },
+  },
+  {
+    // The element is the top layer: it must not import the legacy element.
+    files: ['src/element/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts'],
+          message: 'The v2 element must not import the legacy element.',
+        }],
+      }],
+    },
+  },
+  {
     // Legacy string renderer, deleted at the v2 cutover: report instead of failing.
     files: ['src/component.ts', 'src/template.ts'],
     rules: {

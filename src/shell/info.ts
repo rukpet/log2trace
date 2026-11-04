@@ -1,0 +1,58 @@
+/**
+ * Shell: render an InfoModel
+ *
+ * One description of a span (`describeSpan`) is shown twice, small in the tooltip and in full in
+ * the detail panel. These functions turn the model into DOM nodes without ever parsing markup,
+ * so a value from a log record can only become text.
+ */
+
+import type { InfoGroup, InfoModel, InfoRow, InfoSection } from '../core.ts';
+import { h } from '../kit/dom.ts';
+import * as styles from './shell.css.ts';
+
+/** The heading of a model: title, subtitle and status. */
+export function renderInfoHeader(model: InfoModel): HTMLElement[] {
+  const nodes: HTMLElement[] = [h('div', { class: styles.infoTitle }, model.title)];
+  if (model.subtitle !== undefined) nodes.push(h('div', { class: styles.infoSubtitle }, model.subtitle));
+  if (model.status !== undefined) nodes.push(h('div', { class: styles.status[model.status] }, statusText(model.status)));
+  return nodes;
+}
+
+function statusText(status: 'ok' | 'error' | 'unset'): string {
+  return status === 'ok' ? 'OK' : status === 'error' ? 'Error' : 'Unset';
+}
+
+/** Rows as a definition list. */
+export function renderRows(rows: readonly InfoRow[]): HTMLElement {
+  return h('dl', { class: styles.infoRows }, rows.map(([label, value]) => [h('dt', null, label), h('dd', null, value)]));
+}
+
+function renderGroup(group: InfoGroup): HTMLElement {
+  return h(
+    'div',
+    { class: styles.group },
+    h('div', { class: styles.groupTitle }, group.aside === undefined ? group.title : `${group.title} · ${group.aside}`),
+    renderRows(group.rows),
+  );
+}
+
+function renderSection(section: InfoSection, open: boolean): HTMLElement {
+  return h(
+    'details',
+    { class: styles.section, open },
+    h('summary', null, section.title, section.badge !== undefined && h('span', { class: styles.badge }, section.badge)),
+    section.rows !== undefined && renderRows(section.rows),
+    section.groups?.map(renderGroup),
+  );
+}
+
+/** The sections of a model, each in a native `<details>`. */
+export function renderSections(model: InfoModel): HTMLElement[] {
+  return model.sections.map((section, i) => renderSection(section, i === 0 || section.title !== 'Events'));
+}
+
+/** The rows of the brief model: the first section only, no groups. */
+export function renderBrief(model: InfoModel): HTMLElement[] {
+  const first = model.sections[0];
+  return [...renderInfoHeader(model), ...(first?.rows !== undefined ? [renderRows(first.rows)] : [])];
+}

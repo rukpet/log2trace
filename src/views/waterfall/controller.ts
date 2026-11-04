@@ -19,6 +19,7 @@ import {
   type TraceState,
   type TraceStore,
 } from '../../core.ts';
+import type { ViewCommand } from '../../kit/commands.ts';
 import { formatZoom, withWindow, zoomRatio } from '../../kit/geometry/camera1d.ts';
 import type { SpanIndex } from '../../core/span-index.ts';
 import { createHitResult, hitTest, type HitResult } from './model/hit.ts';
@@ -58,17 +59,7 @@ export interface UpdateResult {
   readonly scrollTo: boolean;
 }
 
-/** A button or key the view offers; the toolbar, the key handler and the a11y layer all read this list. */
-export interface ViewCommand {
-  readonly id: string;
-  readonly label: string;
-  /** Keys that trigger it, as `KeyboardEvent.key` values. */
-  readonly keys?: readonly string[];
-  run(): void;
-  /** Text to show next to the command, such as the zoom level. */
-  readonly readout?: () => string;
-  readonly enabled?: () => boolean;
-}
+export type { ViewCommand };
 
 /** One row of the accessibility tree. */
 export interface A11yItem {
