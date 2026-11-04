@@ -24,6 +24,12 @@ export class DetailPanel {
     this.element = h('aside', { class: styles.detail, 'aria-label': 'Span details', hidden: true });
   }
 
+  /** Set the width of the panel; `undefined` goes back to the stylesheet's. */
+  setWidth(width: string | undefined): void {
+    this.element.style.width = width ?? '';
+    this.element.style.maxWidth = width === undefined ? '' : 'none';
+  }
+
   /**
    * Show a model, or hide the panel.
    *
