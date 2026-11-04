@@ -27,7 +27,3 @@ test('core modules load without DOM globals', async () => {
     await assert.doesNotReject(import(new URL(module, SRC).href), module);
   }
 });
-
-test('the legacy view model still loads without DOM globals', async () => {
-  await assert.doesNotReject(import(new URL('trace-view-model.ts', SRC).href));
-});

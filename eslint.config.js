@@ -44,14 +44,14 @@ export default [
   },
   {
     // The headless core sits below everything else: it must not import the layers above it
-    // (kit, views, shell, element, or the legacy element). test/layers.test.ts checks every import.
+    // (kit, views, shell, element, or the public entry). test/layers.test.ts checks every import.
     files: ['src/core.ts', 'src/core/**/*.ts'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
           group: [
             '**/kit/**', '**/views/**', '**/shell/**', '**/element/**',
-            '**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts',
+            '**/log2trace.ts',
           ],
           message: 'The headless core must not import from the layers above it.',
         }],
@@ -68,7 +68,7 @@ export default [
         patterns: [{
           group: [
             '**/views/**', '**/shell/**', '**/element/**',
-            '**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts',
+            '**/log2trace.ts',
           ],
           message: 'The kit must not import from the layers above it.',
         }],
@@ -83,7 +83,7 @@ export default [
         patterns: [{
           group: [
             '**/shell/**', '**/element/**',
-            '**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts',
+            '**/log2trace.ts',
           ],
           message: 'A view must not import from the layers above it.',
         }],
@@ -98,7 +98,7 @@ export default [
         patterns: [{
           group: [
             '**/views/**', '**/element/**',
-            '**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts',
+            '**/log2trace.ts',
           ],
           message: 'The shell must not import a view or the element.',
         }],
@@ -106,23 +106,15 @@ export default [
     },
   },
   {
-    // The element is the top layer: it must not import the legacy element.
+    // The element is the top layer: only the public entry sits above it.
     files: ['src/element/**/*.ts'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
-          group: ['**/component.ts', '**/template.ts', '**/trace-view-model.ts', '**/styles.css.ts', '**/log2trace.ts'],
-          message: 'The v2 element must not import the legacy element.',
+          group: ['**/log2trace.ts'],
+          message: 'The element must not import the public entry.',
         }],
       }],
-    },
-  },
-  {
-    // Legacy string renderer, deleted at the v2 cutover: report instead of failing.
-    files: ['src/component.ts', 'src/template.ts'],
-    rules: {
-      'no-restricted-properties': ['warn', ...bannedMarkupApis],
-      'no-restricted-syntax': ['warn', bannedStyleAttribute],
     },
   },
   {

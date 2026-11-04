@@ -1,5 +1,5 @@
 /**
- * The `<trace-visualizer-next>` element: the 2.0 trace view.
+ * The `<trace-visualizer>` element: the 2.0 trace view.
  *
  * It joins the pieces: the shared store (data, selection, collapse, filter result), the waterfall
  * controller and its painter (Canvas 2D or the virtualized DOM, chosen by `renderer`), the input
@@ -61,7 +61,7 @@ import { createLegend } from '../shell/legend.ts';
 import * as shellStyles from '../shell/shell.css.ts';
 import { createToolbar, type Toolbar } from '../shell/toolbar.ts';
 import { Tooltip } from '../shell/tooltip.ts';
-import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, type ElementConfig } from './config.ts';
+import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, type TraceVisualizerConfig } from './config.ts';
 import { fetchJson, payloadToIndex } from './data-source.ts';
 import { FilterController } from './filter-controller.ts';
 import * as styles from './element.css.ts';
@@ -75,7 +75,7 @@ export interface LogDataInput {
   readonly config: TransformConfig;
 }
 
-/** Options of {@link TraceVisualizerNextElement.selectSpan}. */
+/** Options of {@link TraceVisualizerElement.selectSpan}. */
 export interface SelectSpanOptions {
   /** Scroll and pan so the span is in view. Default true. */
   readonly reveal?: boolean;
@@ -126,8 +126,8 @@ interface Status {
   readonly spinner?: boolean;
 }
 
-/** Custom element backing the `<trace-visualizer-next>` tag. */
-export class TraceVisualizerNextElement extends HTMLElement {
+/** Custom element backing the `<trace-visualizer>` tag. */
+export class TraceVisualizerElement extends HTMLElement {
   static get observedAttributes(): string[] {
     return OBSERVED;
   }
@@ -147,7 +147,7 @@ export class TraceVisualizerNextElement extends HTMLElement {
   private readonly toolbar: Toolbar;
   private readonly filters: FilterController<FilterBar>;
   private mounted: Mounted | null = null;
-  private programmatic: ElementConfig = {};
+  private programmatic: TraceVisualizerConfig = {};
   private fetchCallbackValue: FetchCallback | null = null;
   private a11yKey = '';
   private statusKey = '';
@@ -217,12 +217,12 @@ export class TraceVisualizerNextElement extends HTMLElement {
    * was assigned to the property on top. Assigning merges field by field; a field set to
    * `undefined` falls back to its attribute.
    */
-  get config(): ElementConfig {
+  get config(): TraceVisualizerConfig {
     return mergeConfig(readConfig(this), this.programmatic);
   }
 
-  set config(config: ElementConfig) {
-    for (const key of Object.keys(config) as Array<keyof ElementConfig>) {
+  set config(config: TraceVisualizerConfig) {
+    for (const key of Object.keys(config) as Array<keyof TraceVisualizerConfig>) {
       if (config[key] === undefined) delete this.programmatic[key];
       else (this.programmatic as Record<string, unknown>)[key] = config[key];
     }
@@ -364,7 +364,7 @@ export class TraceVisualizerNextElement extends HTMLElement {
       font: probeStyles.font,
     });
     const measureContext = document.createElement('canvas').getContext('2d');
-    if (measureContext === null) throw new Error('trace-visualizer-next needs a 2D canvas');
+    if (measureContext === null) throw new Error('trace-visualizer needs a 2D canvas');
     const meter = createTextMeter({ measure: measureWithContext(measureContext) });
     cleanups.push(bindInput(this.plot, {
       onAction: (action) => this.onAction(action),
@@ -477,7 +477,7 @@ export class TraceVisualizerNextElement extends HTMLElement {
     if (!unchanged || next.size > 0) this.refreshTheme();
   }
 
-  private applyMetrics(config: ElementConfig): void {
+  private applyMetrics(config: TraceVisualizerConfig): void {
     const metrics: Partial<WaterfallMetrics> = {
       ...metricsFromSpanSizes(config.spanHeight ?? Number.NaN, config.spanPadding ?? Number.NaN),
       gutterWidth: config.gutterWidth ?? DEFAULT_METRICS.gutterWidth,
@@ -703,4 +703,4 @@ export class TraceVisualizerNextElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('trace-visualizer-next')) customElements.define('trace-visualizer-next', TraceVisualizerNextElement);
+if (!customElements.get('trace-visualizer')) customElements.define('trace-visualizer', TraceVisualizerElement);

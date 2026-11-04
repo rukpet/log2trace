@@ -26,7 +26,7 @@ class FakeSource implements AttributeSource {
 }
 
 test('transform attributes become fields; lists are split and trimmed', () => {
-  const config = readConfig(new FakeSource('trace-visualizer-next', {
+  const config = readConfig(new FakeSource('trace-visualizer', {
     'data-url': './logs.json',
     'trace-id-field': 'text.BTMID',
     'span-name-field': 'text.Action',

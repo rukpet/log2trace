@@ -26,7 +26,7 @@
  *   flat=1      the flat dataset of demo/benchmark.html (see generateFlatLogs)
  *   heavy=<f>   fraction of log-heavy spans (default 0.001)
  *   ev=<mean>   mean events per regular span (default 2)
- *   impl=current|canvas|dom, auto=1   handled by perf.html itself
+ *   impl=canvas|dom, auto=1   handled by perf.html itself
  *
  * About `heavy`: the brief asked for "~2 events per span" together with "1%
  * log-heavy spans of 500-2000 events". Those two cannot both hold: 1% of 50K
