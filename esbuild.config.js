@@ -1,92 +1,10 @@
 import * as esbuild from 'esbuild';
-import { readFileSync, rmSync } from 'fs';
-import { transform } from 'lightningcss';
+import { readFileSync } from 'fs';
 import ts from 'typescript';
 import { minify as minifyHtml } from 'html-minifier-terser';
-import { vanillaExtractPlugin } from '@vanilla-extract/esbuild-plugin';
+import { makeVanillaExtractPlugins } from './build/vanilla-extract.js';
 
 const isWatchMode = process.argv.includes('--watch');
-
-
-/**
- * Creates the two-plugin set needed to use vanilla-extract with Shadow DOM.
- *
- * Problem: vanilla-extract normally emits CSS via `loader: 'css'`, producing a
- * companion .css file. For Shadow DOM we need the CSS as a plain string for
- * adoptedStyleSheets — not as a separate file.
- *
- * Solution:
- *  1. vePlugin — runs vanilla-extract compilation. processCss captures the CSS
- *     text, resolves cssReady, then returns '' to suppress the companion .css
- *     file (esbuild sees empty CSS → nothing emitted).
- *  2. cssTextPlugin — virtual module `virtual:component-css` that awaits
- *     cssReady and returns the captured CSS as a text string.
- *
- * Timing: while cssTextPlugin.onLoad awaits cssReady, the Node.js event loop
- * is free to process other esbuild messages, including the vanillaCssNamespace
- * onLoad that calls processCss and resolves cssReady.
- *
- */
-function makeVanillaExtractPlugins() {
-  let capturedCss = '';
-  let cssResolve = /** @type {(() => void) | null} */ (null);
-  let cssReady = new Promise(resolve => { cssResolve = resolve; });
-
-  // Plugin 1 — vanilla-extract compiler with CSS capture.
-  const vePlugin = vanillaExtractPlugin({
-    processCss: async (css) => {
-      capturedCss += css;
-      cssResolve?.();
-      // Return empty string so esbuild receives empty CSS and emits nothing,
-      // suppressing the companion .css sidecar file.
-      return '';
-    },
-  });
-
-  // Plugin 2 — virtual module that exposes the captured CSS as a text string.
-  // Import it as: import componentCss from 'virtual:component-css'
-  const cssTextPlugin = {
-    name: 've-css-as-text',
-    setup(build) {
-      build.onStart(() => {
-        capturedCss = '';
-        cssReady = new Promise(resolve => { cssResolve = resolve; });
-      });
-      build.onResolve({ filter: /^virtual:component-css$/ }, () => ({
-        path: 'virtual:component-css',
-        namespace: 've-css-text',
-      }));
-      build.onLoad({ filter: /.*/, namespace: 've-css-text' }, async () => {
-        // Wait until processCss has been called (styles.css.ts fully compiled).
-        // The Node.js event loop remains free while awaiting, so esbuild can
-        // concurrently process styles.css.ts and its virtual CSS dependency.
-        await cssReady;
-        let contents = capturedCss;
-        if (build.initialOptions.minify) {
-          const { code } = transform({ code: Buffer.from(contents), minify: true });
-          contents = code.toString();
-        }
-        // Use a JS template literal so actual newlines are preserved in the
-        // dev bundle (loader:'text' would JSON-escape them into \n sequences).
-        const escaped = contents.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
-        return { contents: `export default \`${escaped}\`;`, loader: 'js' };
-      });
-      // Delete the empty .css and .css.map sidecars that esbuild emits when
-      // vanilla-extract's CSS namespace is processed (CSS is already inlined
-      // in the JS bundle via adoptedStyleSheets — no separate file needed).
-      build.onEnd(() => {
-        const outfile = build.initialOptions.outfile;
-        if (!outfile) return;
-        const cssSidecar = outfile.replace(/\.js$/, '.css');
-        for (const f of [cssSidecar, `${cssSidecar}.map`]) {
-          rmSync(f, { force: true });
-        }
-      });
-    },
-  };
-
-  return [vePlugin, cssTextPlugin];
-}
 
 const htmlMinifyPlugin = {
   name: 'html-minify',
@@ -197,6 +115,9 @@ const watchPlugin = {
   },
 };
 
+// Every bundle that carries the element's styles builds them from this manifest.
+const styleOptions = { manifest: 'src/styles.ts' };
+
 const sharedOptions = {
   bundle: true,
   sourcemap: true,
@@ -215,14 +136,14 @@ const buildOptions = [
     entryPoints: ['src/log2trace.ts'],
     minify: true,
     outfile: 'dist/log2trace.min.js',
-    plugins: [...makeVanillaExtractPlugins(), htmlMinifyPlugin, ...watching],
+    plugins: [...makeVanillaExtractPlugins(styleOptions), htmlMinifyPlugin, ...watching],
   },
   {
     ...sharedOptions,
     entryPoints: ['src/log2trace.ts'],
     minify: false,
     outfile: 'dist/log2trace.js',
-    plugins: [...makeVanillaExtractPlugins(), ...watching],
+    plugins: [...makeVanillaExtractPlugins(styleOptions), ...watching],
   },
   {
     ...sharedOptions,
