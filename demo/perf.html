@@ -879,7 +879,7 @@
 
       get plot() { return this.el.shadowRoot.querySelector('[part="plot"]'); }
       get controller() { return this.el.internals.controller; }
-      get store() { return this.el.traceStore; }
+      get store() { return this.el.store; }
 
       mount(stageEl, traceData) {
         const el = document.createElement('trace-visualizer-next');

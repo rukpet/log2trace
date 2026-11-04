@@ -78,7 +78,7 @@ export const message = style({
   padding: 24,
   textAlign: 'center',
   color: vars.color.textMuted,
-  pointerEvents: 'none',
+  background: vars.color.background,
   selectors: { '&[hidden]': { display: 'none' } },
 });
 

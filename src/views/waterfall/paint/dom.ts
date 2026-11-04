@@ -21,7 +21,7 @@ import { timeToPx } from '../../../kit/geometry/camera1d.ts';
 import { niceTicks } from '../../../kit/geometry/ticks.ts';
 import { h } from '../../../kit/dom.ts';
 import { Dirty, type FrameHandle } from '../../../kit/scheduler.ts';
-import type { ResolvedTheme } from '../../../kit/theme/theme.ts';
+import { cssVariableName, type ResolvedTheme } from '../../../kit/theme/theme.ts';
 import { clearOnFontLoad } from '../../../kit/canvas/text-cache.ts';
 import { HitPart } from '../model/hit.ts';
 import { chevronX } from '../model/layout.ts';
@@ -103,13 +103,6 @@ function createSlot(styles: DomClasses, kindClasses: readonly string[]): Slot {
     barVisible: true, barX: Number.NaN, barW: Number.NaN, shownMarkers: 0, durationMode: -1, durationX: Number.NaN,
     durationText: '', usedFrame: -1, hidden: false,
   };
-}
-
-/** The custom property name inside a `var(--name)` reference from `createVar()`. */
-function variableName(reference: string): string {
-  const match = /^var\((--[^),\s]+)/.exec(reference);
-  if (match === null) throw new Error(`not a CSS variable reference: ${reference}`);
-  return match[1];
 }
 
 /** The DOM painter. Create it with {@link mountDomPainter}. */
@@ -223,7 +216,7 @@ class WaterfallDomPainter implements WaterfallPainter {
     this.ruler.style.height = `${layout.headerHeight}px`;
     this.body.style.top = `${layout.headerHeight}px`;
     this.divider.style.transform = `translateX(${layout.plotLeft - 1}px)`;
-    const set = (variable: string, value: number): void => this.layer.style.setProperty(variableName(variable), `${value}px`);
+    const set = (variable: string, value: number): void => this.layer.style.setProperty(cssVariableName(variable), `${value}px`);
     set(this.styles.rowHeightVar, layout.rowHeight);
     set(this.styles.gutterWidthVar, layout.gutterWidth);
     set(this.styles.plotLeftVar, layout.plotLeft);

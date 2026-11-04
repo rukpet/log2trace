@@ -36,13 +36,36 @@ function renderGroup(group: InfoGroup): HTMLElement {
   );
 }
 
+/** Groups (the events of a span) drawn at first, and added with each press of "Show more". */
+const GROUP_PAGE = 100;
+
+/**
+ * The groups of a section. A span can carry thousands of events; drawing them all at once costs
+ * hundreds of milliseconds and tens of thousands of nodes, so they come a page at a time.
+ */
+function renderGroups(groups: readonly InfoGroup[]): HTMLElement[] {
+  if (groups.length <= GROUP_PAGE) return groups.map(renderGroup);
+  const holder = h('div', null, groups.slice(0, GROUP_PAGE).map(renderGroup));
+  let shown = GROUP_PAGE;
+  const label = (): string => `Show ${Math.min(GROUP_PAGE, groups.length - shown)} more (${groups.length - shown} left)`;
+  const more = h('button', { class: styles.button, type: 'button' }, label());
+  more.addEventListener('click', () => {
+    const next = groups.slice(shown, shown + GROUP_PAGE).map(renderGroup);
+    holder.append(...next);
+    shown += next.length;
+    if (shown >= groups.length) more.remove();
+    else more.textContent = label();
+  });
+  return [holder, more];
+}
+
 function renderSection(section: InfoSection, open: boolean): HTMLElement {
   return h(
     'details',
     { class: styles.section, open },
     h('summary', null, section.title, section.badge !== undefined && h('span', { class: styles.badge }, section.badge)),
     section.rows !== undefined && renderRows(section.rows),
-    section.groups?.map(renderGroup),
+    section.groups !== undefined && renderGroups(section.groups),
   );
 }
 

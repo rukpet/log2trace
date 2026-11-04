@@ -20,10 +20,11 @@ export interface Toolbar {
  * Build a toolbar.
  *
  * @param commands - The commands of the view; a button is made for each.
+ * @param leading - Elements to put before the buttons, such as the legend.
  */
-export function createToolbar(commands: readonly ViewCommand[]): Toolbar {
+export function createToolbar(commands: readonly ViewCommand[], leading: readonly HTMLElement[] = []): Toolbar {
   const updaters: Array<() => void> = [];
-  const nodes: HTMLElement[] = [];
+  const nodes: HTMLElement[] = [...leading];
 
   for (const command of commands) {
     const button = h('button', { class: styles.button, type: 'button', title: command.label, 'aria-label': command.label }, shortLabel(command));

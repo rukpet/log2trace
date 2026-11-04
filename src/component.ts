@@ -1573,12 +1573,24 @@ class FilterBarController {
   }
 }
 
+/** The elements that read `<trace-filter>` and `<span-kind-rule>` children: the legacy one and its replacement. */
+const CONFIG_HOSTS = 'trace-visualizer, trace-visualizer-next';
+
+/** What a carrier needs of its host: to be told that its configuration changed. */
+interface ConfigHost extends HTMLElement {
+  _rerender(): void;
+}
+
+function isConfigHost(el: Element | null): el is ConfigHost {
+  return el !== null && typeof (el as Partial<ConfigHost>)._rerender === 'function';
+}
+
 // ---------------------------------------------------------------------------
 // <trace-filter> — configuration carrier, no Shadow DOM, no rendering
 // ---------------------------------------------------------------------------
 
 class TraceFilterElement extends HTMLElement {
-  private _host: TraceVisualizerElement | null = null;
+  private _host: ConfigHost | null = null;
 
   static get observedAttributes() {
     return [
@@ -1590,11 +1602,12 @@ class TraceFilterElement extends HTMLElement {
   private _notify(): void { this._host?._rerender(); }
 
   connectedCallback(): void {
-    const el = this.closest('trace-visualizer');
-    this._host = el instanceof TraceVisualizerElement ? el : null;
+    const el = this.closest(CONFIG_HOSTS);
+    this._host = isConfigHost(el) ? el : null;
     if (!this._host && el) {
-      customElements.whenDefined('trace-visualizer').then(() => {
-        this._host = this.closest<TraceVisualizerElement>('trace-visualizer');
+      customElements.whenDefined(el.localName).then(() => {
+        const upgraded = this.closest(CONFIG_HOSTS);
+        this._host = isConfigHost(upgraded) ? upgraded : null;
         this._notify();
       });
       return;
@@ -1610,7 +1623,7 @@ class TraceFilterElement extends HTMLElement {
 // ---------------------------------------------------------------------------
 
 class SpanKindRuleElement extends HTMLElement {
-  private _host: TraceVisualizerElement | null = null;
+  private _host: ConfigHost | null = null;
 
   static get observedAttributes() {
     return ['kind', 'match-field', 'match-value', 'match'];
@@ -1619,11 +1632,12 @@ class SpanKindRuleElement extends HTMLElement {
   private _notify(): void { this._host?._rerender(); }
 
   connectedCallback(): void {
-    const el = this.closest('trace-visualizer');
-    this._host = el instanceof TraceVisualizerElement ? el : null;
+    const el = this.closest(CONFIG_HOSTS);
+    this._host = isConfigHost(el) ? el : null;
     if (!this._host && el) {
-      customElements.whenDefined('trace-visualizer').then(() => {
-        this._host = this.closest<TraceVisualizerElement>('trace-visualizer');
+      customElements.whenDefined(el.localName).then(() => {
+        const upgraded = this.closest(CONFIG_HOSTS);
+        this._host = isConfigHost(upgraded) ? upgraded : null;
         this._notify();
       });
       return;
