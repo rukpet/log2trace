@@ -20,6 +20,7 @@
     "./dist/log2trace.js",
     "./dist/log2trace.min.js",
     "./src/component.ts",
+    "./src/element/trace-visualizer-next.ts",
     "./src/styles.css.ts"
   ],
   "scripts": {

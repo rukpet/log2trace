@@ -31,6 +31,10 @@ const LAYERS: readonly Layer[] = [
   { name: 'kit', paths: ['kit'], mayImport: ['core', 'kit/geometry'] },
   // Views: a headless model per view plus its painters; they know the kit but not the shell or the element.
   { name: 'views', paths: ['views'], mayImport: ['core', 'kit/geometry', 'kit'] },
+  // The chrome around a view (toolbar, tooltip, detail panel). It reads view-agnostic contracts from the kit, never a view.
+  { name: 'shell', paths: ['shell'], mayImport: ['core', 'kit/geometry', 'kit'] },
+  // The custom elements: the only layer that knows the views, the shell and the page.
+  { name: 'element', paths: ['element'], mayImport: ['core', 'kit/geometry', 'kit', 'views', 'shell'] },
 ];
 
 /** Lists the `.ts` files under a path relative to `src/` (the path itself when it is a file). */
