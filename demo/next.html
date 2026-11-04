@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>trace-visualizer-next</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; font-family: system-ui, sans-serif; background: Canvas; color: CanvasText; color-scheme: light dark; }
+    header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
+    header h1 { font-size: 16px; margin: 0 12px 0 0; }
+    button, select { font: inherit; }
+    trace-visualizer-next { height: calc(100vh - 80px); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>trace-visualizer-next</h1>
+    <label>theme
+      <select id="theme"><option value="">auto</option><option>light</option><option>dark</option></select>
+    </label>
+    <label><input type="checkbox" id="wheel-zoom"> wheel zooms</label>
+    <span id="info"></span>
+    <span>Data: <code>#n=50000</code> for a generated trace (also <code>seed</code>, <code>ev</code>), otherwise the sample OTel file.</span>
+  </header>
+  <trace-visualizer-next></trace-visualizer-next>
+
+  <script type="module">
+    import { generateTrace, optionsFromParams } from './perf-gen.js';
+    await import('/dist/log2trace.js');
+
+    const el = document.querySelector('trace-visualizer-next');
+    const info = document.getElementById('info');
+    const params = new URLSearchParams(location.hash.slice(1) || location.search);
+
+    document.getElementById('theme').addEventListener('change', (e) => {
+      if (e.target.value) el.setAttribute('theme', e.target.value); else el.removeAttribute('theme');
+    });
+    document.getElementById('wheel-zoom').addEventListener('change', (e) => el.toggleAttribute('wheel-zoom', e.target.checked));
+
+    if (params.get('n')) {
+      const t0 = performance.now();
+      const { traceData, meta } = generateTrace(optionsFromParams(params));
+      const t1 = performance.now();
+      el.traceData = traceData;
+      info.textContent = `${meta.params.n} spans: generated in ${(t1 - t0).toFixed(0)} ms, loaded in ${(performance.now() - t1).toFixed(0)} ms`;
+    } else {
+      el.setAttribute('data-url', './otel-trace.json');
+    }
+    el.addEventListener('span-selected', (e) => console.log('span-selected', e.detail.spanId));
+    window.el = el;
+  </script>
+</body>
+</html>
