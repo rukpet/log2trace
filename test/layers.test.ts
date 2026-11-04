@@ -24,6 +24,11 @@ interface Layer {
 
 const LAYERS: readonly Layer[] = [
   { name: 'core', paths: ['core.ts', 'core'], mayImport: [] },
+  // Pure math with no DOM (tsconfig.headless.json type-checks it without the DOM lib as well).
+  // It must come before `kit`, whose directory contains it: a file belongs to the first layer that matches.
+  { name: 'kit/geometry', paths: ['kit/geometry'], mayImport: ['core'] },
+  // Everything that touches the DOM but knows nothing about a particular view.
+  { name: 'kit', paths: ['kit'], mayImport: ['core', 'kit/geometry'] },
 ];
 
 /** Lists the `.ts` files under a path relative to `src/` (the path itself when it is a file). */
@@ -46,8 +51,8 @@ function relativeImports(file: string): string[] {
 }
 
 function layerOf(file: string): Layer | undefined {
-  const rel = relative(SRC, file);
-  return LAYERS.find((layer) => layer.paths.some((path) => rel === path || rel.startsWith(path + sep)));
+  const rel = relative(SRC, file).split(sep).join('/');
+  return LAYERS.find((layer) => layer.paths.some((path) => rel === path || rel.startsWith(path + '/')));
 }
 
 for (const layer of LAYERS) {

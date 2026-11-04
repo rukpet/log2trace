@@ -7,6 +7,6 @@
     "lib": ["ESNext"],
     "types": []
   },
-  "include": ["src/core.ts", "src/core/**/*"],
+  "include": ["src/core.ts", "src/core/**/*", "src/kit/geometry/**/*"],
   "exclude": []
 }
