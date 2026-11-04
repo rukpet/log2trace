@@ -2,17 +2,18 @@
  * The `<trace-visualizer-next>` element: the 2.0 trace view.
  *
  * It joins the pieces: the shared store (data, selection, collapse), the waterfall controller
- * and its Canvas painter, the input binding on the native scroller, the frame scheduler, the theme
+ * and its painter (Canvas 2D or the virtualized DOM, chosen by `renderer`), the input binding on the native scroller, the frame scheduler, the theme
  * probe and the shell (toolbar, tooltip, detail panel). It holds no trace logic of its own.
  *
- * DOM, from the back: the stage holds two canvases (the surface adds them) and the scroller
- * (`part="plot"`), a transparent native scroller whose spacer gives the rows their scroll range,
- * so the wheel, touch, keyboard and scrollbar all work natively while the canvases are redrawn
- * from the scroll position. The tooltip and a visually hidden accessibility tree sit above.
+ * DOM, from the back: the stage holds what the painter adds (two canvases, or a layer of row
+ * elements) and the scroller (`part="plot"`), a transparent native scroller whose spacer gives the
+ * rows their scroll range, so the wheel, touch, keyboard and scrollbar all work natively while the
+ * painter redraws from the scroll position. The tooltip and, for the canvas, a visually hidden
+ * accessibility tree sit above.
  *
  * Data comes from `traceData`, `logData` or `data-url` (a JSON file of OTel trace data).
  * Attributes: `theme` (`light`, `dark`, default follows the page), `wheel-zoom`, `span-height`,
- * `span-padding`, `gutter-width`, `renderer` (`canvas`; the DOM painter arrives later).
+ * `span-padding`, `gutter-width`, `renderer` (`canvas`, `dom`, or `auto`, the default, which is `dom`). Changing `renderer` swaps the painter and keeps the camera, scroll and selection.
  */
 
 import componentCss from 'virtual:component-css';
@@ -32,17 +33,18 @@ import {
 } from '../core.ts';
 import { measure } from '../core/instrumentation.ts';
 import { h } from '../kit/dom.ts';
-import { createCanvasSurface, type CanvasSurface } from '../kit/canvas/surface.ts';
-import { clearOnFontLoad, createTextMeter, measureWithContext, type TextMeter } from '../kit/canvas/text-cache.ts';
+import { createTextMeter, measureWithContext, type TextMeter } from '../kit/canvas/text-cache.ts';
 import { bindInput } from '../kit/input/bind.ts';
 import { InputActionKind, Key, type InputAction } from '../kit/input/types.ts';
-import { Dirty, getFrameScheduler, type FrameHandle } from '../kit/scheduler.ts';
+import { getFrameScheduler, type FrameHandle } from '../kit/scheduler.ts';
 import { ThemeProbe } from '../kit/theme/theme.ts';
 import * as probeStyles from '../kit/theme/probe.css.ts';
 import { metricsFromSpanSizes, type WaterfallMetrics } from '../views/waterfall/model/layout.ts';
 import { WaterfallController, type UpdateResult } from '../views/waterfall/controller.ts';
 import { WaterfallDirty, type Cursor, type WaterfallInput } from '../views/waterfall/model/interaction.ts';
-import { WaterfallCanvasPainter, toSurfaceDirty } from '../views/waterfall/paint/canvas.ts';
+import { mountCanvasPainter } from '../views/waterfall/paint/canvas.ts';
+import { mountDomPainter } from '../views/waterfall/paint/dom-mount.ts';
+import type { PainterFactory, PainterStats, RendererKind, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
 import { DetailPanel } from '../shell/detail.ts';
 import { createToolbar, type Toolbar } from '../shell/toolbar.ts';
 import { Tooltip } from '../shell/tooltip.ts';
@@ -79,8 +81,7 @@ const KEY_NAMES: Readonly<Record<Key, string>> = {
 
 /** Everything that exists only while the element is in a document. */
 interface Mounted {
-  readonly surface: CanvasSurface;
-  readonly painter: WaterfallCanvasPainter;
+  painter: WaterfallPainter | null;
   readonly probe: ThemeProbe;
   readonly meter: TextMeter;
   readonly a11y: FrameHandle;
@@ -164,27 +165,26 @@ export class TraceVisualizerNextElement extends HTMLElement {
     this.store.flushSync();
   }
 
-  /** The painter in use. Only the Canvas painter exists so far. */
-  get renderer(): 'canvas' {
-    return 'canvas';
+  /** The painter in use, or the one that will be used once the element is in a document. */
+  get renderer(): RendererKind {
+    return this.mounted?.painter?.kind ?? this.chooseRenderer();
   }
 
   /** Parts of the element for tests and the performance harness; not a public API. */
-  get internals(): { readonly controller: WaterfallController; readonly store: TraceStore; readonly painter: WaterfallCanvasPainter | null; readonly plot: HTMLElement } {
+  get internals(): { readonly controller: WaterfallController; readonly store: TraceStore; readonly painter: WaterfallPainter | null; readonly plot: HTMLElement } {
     return { controller: this.controller, store: this.store, painter: this.mounted?.painter ?? null, plot: this.plot };
   }
 
   /** What the recent frames cost and how much the painter drew, for the performance harness. */
-  frameStats(): { readonly frames: ReturnType<ReturnType<typeof getFrameScheduler>['stats']>; readonly painter: WaterfallCanvasPainter['stats'] | null } {
-    return { frames: getFrameScheduler().stats(), painter: this.mounted?.painter.stats ?? null };
+  frameStats(): { readonly frames: ReturnType<ReturnType<typeof getFrameScheduler>['stats']>; readonly painter: PainterStats | null } {
+    return { frames: getFrameScheduler().stats(), painter: this.mounted?.painter?.stats ?? null };
   }
 
   /** Read the theme tokens again and repaint: after the host changed a `--l2t-*` property from script. */
   refreshTheme(): void {
     const mounted = this.mounted;
     if (mounted === null) return;
-    mounted.painter.setTheme(mounted.probe.resolve());
-    mounted.surface.mark(Dirty.Theme);
+    mounted.painter?.setTheme(mounted.probe.resolve());
   }
 
   // ---------------------------------------------------------------------------
@@ -209,6 +209,9 @@ export class TraceVisualizerNextElement extends HTMLElement {
         break;
       case 'theme':
         this.refreshTheme();
+        break;
+      case 'renderer':
+        this.swapPainter();
         break;
       case 'wheel-zoom':
         this.controller.wheelZoom = newValue !== null;
@@ -236,13 +239,6 @@ export class TraceVisualizerNextElement extends HTMLElement {
     const measureContext = document.createElement('canvas').getContext('2d');
     if (measureContext === null) throw new Error('trace-visualizer-next needs a 2D canvas');
     const meter = createTextMeter({ measure: measureWithContext(measureContext) });
-    const painter = new WaterfallCanvasPainter({ controller: this.controller, meter, theme: probe.resolve() });
-
-    const surface = createCanvasSurface({ host: this.stage, paint: painter.paint, scheduler });
-    cleanups.push(surface.onResize((size) => {
-      this.apply(this.controller.resize(size.cssWidth, size.cssHeight));
-    }));
-    cleanups.push(clearOnFontLoad(meter, { onCleared: () => surface.mark(Dirty.Theme) }));
     cleanups.push(bindInput(this.plot, {
       onAction: (action) => this.onAction(action),
       wheelZoom: () => this.controller.wheelZoom,
@@ -256,14 +252,14 @@ export class TraceVisualizerNextElement extends HTMLElement {
     }
 
     const a11y = scheduler.register({ paint: () => this.renderA11y() });
-    this.mounted = { surface, painter, probe, meter, a11y, cleanups };
+    this.mounted = { painter: null, probe, meter, a11y, cleanups };
+    this.mountPainter();
 
     this.controller.wheelZoom = this.hasAttribute('wheel-zoom');
     this.applyMetrics();
     this.syncSpacer();
     this.renderPhase();
     this.renderSelection();
-    surface.mark(Dirty.All);
     a11y.mark(1);
   }
 
@@ -273,9 +269,45 @@ export class TraceVisualizerNextElement extends HTMLElement {
     this.mounted = null;
     for (const cleanup of mounted.cleanups) cleanup();
     mounted.a11y.dispose();
-    mounted.surface.dispose();
+    mounted.painter?.dispose();
     mounted.probe.dispose();
     this.tooltip.hide();
+  }
+
+  /**
+   * The renderer the attribute asks for. `auto` is the DOM painter: at 50,000 spans it keeps the frame
+   * interval of the canvas on every scenario of the harness (see the stage 3 A/B in the plan), and it brings
+   * text selection, find-in-page, a real accessibility tree and forced colours for free.
+   */
+  private chooseRenderer(): RendererKind {
+    return this.getAttribute('renderer') === 'canvas' ? 'canvas' : 'dom';
+  }
+
+  private mountPainter(): void {
+    const mounted = this.mounted;
+    if (mounted === null) return;
+    const kind = this.chooseRenderer();
+    const factory: PainterFactory = kind === 'dom' ? mountDomPainter : mountCanvasPainter;
+    mounted.painter = factory({
+      controller: this.controller,
+      host: this.stage,
+      meter: mounted.meter,
+      theme: mounted.probe.resolve(),
+      scheduler: getFrameScheduler(),
+      onSize: (width, height) => this.apply(this.controller.resize(width, height)),
+    });
+    this.a11yKey = '';
+    mounted.a11y.mark(1);
+    mounted.painter.mark(WaterfallDirty.Rows | WaterfallDirty.Scroll | WaterfallDirty.Camera | WaterfallDirty.Selection | WaterfallDirty.Hover | WaterfallDirty.Theme | WaterfallDirty.Size);
+  }
+
+  /** Replace the painter after `renderer` changed; the camera, scroll position and selection stay, they are not the painter's. */
+  private swapPainter(): void {
+    const mounted = this.mounted;
+    if (mounted === null) return;
+    if (mounted.painter !== null && mounted.painter.kind === this.chooseRenderer()) return;
+    mounted.painter?.dispose();
+    this.mountPainter();
   }
 
   // ---------------------------------------------------------------------------
@@ -375,7 +407,7 @@ export class TraceVisualizerNextElement extends HTMLElement {
 
     const mounted = this.mounted;
     if (mounted !== null) {
-      mounted.surface.mark(toSurfaceDirty(dirty));
+      mounted.painter?.mark(dirty);
       if ((dirty & (WaterfallDirty.Rows | WaterfallDirty.Scroll | WaterfallDirty.Selection | WaterfallDirty.Size)) !== 0) mounted.a11y.mark(1);
     }
     this.renderTooltip(dirty);
@@ -438,6 +470,12 @@ export class TraceVisualizerNextElement extends HTMLElement {
 
   /** Rebuild the accessibility tree of the rows in view when it changed. */
   private renderA11y(): void {
+    if (this.mounted?.painter?.kind !== 'canvas') {
+      // the DOM painter's rows are the tree
+      if (this.a11yKey !== 'dom') this.a11yRoot.replaceChildren();
+      this.a11yKey = 'dom';
+      return;
+    }
     const tree = this.controller.a11y('Spans');
     const first = tree.items[0]?.position ?? 0;
     const key = `${tree.size}|${first}|${tree.items.length}|${tree.activeId ?? ''}`;

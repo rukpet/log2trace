@@ -20,16 +20,18 @@
 
 import { niceTicks } from '../../../kit/geometry/ticks.ts';
 import { timeToPx } from '../../../kit/geometry/camera1d.ts';
-import type { CanvasSurface } from '../../../kit/canvas/surface.ts';
-import type { TextMeter } from '../../../kit/canvas/text-cache.ts';
+import { createCanvasSurface, type CanvasSurface } from '../../../kit/canvas/surface.ts';
+import { clearOnFontLoad, type TextMeter } from '../../../kit/canvas/text-cache.ts';
 import { Dirty } from '../../../kit/scheduler.ts';
 import type { ResolvedTheme } from '../../../kit/theme/theme.ts';
 import type { WaterfallController } from '../controller.ts';
 import { HitPart } from '../model/hit.ts';
-import { WaterfallDirty } from '../model/interaction.ts';
 import { chevronX, labelWidth, labelX, CHEVRON_SIZE } from '../model/layout.ts';
 import { FramePlan, LabelMode, RowFlag } from '../model/plan.ts';
 import { Chevron } from '../model/rows.ts';
+import { toSurfaceDirty, type PainterContext, type PainterStats, type WaterfallPainter } from './painter.ts';
+
+export { toSurfaceDirty };
 
 /** The surface bits that need the scene redrawn. */
 const SCENE_BITS = Dirty.Size | Dirty.Theme | Dirty.Rows | Dirty.Scroll | Dirty.Camera;
@@ -43,19 +45,6 @@ const SMALL_SIZE = 11;
 /** Opacity of rows that are only the ancestors of a filter match. */
 const CONTEXT_ALPHA = 0.5;
 
-/** The `WaterfallDirty` bits of the controller as the surface's {@link Dirty} bits. */
-export function toSurfaceDirty(bits: number): number {
-  let out = 0;
-  if (bits & WaterfallDirty.Rows) out |= Dirty.Rows;
-  if (bits & WaterfallDirty.Scroll) out |= Dirty.Scroll;
-  if (bits & WaterfallDirty.Camera) out |= Dirty.Camera;
-  if (bits & WaterfallDirty.Selection) out |= Dirty.Selection;
-  if (bits & WaterfallDirty.Hover) out |= Dirty.Hover;
-  if (bits & WaterfallDirty.Theme) out |= Dirty.Theme;
-  if (bits & WaterfallDirty.Size) out |= Dirty.Size;
-  return out;
-}
-
 /** What the painter is made of. */
 export interface CanvasPainterOptions {
   readonly controller: WaterfallController;
@@ -63,16 +52,6 @@ export interface CanvasPainterOptions {
   readonly meter: TextMeter;
   /** The tokens as the browser resolved them. */
   readonly theme: ResolvedTheme;
-}
-
-/** Counters for the harness: what the last frames cost in drawing work. */
-export interface PainterStats {
-  /** Scene redraws so far. */
-  scenes: number;
-  /** Overlay redraws so far. */
-  overlays: number;
-  /** Rows drawn by the last scene redraw. */
-  rows: number;
 }
 
 /** Draws the waterfall on a {@link CanvasSurface}. */
@@ -331,4 +310,27 @@ function drawChevron(ctx: CanvasRenderingContext2D, cx: number, cy: number, expa
   }
   ctx.closePath();
   ctx.fill();
+}
+
+/** Mount the Canvas painter: two canvases in the host, drawn on the frame loop. */
+export function mountCanvasPainter(context: PainterContext): WaterfallPainter {
+  const painter = new WaterfallCanvasPainter({ controller: context.controller, meter: context.meter, theme: context.theme });
+  const surface = createCanvasSurface({ host: context.host, paint: painter.paint, scheduler: context.scheduler });
+  const stopResize = surface.onResize((size) => context.onSize(size.cssWidth, size.cssHeight));
+  const stopFonts = clearOnFontLoad(context.meter, { onCleared: () => surface.mark(Dirty.Theme) });
+  surface.mark(Dirty.All);
+  return {
+    kind: 'canvas',
+    stats: painter.stats,
+    mark: (dirty) => surface.mark(toSurfaceDirty(dirty)),
+    setTheme(theme) {
+      painter.setTheme(theme);
+      surface.mark(Dirty.Theme);
+    },
+    dispose() {
+      stopResize();
+      stopFonts();
+      surface.dispose();
+    },
+  };
 }
