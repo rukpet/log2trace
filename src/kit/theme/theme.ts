@@ -53,6 +53,13 @@ export const FONT_TOKENS = ['sans', 'mono'] as const;
 /** The name of a font token. */
 export type FontToken = (typeof FONT_TOKENS)[number];
 
+/** The custom property name inside a `var(--name)` reference, as `createVar()` and the theme contract produce them. */
+export function cssVariableName(reference: string): string {
+  const match = /^var\((--[^),\s]+)/.exec(reference);
+  if (match === null) throw new Error(`not a CSS variable reference: ${reference}`);
+  return match[1];
+}
+
 /** A record with one entry per key, for typing the token tables. */
 export function tokenRecord<K extends string, V>(keys: readonly K[], value: (key: K) => V): Record<K, V> {
   const record = {} as Record<K, V>;

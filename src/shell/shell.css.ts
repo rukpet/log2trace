@@ -5,12 +5,14 @@
  * the host page's overrides without a rule of its own.
  */
 
-import { globalStyle, style, styleVariants } from '@vanilla-extract/css';
+import { globalStyle, keyframes, style, styleVariants } from '@vanilla-extract/css';
+import { KIND_TOKENS, tokenRecord, type ColorToken } from '../kit/theme/theme.ts';
 import { vars } from '../kit/theme/tokens.css.ts';
 
 // ---- Toolbar ----
 export const toolbar = style({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
   gap: 6,
   padding: '6px 10px',
@@ -125,3 +127,35 @@ export const group = style({
   borderLeft: `2px solid ${vars.color.border}`,
 });
 export const groupTitle = style({ fontWeight: 600 });
+
+// ---- Legend ----
+export const legend = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: 12,
+  marginRight: 'auto',
+  selectors: { '&[hidden]': { display: 'none' } },
+});
+export const legendItem = style({ display: 'flex', alignItems: 'center', gap: 5, color: vars.color.textMuted });
+
+/** A swatch per span-kind colour token. */
+export const swatch = styleVariants(
+  tokenRecord<ColorToken, string>(KIND_TOKENS, (token) => vars.color[token]),
+  (value) => ({ width: 12, height: 12, borderRadius: 3, background: value }),
+);
+
+// ---- Spinner ----
+const spin = keyframes({ '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } });
+export const spinner = style({
+  display: 'inline-block',
+  width: 18,
+  height: 18,
+  marginRight: 10,
+  verticalAlign: 'middle',
+  border: `3px solid ${vars.color.border}`,
+  borderTopColor: vars.color.accent,
+  borderRadius: '50%',
+  animation: `${spin} 1s linear infinite`,
+  '@media': { '(prefers-reduced-motion: reduce)': { animationDuration: '4s' } },
+});
