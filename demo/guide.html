@@ -338,6 +338,7 @@
     <span class="toc-group-label">Advanced</span>
     <a href="#ex-23">23. Full advanced setup</a>
     <a href="#ex-24">24. View tabs</a>
+    <a href="#ex-25">25. Flame graph</a>
   </div>
 </nav>
 
@@ -1447,8 +1448,9 @@ el23.addEventListener('span-selected', (e) => {
     <p class="desc">
       A trace can be drawn by more than one <em>view</em>. List them in the <code>views</code>
       attribute and tabs appear; <code>view</code> says which one is shown first. The waterfall is
-      the default, and <code>inspector</code> is a small second view that prints the shared state
-      (selection, hover, collapsed spans, filter, time window). The views share one store, so a
+      the default, <code>flame</code> is the flame graph of the next example, and <code>inspector</code>
+      is a small view that prints the shared state (selection, hover, collapsed spans, filter,
+      time window). The views share one store, so a
       span selected in one is selected in the other, and the waterfall comes back to the camera and
       scroll position you left. Other views register themselves with
       <code>registerView()</code> from the <code>log2trace-ui</code> entry. Listen for
@@ -1466,6 +1468,48 @@ el23.addEventListener('span-selected', (e) => {
       <trace-visualizer id="ex24" views="waterfall,inspector" show-legend></trace-visualizer>
     </div>
     <pre id="ex24-output" class="output-pre">// switch tabs to see view-changed here</pre>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 25 — Flame graph
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-25">
+    <h2><span class="ex-num">25</span>Flame graph</h2>
+    <p class="desc">
+      <code>flame</code> is a view of its own: it folds the spans into <em>boxes</em>, one for every
+      distinct call path (service, name and kind of the span and of each ancestor), and makes a box
+      as wide as the time its spans take together. Where the waterfall answers &ldquo;when did it
+      happen&rdquo;, the flame graph answers &ldquo;where did the time go&rdquo;. Because it shares the
+      store, a click or a hover selects every span of the box in the other tabs too, the filter
+      dims the boxes none of whose spans matched, and the shared time window limits what is
+      counted. Double-click a box (or press <kbd>F</kbd>) to make it fill the width; the toolbar
+      goes back up one box or to the whole trace, and the focus is kept when you change tabs.
+    </p>
+
+    <table class="kbd-table" style="margin-bottom:1rem">
+      <thead>
+        <tr><th>Key</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Select the parent box / the heaviest child</td></tr>
+        <tr><td><kbd>&larr;</kbd> / <kbd>&rarr;</kbd></td><td>Select the previous / next sibling</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Focus the selected box</td></tr>
+        <tr><td><kbd>Escape</kbd></td><td>Leave the focus; with no focus, clear the selection</td></tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer views="flame,waterfall" view="flame" show-legend
+                  data-url="./otel-trace.json"&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — click a box, double-click to focus, then open the Waterfall tab</div>
+    <div class="result-box">
+      <trace-visualizer id="ex25" views="flame,waterfall" view="flame" show-legend data-url="./otel-trace.json"></trace-visualizer>
+    </div>
   </section>
 
 
