@@ -96,6 +96,8 @@ interface Mounted {
   frameNo: number;
   width: number;
   height: number;
+  /** The scroll position as of the last scroll event, so that the hover path never reads it from the element. */
+  scrollTop: number;
   hoverBox: number;
   selected: ReadonlySet<number>;
   hovered: ReadonlySet<number>;
@@ -145,11 +147,12 @@ export class FlameView implements TraceView {
       ctx, root, stage, note, live, frame, observer, tree,
       slots: new Map(), slotOf: new WeakMap(), pool: [],
       layout: layoutFlame(tree, -1, 0), focus: -1, generation: ctx.store.state.data.generation,
-      frameNo: 0, width: 0, height: 0, hoverBox: -1,
+      frameNo: 0, width: 0, height: 0, scrollTop: 0, hoverBox: -1,
       selected: new Set(), hovered: new Set(), matched: null, matchedFor: null, liveText: '',
     };
 
     root.addEventListener('scroll', () => {
+      if (this.mounted !== null) this.mounted.scrollTop = root.scrollTop;
       this.leaveHover();
       frame.mark(Dirty.View);
     });
@@ -434,8 +437,10 @@ export class FlameView implements TraceView {
     const { tree } = m;
     m.ctx.hover({
       key: `${m.generation}:${slot.box}:${tree.weight[slot.box]}`,
-      anchor: { x: slot.x, y: tree.depth[slot.box] * ROW_HEIGHT - m.root.scrollTop, w: slot.w, h: ROW_HEIGHT },
-      bounds: { width: m.root.clientWidth, height: m.root.clientHeight },
+      // sizes and scroll position are the ones the view already holds: reading them from the element
+      // here would force a layout on every hover
+      anchor: { x: slot.x, y: tree.depth[slot.box] * ROW_HEIGHT - m.scrollTop, w: slot.w, h: ROW_HEIGHT },
+      bounds: { width: m.width, height: m.height },
       info: () => describeBox(tree, slot.box),
     });
   }
