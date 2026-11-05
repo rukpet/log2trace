@@ -331,7 +331,7 @@ test('random trees, shuffled, come out in the reference order (many equal start 
   }
 });
 
-// -- the demo data, against what the pre-v2 implementation produced ------------------------
+// -- the demo data, against what the pre-rework implementation produced ------------------------
 
 test('demo/logs.json keeps the order the old index produced', () => {
   const index = demoLogsIndex();

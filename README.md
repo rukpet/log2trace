@@ -53,7 +53,7 @@ You can also configure the component and feed data programmatically via the Java
 
 ## Performance and rendering
 
-Version 2 is built for large traces: about 50,000 spans in one diagram, with smooth zoom and pan and instant hover, selection and collapse. The element draws only the rows in view, with one of two painters behind the same model:
+This release is built for large traces: about 50,000 spans in one diagram, with smooth zoom and pan and instant hover, selection and collapse. The element draws only the rows in view, with one of two painters behind the same model:
 
 - `renderer="dom"` (what `auto` picks today): a small pool of reused row elements, so text stays selectable and the browser's find-in-page works.
 - `renderer="canvas"`: Canvas 2D, with the least JavaScript per frame.
@@ -62,9 +62,9 @@ The wheel scrolls the rows, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + wheel (or a pin
 
 The data side works without a DOM. `log2trace-ui/core` (transform, span index, filtering, the shared store, `describeSpan`) loads in Node and in a Worker, and it is what future views (flame graph, service graph, sequence diagram) will build on.
 
-## Upgrading from 1.x
+## Upgrading from 1.0.0-RC2
 
-Markup, the data attributes, `<trace-filter>`, `<span-kind-rule>`, `traceData`, `logData`, `config`, `fetchCallback`, `loadTraceData()` and `loadAndTransform()` work as before. What changed:
+1.0.0-RC3 rebuilds the drawing layer; the data side is unchanged. Markup, the data attributes, `<trace-filter>`, `<span-kind-rule>`, `traceData`, `logData`, `config`, `fetchCallback`, `loadTraceData()` and `loadAndTransform()` work as before. What changed:
 
 - The wheel scrolls instead of zooming; use `wheel-zoom` for the old behaviour.
 - The `width` and `background-color` attributes are gone: size and colour the element with CSS (`style="width: 700px; --l2t-color-background: #f8f9ff"`). `full-width` is accepted and does nothing, because the element always fills its container. The element is 480 px tall unless you set `height`.
