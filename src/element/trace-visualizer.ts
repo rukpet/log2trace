@@ -165,7 +165,10 @@ export class TraceVisualizerElement extends HTMLElement {
     this.message = h('div', { class: styles.message, role: 'status', hidden: true });
     this.live = h('div', { class: a11yStyles.visuallyHidden, role: 'status', 'aria-live': 'polite' });
     this.stage = h('div', { class: styles.stage, id: panelId, role: 'tabpanel' }, this.surface, this.message, this.tooltip.element, this.live);
-    this.detail = new DetailPanel(() => this.shared.setSelection([], { origin: 'shell' }));
+    this.detail = new DetailPanel({
+      onClose: () => this.shared.setSelection([], { origin: 'shell' }),
+      onReturn: () => this.active?.view.focus?.(),
+    });
     this.tabs = createViewTabs((id) => { this.view = id; }, panelId);
     this.toolbarSlot = h('div', { class: styles.toolbarSlot });
 
@@ -384,6 +387,25 @@ export class TraceVisualizerElement extends HTMLElement {
     };
     this.shadow.addEventListener('click', onOutside, true);
     cleanups.push(() => this.shadow.removeEventListener('click', onOutside, true));
+
+    // Enter or Space on a selected span moves the focus to its details, Ctrl/Cmd+F to the filter bar, and
+    // Escape in a text filter back to the view; the page's own find still works when there is no bar
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented || event.altKey) return;
+      const target = event.target;
+      const editing = target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLButtonElement;
+      if ((event.key === 'Enter' || event.key === ' ') && !event.ctrlKey && !event.metaKey && !event.shiftKey && !editing && this.stage.contains(target as Node)
+        && this.shared.state.selection.primary !== null) {
+        if (this.detail.focus()) event.preventDefault();
+      } else if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'f') {
+        if (this.filters.bar.focusFirst()) event.preventDefault();
+      } else if (event.key === 'Escape' && target instanceof HTMLInputElement && target.type === 'text' && this.filters.bar.element.contains(target)) {
+        event.preventDefault();
+        this.active?.view.focus?.();
+      }
+    };
+    this.shadow.addEventListener('keydown', onKey as EventListener);
+    cleanups.push(() => this.shadow.removeEventListener('keydown', onKey as EventListener));
 
     this.connected = { cleanups };
     this.syncTabs();
