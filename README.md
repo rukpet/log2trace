@@ -62,6 +62,20 @@ The wheel scrolls the rows, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + wheel (or a pin
 
 The data side works without a DOM. `log2trace-ui/core` (transform, span index, filtering, the shared store, `describeSpan`) loads in Node and in a Worker, and it is what future views (flame graph, service graph, sequence diagram) will build on.
 
+## Views
+
+The element draws the trace with one view at a time. List several in the `views` attribute and tabs appear; `view` says which one is shown first. They share one store, so a span selected, hovered or filtered in one view is the same in the others, and each view keeps its own camera or focus when you switch away.
+
+```html
+<trace-visualizer views="waterfall,flame,inspector" view="waterfall" data-url="./logs.json"></trace-visualizer>
+```
+
+- `waterfall` (the default): one row per span on a time axis. It answers "when did it happen".
+- `flame`: a flame graph. Spans with the same call path (service, name and kind of the span and of each ancestor) fold into one box, as wide as the time those spans take together, so it answers "where did the time go". Click or hover a box to select all its spans, double-click or press `F` to make it fill the width, `Escape` to leave. It draws with the DOM.
+- `inspector`: the shared state as text, mostly there to prove the view contract.
+
+The `view-changed` event reports a switch, and `registerView()` adds views of your own.
+
 ## Upgrading from 1.0.0-RC2
 
 1.0.0-RC3 rebuilds the drawing layer; the data side is unchanged. Markup, the data attributes, `<trace-filter>`, `<span-kind-rule>`, `traceData`, `logData`, `config`, `fetchCallback`, `loadTraceData()` and `loadAndTransform()` work as before. What changed:
@@ -71,7 +85,7 @@ The data side works without a DOM. `log2trace-ui/core` (transform, span index, f
 - `color-scheme` still works; `kind-colors` is its new name. Span-kind colours can also be set with the `--l2t-color-kindServer`-style custom properties (`kindInternal`, `kindClient`, …).
 - The `virtual-scroll-activated` event is gone: rows are always virtualized.
 - `span-selected` fires only for the user's own clicks and keys, not for `selectSpan()`.
-- New: `views` and `view` attributes (tabs), the `view-changed` event, and `registerView()` for views of your own.
+- New: `views` and `view` attributes (tabs), the `flame` and `inspector` views (see Views above), the `view-changed` event, and `registerView()` for views of your own.
 - The exports `TraceViewModel`, `Template`, `resolveDisplayDefaults`, `DisplayConfig` and `ViewSpan` are removed. `TraceVisualizerConfig` remains (without the removed display fields). The headless functions (`transformLogs`, `buildSpanIndex`, `matchSpans`, …) are unchanged.
 - The inner DOM changed (`[data-role]` hooks and the old class names are gone); style through the custom properties and the exposed `part` names (`root`, `plot`, `filter-bar`, `legend`).
 
