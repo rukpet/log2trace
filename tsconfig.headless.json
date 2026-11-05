@@ -7,6 +7,6 @@
     "lib": ["ESNext"],
     "types": []
   },
-  "include": ["src/core.ts", "src/core/**/*", "src/kit/geometry/**/*", "src/views/waterfall/model/**/*", "src/views/waterfall/controller.ts", "src/views/inspector/model.ts", "src/shell/view-tabs-model.ts"],
+  "include": ["src/core.ts", "src/core/**/*", "src/kit/geometry/**/*", "src/kit/view-options.ts", "src/views/waterfall/settings.ts","src/views/waterfall/model/**/*", "src/views/waterfall/controller.ts", "src/views/inspector/model.ts", "src/shell/view-tabs-model.ts"],
   "exclude": []
 }

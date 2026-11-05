@@ -55,8 +55,8 @@ import {
   type ViewContext,
   type ViewDefinition,
   type ViewHit,
-  type ViewSettings,
 } from '../kit/view.ts';
+import type { ViewOptions } from '../kit/view-options.ts';
 import { DetailPanel } from '../shell/detail.ts';
 import { FilterBar } from '../shell/filter-bar.ts';
 import { createLegend } from '../shell/legend.ts';
@@ -67,6 +67,7 @@ import { createViewTabs, type ViewTabs } from '../shell/view-tabs.ts';
 import { inspectorDefinition } from '../views/inspector/view.ts';
 import type { WaterfallController } from '../views/waterfall/controller.ts';
 import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
+import { readWaterfallSettings } from '../views/waterfall/settings.ts';
 import { WaterfallView, waterfallDefinition } from '../views/waterfall/view.ts';
 import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, type TraceVisualizerConfig } from './config.ts';
 import { fetchJson, payloadToIndex } from './data-source.ts';
@@ -301,7 +302,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   /** The backend of the active view, or the one the waterfall will use once the element is in a document. */
   get renderer(): RendererKind {
-    return this.active?.view.renderer ?? resolveRenderer(this.viewSettings().renderer, waterfallDefinition.renderers);
+    return this.active?.view.renderer ?? resolveRenderer(readWaterfallSettings(this.viewOptions()).renderer, waterfallDefinition.renderers);
   }
 
   /** Parts of the active waterfall for tests and the performance harness; not a public API. */
@@ -352,7 +353,7 @@ export class TraceVisualizerElement extends HTMLElement {
         break;
       case 'renderer':
       case 'wheel-zoom':
-        this.active?.view.settingsChanged();
+        this.active?.view.optionsChanged();
         break;
       case 'view':
         this.showView(this.wantedView());
@@ -450,24 +451,16 @@ export class TraceVisualizerElement extends HTMLElement {
     this.showView(wanted);
   }
 
-  /** The settings of the views, read from the configuration and the attributes that concern drawing. */
-  private viewSettings(): ViewSettings {
-    const config = this.config;
-    const asked = this.getAttribute('renderer');
-    return {
-      spanHeight: config.spanHeight,
-      spanPadding: config.spanPadding,
-      gutterWidth: config.gutterWidth,
-      wheelZoom: this.hasAttribute('wheel-zoom'),
-      renderer: asked === 'canvas' || asked === 'dom' ? asked : undefined,
-    };
+  /** The configuration as every view sees it; each view reads the options it knows. */
+  private viewOptions(): ViewOptions {
+    return { config: { ...this.config }, attribute: (name) => this.getAttribute(name) };
   }
 
   private viewContext(definition: ViewDefinition): ViewContext {
     return {
       origin: `${definition.id}-${this.instance}`,
       store: this.shared,
-      settings: () => this.viewSettings(),
+      options: () => this.viewOptions(),
       hover: (hit) => this.showHover(hit),
       refreshCommands: () => this.toolbar?.refresh(),
     };
@@ -541,7 +534,7 @@ export class TraceVisualizerElement extends HTMLElement {
     this.detail.setWidth(config.detailPanelWidth);
     this.applyHeight(config.height);
     this.applyKindColors(config.kindColors);
-    this.active?.view.settingsChanged();
+    this.active?.view.optionsChanged();
     this.filters.configure();
   }
 

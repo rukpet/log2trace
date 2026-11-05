@@ -19,23 +19,9 @@
 
 import type { ChangeSet, InfoModel, SpanId, TraceStore } from '../core.ts';
 import type { ViewCommand } from './commands.ts';
+import type { RendererKind, ViewOptions } from './view-options.ts';
 
-/** How a view that can draw with more than one backend draws. */
-export type RendererKind = 'canvas' | 'dom';
-
-/** The options a view may read from the element's configuration; it takes the ones it knows. */
-export interface ViewSettings {
-  /** Height of a row's bar, px. */
-  readonly spanHeight?: number;
-  /** Space between rows, px. */
-  readonly spanPadding?: number;
-  /** Width of the label column, px. */
-  readonly gutterWidth?: number;
-  /** Let the plain wheel zoom instead of scrolling. */
-  readonly wheelZoom?: boolean;
-  /** The backend asked for, or `undefined` for the view's own default. */
-  readonly renderer?: RendererKind;
-}
+export type { RendererKind } from './view-options.ts';
 
 /** The element a pointer rests on, as the page needs to describe it. */
 export interface ViewHit {
@@ -54,8 +40,11 @@ export interface ViewContext {
   /** Names this view in the store: the changes it writes carry it, and it ignores their echoes. */
   readonly origin: string;
   readonly store: TraceStore;
-  /** The current settings, read again whenever {@link TraceView.settingsChanged} is called. */
-  settings(): ViewSettings;
+  /**
+   * The current configuration of the element, read again whenever {@link TraceView.optionsChanged}
+   * is called. The view reads the options it knows (see `view-options.ts`) into its own settings.
+   */
+  options(): ViewOptions;
   /** The pointer is over something (or over nothing, with `null`). */
   hover(hit: ViewHit | null): void;
   /** The commands' readouts or enabled state changed: the toolbar should read them again. */
@@ -70,8 +59,8 @@ export interface TraceView {
   mount(surface: HTMLElement, ctx: ViewContext): void;
   /** The store changed. Only mark what is dirty; drawing waits for the frame. */
   update(change: ChangeSet): void;
-  /** The settings changed. */
-  settingsChanged(): void;
+  /** The configuration of the element changed: read {@link ViewContext.options} again. */
+  optionsChanged(): void;
   /** A `--l2t-*` token may have changed: read the theme again. */
   themeChanged(): void;
   /** The buttons and keys of the view, for the toolbar. */
