@@ -68,7 +68,7 @@ export class InspectorView implements TraceView {
     }
   }
 
-  settingsChanged(): void {
+  optionsChanged(): void {
     // nothing to configure
   }
 

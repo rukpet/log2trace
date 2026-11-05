@@ -28,10 +28,8 @@ import { WaterfallDirty, type Cursor, type WaterfallInput } from './model/intera
 import { mountCanvasPainter } from './paint/canvas.ts';
 import { mountDomPainter } from './paint/dom-mount.ts';
 import type { PainterFactory, PainterStats, WaterfallPainter } from './paint/painter.ts';
+import { readWaterfallSettings, WATERFALL_RENDERERS, type WaterfallSettings } from './settings.ts';
 import * as styles from './view.css.ts';
-
-/** The backends of the waterfall, the default first. */
-const RENDERERS: readonly RendererKind[] = ['dom', 'canvas'];
 
 /** Maps the keys of the input kit to the `KeyboardEvent.key` values the reducer knows. */
 const KEY_NAMES: Readonly<Record<Key, string>> = {
@@ -103,8 +101,7 @@ export class WaterfallView implements TraceView {
 
   mount(surface: HTMLElement, ctx: ViewContext): void {
     if (this.mounted !== null) return;
-    const settings = ctx.settings();
-    const controller = new WaterfallController({ store: ctx.store, origin: ctx.origin, wheelZoom: settings.wheelZoom === true });
+    const controller = new WaterfallController({ store: ctx.store, origin: ctx.origin, wheelZoom: readWaterfallSettings(ctx.options()).wheelZoom });
     const cleanups: Array<() => void> = [];
 
     const spacer = h('div', { class: styles.spacer });
@@ -158,10 +155,10 @@ export class WaterfallView implements TraceView {
     if (touches(change, Slice.Selection)) m.a11y.mark(1);
   }
 
-  settingsChanged(): void {
+  optionsChanged(): void {
     const m = this.mounted;
     if (m === null) return;
-    m.controller.wheelZoom = m.ctx.settings().wheelZoom === true;
+    m.controller.wheelZoom = this.settings().wheelZoom;
     this.applyMetrics();
     this.swapPainter();
   }
@@ -199,10 +196,16 @@ export class WaterfallView implements TraceView {
 
   // ---------------------------------------------------------------------------
 
+  /** The waterfall's own settings, read from the options of the element as they are now. */
+  private settings(): WaterfallSettings {
+    const m = this.mounted;
+    return m === null ? readWaterfallSettings({ config: {}, attribute: () => null }) : readWaterfallSettings(m.ctx.options());
+  }
+
   private applyMetrics(): void {
     const m = this.mounted;
     if (m === null) return;
-    const settings = m.ctx.settings();
+    const settings = this.settings();
     const metrics: Partial<WaterfallMetrics> = {
       ...metricsFromSpanSizes(settings.spanHeight ?? Number.NaN, settings.spanPadding ?? Number.NaN),
       gutterWidth: settings.gutterWidth ?? DEFAULT_METRICS.gutterWidth,
@@ -216,7 +219,7 @@ export class WaterfallView implements TraceView {
    * brings text selection, find-in-page, a real accessibility tree and forced colours for free.
    */
   private chosenRenderer(): RendererKind {
-    return resolveRenderer(this.mounted?.ctx.settings().renderer, RENDERERS);
+    return resolveRenderer(this.settings().renderer, WATERFALL_RENDERERS);
   }
 
   private mountPainter(): void {
@@ -380,7 +383,7 @@ export class WaterfallView implements TraceView {
 export const waterfallDefinition: ViewDefinition = {
   id: 'waterfall',
   label: 'Waterfall',
-  renderers: RENDERERS,
+  renderers: WATERFALL_RENDERERS,
   capabilities: { legend: true },
   create: () => new WaterfallView(),
 };
