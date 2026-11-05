@@ -2,8 +2,8 @@
  * The filter engine: the mask-based `matchSpans`, the Set-based `filterSpanIds` that the
  * legacy element still uses, and the external-filter helpers.
  *
- * The expectations for the demo data were recorded from the implementation before the v2
- * rework (sizes and a fingerprint of the sorted ids), so a refactor that changes which spans
+ * The expectations for the demo data were recorded from the implementation before the
+ * rework (1.0.0-RC2) (sizes and a fingerprint of the sorted ids), so a refactor that changes which spans
  * match fails here. Quirks of the old matching are kept on purpose and noted in the case names.
  */
 

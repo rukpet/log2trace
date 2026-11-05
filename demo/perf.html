@@ -1031,7 +1031,7 @@
       };
     }
 
-    // Order matters: the scenarios share one mounted view. The 1.x element (see baseline/) wrote an inline
+    // Order matters: the scenarios share one mounted view. The 1.0.0-RC2 element (see baseline/) wrote an inline
     // transform on every duration label and event marker the first time anything zoomed or reset, and from
     // then on every frame was much slower (select at 5K spans: ~50 ms before, ~700 ms after). So the scenarios
     // that are not about zoom run first, zoom and pan come last, and hover/select are repeated afterwards to
