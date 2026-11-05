@@ -5,7 +5,7 @@
  * the library adopts the same stylesheet.
  */
 
-import { globalStyle, style, styleVariants } from '@vanilla-extract/css';
+import { globalStyle, style } from '@vanilla-extract/css';
 import { vars } from '../kit/theme/tokens.css.ts';
 
 globalStyle(':host(trace-visualizer)', {
@@ -34,7 +34,7 @@ export const body = style({
   minHeight: 0,
 });
 
-/** The box the canvases fill and the plot scrolls in. */
+/** The box the active view fills; the status message and the tooltip sit above it. */
 export const stage = style({
   position: 'relative',
   flex: 1,
@@ -43,30 +43,11 @@ export const stage = style({
   background: vars.color.background,
 });
 
-/** The native scroller over the canvases: it takes the wheel, the touch and the keys. */
-export const plot = style({
+/** What the active view fills: the whole stage. */
+export const surface = style({
   position: 'absolute',
   inset: 0,
-  overflowX: 'hidden',
-  overflowY: 'auto',
-  touchAction: 'pan-y',
-  userSelect: 'none',
-  scrollbarWidth: 'thin',
-  outline: 'none',
-  selectors: {
-    '&:focus-visible': { outline: `2px solid ${vars.color.accent}`, outlineOffset: -2 },
-  },
-});
-
-export const cursor = styleVariants({
-  default: { cursor: 'default' },
-  pointer: { cursor: 'pointer' },
-  grab: { cursor: 'grab' },
-});
-
-export const spacer = style({
-  width: 1,
-  pointerEvents: 'none',
+  overflow: 'hidden',
 });
 
 export const message = style({
@@ -84,12 +65,5 @@ export const message = style({
 
 export const messageError = style({ color: vars.color.error });
 
-/** Present to assistive technology and invisible to everyone else. */
-export const visuallyHidden = style({
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  overflow: 'hidden',
-  clip: 'rect(0 0 0 0)',
-  whiteSpace: 'nowrap',
-});
+/** Holds the active view's toolbar; the toolbar is built again when the view changes. */
+export const toolbarSlot = style({ flex: 'none' });

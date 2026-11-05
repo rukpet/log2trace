@@ -39,4 +39,8 @@ export * from './core.ts';
 export { TraceVisualizerElement } from './element/trace-visualizer.ts';
 export type { LogDataInput, SelectSpanOptions } from './element/trace-visualizer.ts';
 export type { TraceVisualizerConfig } from './element/config.ts';
-export type { RendererKind } from './views/waterfall/paint/painter.ts';
+
+// The view contract: register a view of your own next to the waterfall and the inspector
+export { getView, listViews, registerView } from './kit/view.ts';
+export type { RendererKind, TraceView, ViewContext, ViewDefinition, ViewHit, ViewSettings } from './kit/view.ts';
+export type { ViewCommand } from './kit/commands.ts';
