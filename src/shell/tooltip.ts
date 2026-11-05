@@ -4,31 +4,49 @@
  * A small box that describes the element under the pointer. It is told what to show (an
  * `InfoModel`) and where (the box of the element, in the coordinates of its container) and keeps
  * itself inside the container.
+ *
+ * It never asks the browser for its size while the page is being changed: reading `offsetWidth`
+ * right after the DOM was written forces a style and layout pass on every hover, which on a view
+ * with hundreds of boxes cost about 3 ms. Instead a `ResizeObserver` reports the size once the
+ * browser has laid the box out in the normal rendering step, and the tooltip is placed with the
+ * last known size at once and again, before painting, if the size turns out to have changed.
  */
 
 import type { InfoModel } from '../core.ts';
 import { h } from '../kit/dom.ts';
 import { renderBrief } from './info.ts';
 import * as styles from './shell.css.ts';
+import { placeTooltip, type TooltipAnchor } from './tooltip-model.ts';
 
-/** Where the tooltip points, in the coordinates of its container. */
-export interface TooltipAnchor {
-  readonly x: number;
-  readonly y: number;
-  readonly w: number;
-  readonly h: number;
+export type { TooltipAnchor } from './tooltip-model.ts';
+
+/** What the last `show` asked for, to place the box again when its size changes. */
+interface Request {
+  readonly anchor: TooltipAnchor;
+  readonly container: { readonly width: number; readonly height: number };
 }
-
-/** Gap between the anchor and the tooltip, px. */
-const GAP = 8;
 
 /** The tooltip element and its behaviour. */
 export class Tooltip {
   readonly element: HTMLElement;
   private shownKey: string | null = null;
+  private request: Request | null = null;
+  private width = 0;
+  private height = 0;
+  private readonly observer: ResizeObserver | null;
 
   constructor() {
     this.element = h('div', { class: styles.tooltip, role: 'tooltip', hidden: true });
+    this.observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver((entries) => {
+      // a hidden box reports no size: keep the last real one as the guess for the next show
+      if (this.element.hidden) return;
+      const size = entries[entries.length - 1].borderBoxSize?.[0];
+      if (size === undefined) return;
+      this.width = size.inlineSize;
+      this.height = size.blockSize;
+      this.place();
+    });
+    this.observer?.observe(this.element);
   }
 
   /**
@@ -45,20 +63,25 @@ export class Tooltip {
       this.shownKey = key;
     }
     this.element.hidden = false;
-
-    const width = this.element.offsetWidth;
-    const height = this.element.offsetHeight;
-    let x = anchor.x + anchor.w + GAP;
-    if (x + width > container.width) x = Math.max(0, anchor.x - width - GAP);
-    let y = anchor.y + anchor.h + GAP;
-    if (y + height > container.height) y = Math.max(0, anchor.y - height - GAP);
-    this.element.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+    this.request = { anchor, container };
+    if (this.observer === null) {
+      this.width = this.element.offsetWidth;
+      this.height = this.element.offsetHeight;
+    }
+    this.place();
   }
 
   /** Hide it. */
   hide(): void {
     if (this.shownKey === null && this.element.hidden) return;
     this.shownKey = null;
+    this.request = null;
     this.element.hidden = true;
+  }
+
+  private place(): void {
+    if (this.request === null) return;
+    const { x, y } = placeTooltip(this.request.anchor, { width: this.width, height: this.height }, this.request.container);
+    this.element.style.transform = `translate(${x}px, ${y}px)`;
   }
 }
