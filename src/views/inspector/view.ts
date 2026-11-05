@@ -85,6 +85,10 @@ export class InspectorView implements TraceView {
     ];
   }
 
+  focus(): void {
+    this.mounted?.root.focus({ preventScroll: true });
+  }
+
   getState(): null {
     return null;
   }

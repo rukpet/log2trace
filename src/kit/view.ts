@@ -78,6 +78,8 @@ export interface TraceView {
   commands(): readonly ViewCommand[];
   /** Bring a span into view (it is already selected, with its ancestors expanded). */
   reveal?(id: SpanId): void;
+  /** Put the keyboard focus on the view, for the shell to hand it back after a panel or the filter bar. */
+  focus?(): void;
   /** Where the view looks, to restore it when it is shown again. The value is the view's own. */
   getState(): unknown;
   /** Restore what {@link TraceView.getState} returned; called after mount. */
