@@ -1,0 +1,1508 @@
+{
+  "schema": "log2trace-perf/1",
+  "status": "complete",
+  "label": "",
+  "rev": "",
+  "impl": "canvas",
+  "params": {
+    "impl": "canvas",
+    "n": 50000,
+    "flat": false,
+    "ns": 1,
+    "seed": 1,
+    "heavy": 0.001,
+    "ev": 2,
+    "only": null,
+    "wdSec": 120,
+    "budgetSec": 900,
+    "bundle": "./dist/log2trace.min.js",
+    "manual": false,
+    "hud": false
+  },
+  "startedAt": "2026-11-05T00:35:29.880Z",
+  "finishedAt": "2026-11-05T00:36:02.610Z",
+  "bundle": {
+    "url": "./dist/log2trace.min.js",
+    "bytes": 130741,
+    "sha256": "cfbd8f2a3bfeb7cfc2b9c71bd06d87e6e62c3275b9d0052198b078f4fd0b74f4"
+  },
+  "env": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+    "uaData": {
+      "brands": [
+        {
+          "brand": "Not-A.Brand",
+          "version": "99.0.0.0"
+        },
+        {
+          "brand": "Google Chrome",
+          "version": "157.0.8103.39"
+        },
+        {
+          "brand": "Chromium",
+          "version": "157.0.8103.39"
+        }
+      ],
+      "platform": "Windows",
+      "platformVersion": "19.0.0",
+      "architecture": "x86",
+      "bitness": "64",
+      "mobile": false
+    },
+    "hardwareConcurrency": 20,
+    "deviceMemoryGb": 32,
+    "devicePixelRatio": 2,
+    "screen": {
+      "width": 200,
+      "height": 150,
+      "availWidth": 400,
+      "availHeight": 300,
+      "colorDepth": 24
+    },
+    "viewport": {
+      "innerWidth": 1382,
+      "innerHeight": 704,
+      "outerWidth": 1400,
+      "outerHeight": 800
+    },
+    "crossOriginIsolated": true,
+    "secureContext": true,
+    "gpu": {
+      "webgl": true,
+      "vendor": "Google Inc. (Intel)",
+      "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "refresh": {
+      "medianMs": 16.67,
+      "p95Ms": 16.77,
+      "maxMs": 16.95,
+      "hz": 60,
+      "samples": 60
+    },
+    "visibility": {
+      "state": "visible",
+      "hasFocus": false
+    },
+    "observers": {
+      "longtask": true,
+      "loaf": true,
+      "event": true
+    },
+    "language": "uk-UA",
+    "timeZone": "Europe/Kiev",
+    "url": "http://localhost:3000/perf.html#impl=canvas&n=50000&auto=1&sink=http%3A%2F%2Flocalhost%3A3921%2Fsave&wd=120&budget=900&mem=0",
+    "probe": {
+      "cpu": {
+        "minMs": 8.07,
+        "p50Ms": 8.54,
+        "maxMs": 14.59
+      },
+      "pipeline": {
+        "frames": 89,
+        "p50": 16.66,
+        "p95": 17.16,
+        "p99": 17.82,
+        "max": 17.82,
+        "overRefresh1_5": 0
+      }
+    },
+    "stage": {
+      "widthCss": 1366,
+      "mode": "fixed",
+      "heightCss": 684
+    }
+  },
+  "dataset": {
+    "spans": 50000,
+    "traceId": "20f304e8d96e685668547ee55c79625b",
+    "roots": 1,
+    "precision": "ns",
+    "depth": {
+      "mean": 9,
+      "max": 30,
+      "histogram": [
+        1,
+        2,
+        9,
+        60,
+        293,
+        1051,
+        2827,
+        5798,
+        9105,
+        10895,
+        9779,
+        6384,
+        2866,
+        794,
+        104,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "fanout": {
+      "internal": 9019,
+      "leaves": 40981,
+      "mean": 5.54,
+      "max": 500,
+      "classesPct": {
+        "1-3": 70.3,
+        "4-12": 24.9,
+        "13-19": 0,
+        "20-60": 4.8,
+        "61+": 0
+      },
+      "classCounts": {
+        "1-3": 6338,
+        "4-12": 2242,
+        "13-19": 2,
+        "20-60": 433,
+        "61+": 4
+      }
+    },
+    "kinds": {
+      "Server": 10006,
+      "Internal": 25083,
+      "Client": 10018,
+      "Producer": 2418,
+      "Consumer": 2475
+    },
+    "services": {
+      "count": 25,
+      "topShare": 0.301
+    },
+    "names": {
+      "distinct": 500,
+      "maxLength": 354,
+      "nonLatin": 25
+    },
+    "errors": {
+      "total": 2625,
+      "share": 0.0525
+    },
+    "events": {
+      "total": 152284,
+      "perSpan": 3.05,
+      "spansWithEvents": 43107,
+      "max": 2000,
+      "heavySpans": 50
+    },
+    "durations": {
+      "traceMs": 136023,
+      "rootMs": 136023.236,
+      "p10Us": 54.9,
+      "medianUs": 641.8,
+      "p90Us": 10746.9,
+      "p99Us": 242903.8,
+      "maxMs": 136023.236,
+      "under1msShare": 0.588,
+      "zeroShare": 0
+    },
+    "hot": {
+      "root": {
+        "spanId": "6d1d922656515d44",
+        "name": "POST /api/v3/tokens/{id}/receipts",
+        "depth": 0,
+        "descendants": 49999
+      },
+      "bigSubtree": {
+        "spanId": "7f082021313e9005",
+        "name": "決済処理 · Invoice",
+        "depth": 2,
+        "descendants": 9670,
+        "target": 10000
+      },
+      "heavyEvents": {
+        "spanId": "2fe3fc406a5a3a8c",
+        "name": "ReportService.deserializeReceipt",
+        "depth": 8,
+        "events": 2000
+      },
+      "widestFanout": {
+        "spanId": "59195d73c5e76f86",
+        "name": "GET /api/v3/policys/{id}/events",
+        "depth": 7,
+        "children": 500
+      },
+      "deepest": {
+        "spanId": "2400b2e57f8484d6",
+        "name": "POST /api/v3/tokens/{id}/receipts",
+        "depth": 30
+      }
+    },
+    "generator": {
+      "kind": "hierarchical",
+      "version": 1,
+      "params": {
+        "n": 50000,
+        "seed": 1,
+        "ns": 1,
+        "heavy": 0.001,
+        "heavyMin": 500,
+        "heavyMax": 2000,
+        "ev": 2,
+        "depthMean": 9,
+        "depthMax": 14,
+        "chainDepth": 30,
+        "errorRate": 0.02,
+        "leafMedianUs": 450
+      },
+      "rootDurationMs": 136023.236443,
+      "errorsSeeded": 980,
+      "megaFanout": 500,
+      "megaSpanIds": [
+        "900e6e227b538d07",
+        "59195d73c5e76f86",
+        "28e4ab2008810ede",
+        "fe87ee14515f44b3"
+      ],
+      "chains": [
+        {
+          "anchorSpanId": "8ac5e928ea3981f9",
+          "tipSpanId": "2400b2e57f8484d6",
+          "length": 22,
+          "tipDepth": 30
+        },
+        {
+          "anchorSpanId": "0f7be045b1131c36",
+          "tipSpanId": "8d3c950a18cc3958",
+          "length": 26,
+          "tipDepth": 30
+        }
+      ],
+      "heavySpanIds": [
+        "2fe3fc406a5a3a8c",
+        "d74e565f5150519a",
+        "b4ee400d7f617bb6",
+        "47890468ae446bd4",
+        "e251904b44b7176a"
+      ],
+      "genMs": 655.6
+    },
+    "buildMs": 656
+  },
+  "checkpoints": [
+    {
+      "label": "dataReady",
+      "atMs": 5272,
+      "jsHeapUsed": 84643474,
+      "jsHeapTotal": 116544954,
+      "jsHeapLimit": 4395630592,
+      "ua": "skipped (mem=0)"
+    },
+    {
+      "label": "afterFirstRender",
+      "atMs": 5766,
+      "jsHeapUsed": 105721334,
+      "jsHeapTotal": 149966238,
+      "jsHeapLimit": 4395630592,
+      "ua": "skipped (mem=0)"
+    },
+    {
+      "label": "end",
+      "atMs": 32277,
+      "jsHeapUsed": 101262177,
+      "jsHeapTotal": 157511641,
+      "jsHeapLimit": 4395630592,
+      "ua": "skipped (mem=0)"
+    }
+  ],
+  "scenarios": {
+    "first-render": {
+      "status": "ok",
+      "jsMs": 257.9,
+      "toFirstFrameMs": 323.1,
+      "doubleRafMs": 323.8,
+      "stageHeightPx": 684,
+      "timings": {
+        "frames": {
+          "frames": {
+            "frames": 2,
+            "recent": [
+              0.6600000038743019,
+              0.5549999997019768
+            ],
+            "last": 0.5549999997019768,
+            "mean": 0.6075000017881393,
+            "p95": 0.6600000038743019,
+            "max": 0.6600000038743019,
+            "ema": 0.6390000030398368
+          },
+          "painter": {
+            "scenes": 658,
+            "overlays": 1159,
+            "rows": 18
+          }
+        }
+      },
+      "headline": {
+        "label": "first render (js sync / to first frame)",
+        "unit": "ms",
+        "p50": 258,
+        "p95": 323,
+        "max": 324
+      },
+      "wallMs": 330,
+      "longTasks": {
+        "count": 1,
+        "totalMs": 58,
+        "maxMs": 58
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 80,
+        "nodes": 116,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "hover": {
+      "status": "ok",
+      "framesDone": 300,
+      "wallMs": 5393,
+      "frames": {
+        "n": 300,
+        "mean": 17.05,
+        "min": 16.11,
+        "p50": 16.66,
+        "p95": 16.95,
+        "p99": 17.33,
+        "max": 99.93,
+        "over16_7": 32,
+        "over20": 1,
+        "over33": 0.7,
+        "overRefresh1_5": 1
+      },
+      "handler": {
+        "n": 300,
+        "mean": 1,
+        "min": 0.07,
+        "p50": 0.74,
+        "p95": 1.71,
+        "p99": 5.3,
+        "max": 32.78,
+        "totalMs": 300.4
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 16.66,
+        "p95": 16.95,
+        "p99": 17.33,
+        "max": 99.93
+      },
+      "framesRequested": 300,
+      "visibleRows": [
+        16666,
+        16683
+      ],
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 1,
+        "totalMs": 95,
+        "maxMs": 95,
+        "blockingMs": 0,
+        "renderMs": 8.5,
+        "styleLayoutMs": 0.6,
+        "forcedStyleLayoutMs": 7.1,
+        "top": [
+          {
+            "at": 6272,
+            "durationMs": 95,
+            "blockingMs": 0,
+            "renderMs": 8.5,
+            "styleLayoutMs": 0.6,
+            "forcedStyleLayoutMs": 7.1,
+            "scripts": [
+              {
+                "invoker": "FrameRequestCallback",
+                "fn": "onFrame",
+                "src": "perf.html",
+                "ms": 7.7,
+                "forcedMs": 7.1
+              }
+            ]
+          }
+        ]
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 95,
+        "nodes": 145,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "select": {
+      "status": "ok",
+      "samples": 49,
+      "handler": {
+        "n": 49,
+        "mean": 0.14,
+        "min": 0.1,
+        "p50": 0.12,
+        "p95": 0.22,
+        "p99": 0.64,
+        "max": 0.64
+      },
+      "toFrame": {
+        "n": 49,
+        "mean": 19.18,
+        "min": 10.77,
+        "p50": 18.78,
+        "p95": 21.13,
+        "p99": 37.21,
+        "max": 37.21
+      },
+      "headline": {
+        "label": "action -> next frame",
+        "unit": "ms",
+        "p50": 18.78,
+        "p95": 21.13,
+        "p99": 37.21,
+        "max": 37.21
+      },
+      "selected": 50,
+      "heavySpan": {
+        "events": 2000,
+        "handlerMs": 0.1,
+        "toFrameMs": 21.9,
+        "detailNodes": 1544
+      },
+      "detailNodesTypical": 98,
+      "wallMs": 2618,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 193,
+        "nodes": 329,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "resize": {
+      "status": "ok",
+      "framesDone": 40,
+      "wallMs": 790,
+      "frames": {
+        "n": 40,
+        "mean": 16.66,
+        "min": 16.58,
+        "p50": 16.66,
+        "p95": 16.76,
+        "p99": 16.78,
+        "max": 16.78,
+        "over16_7": 22.5,
+        "over20": 0,
+        "over33": 0,
+        "overRefresh1_5": 0
+      },
+      "handler": {
+        "n": 40,
+        "mean": 0.02,
+        "min": 0.01,
+        "p50": 0.02,
+        "p95": 0.02,
+        "p99": 0.07,
+        "max": 0.07,
+        "totalMs": 0.8
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 16.66,
+        "p95": 16.76,
+        "p99": 16.78,
+        "max": 16.78
+      },
+      "framesRequested": 40,
+      "widthsPx": [
+        1366,
+        956
+      ],
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 190,
+        "nodes": 323,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "collapse": {
+      "status": "ok",
+      "target": {
+        "spanId": "7f082021313e9005",
+        "descendants": 9670,
+        "depth": 2
+      },
+      "rows": {
+        "before": 50000,
+        "collapsed": 40330,
+        "expanded": 50000,
+        "allCollapsed": 1
+      },
+      "opsDone": 46,
+      "adapterNotes": {
+        "renderer": "canvas",
+        "domNodes": 189
+      },
+      "collapse": {
+        "samples": 20,
+        "handler": {
+          "n": 20,
+          "mean": 0.43,
+          "min": 0.35,
+          "p50": 0.38,
+          "p95": 0.59,
+          "p99": 1.14,
+          "max": 1.14
+        },
+        "toFrame": {
+          "n": 20,
+          "mean": 17.83,
+          "min": 13.86,
+          "p50": 18.01,
+          "p95": 18.22,
+          "p99": 18.36,
+          "max": 18.36
+        }
+      },
+      "expand": {
+        "samples": 20,
+        "handler": {
+          "n": 20,
+          "mean": 0.41,
+          "min": 0.38,
+          "p50": 0.41,
+          "p95": 0.46,
+          "p99": 0.48,
+          "max": 0.48
+        },
+        "toFrame": {
+          "n": 20,
+          "mean": 18.18,
+          "min": 17.75,
+          "p50": 18.03,
+          "p95": 19.44,
+          "p99": 19.49,
+          "max": 19.49
+        }
+      },
+      "collapseAll": {
+        "samples": 3,
+        "handler": {
+          "n": 3,
+          "mean": 0.64,
+          "min": 0.45,
+          "p50": 0.45,
+          "p95": 1.01,
+          "p99": 1.01,
+          "max": 1.01
+        },
+        "toFrame": {
+          "n": 3,
+          "mean": 17.39,
+          "min": 17.23,
+          "p50": 17.43,
+          "p95": 17.49,
+          "p99": 17.49,
+          "max": 17.49
+        }
+      },
+      "expandAll": {
+        "samples": 3,
+        "handler": {
+          "n": 3,
+          "mean": 0.43,
+          "min": 0.4,
+          "p50": 0.41,
+          "p95": 0.49,
+          "p99": 0.49,
+          "max": 0.49
+        },
+        "toFrame": {
+          "n": 3,
+          "mean": 18.28,
+          "min": 17.92,
+          "p50": 18.19,
+          "p95": 18.72,
+          "p99": 18.72,
+          "max": 18.72
+        }
+      },
+      "samples": 40,
+      "handler": {
+        "n": 40,
+        "mean": 0.42,
+        "min": 0.35,
+        "p50": 0.4,
+        "p95": 0.48,
+        "p99": 1.14,
+        "max": 1.14
+      },
+      "toFrame": {
+        "n": 40,
+        "mean": 18.01,
+        "min": 13.86,
+        "p50": 18.03,
+        "p95": 18.69,
+        "p99": 19.49,
+        "max": 19.49
+      },
+      "headline": {
+        "label": "action -> next frame",
+        "unit": "ms",
+        "p50": 18.03,
+        "p95": 18.69,
+        "p99": 19.49,
+        "max": 19.49
+      },
+      "wallMs": 1644,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 190,
+        "nodes": 323,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "filter": {
+      "status": "ok",
+      "queries": {
+        "selective": {
+          "text": "addresss",
+          "share": 0.0194,
+          "matches": 969
+        },
+        "broad": {
+          "text": "select",
+          "share": 0.1883,
+          "matches": 9416
+        }
+      },
+      "setup": {
+        "enableFilterSyncMs": 0
+      },
+      "steps": [
+        {
+          "label": "selective",
+          "text": "addresss",
+          "debounceMs": 0,
+          "renderMs": 17.5,
+          "toFrameMs": 24,
+          "rowsAfter": 2662
+        },
+        {
+          "label": "broad",
+          "text": "select",
+          "debounceMs": 0,
+          "renderMs": 18.3,
+          "toFrameMs": 33.5,
+          "rowsAfter": 13734
+        },
+        {
+          "label": "clear",
+          "text": "",
+          "debounceMs": 0,
+          "renderMs": 17.6,
+          "toFrameMs": 32.9,
+          "rowsAfter": 50000
+        },
+        {
+          "label": "selective",
+          "text": "addresss",
+          "debounceMs": 0,
+          "renderMs": 18.7,
+          "toFrameMs": 33.5,
+          "rowsAfter": 2662
+        },
+        {
+          "label": "broad",
+          "text": "select",
+          "debounceMs": 0,
+          "renderMs": 18.3,
+          "toFrameMs": 33.5,
+          "rowsAfter": 13734
+        },
+        {
+          "label": "clear",
+          "text": "",
+          "debounceMs": 0,
+          "renderMs": 20,
+          "toFrameMs": 33.2,
+          "rowsAfter": 50000
+        },
+        {
+          "label": "selective",
+          "text": "addresss",
+          "debounceMs": 0,
+          "renderMs": 18.5,
+          "toFrameMs": 33.5,
+          "rowsAfter": 2662
+        },
+        {
+          "label": "broad",
+          "text": "select",
+          "debounceMs": 0,
+          "renderMs": 18.3,
+          "toFrameMs": 33.4,
+          "rowsAfter": 13734
+        },
+        {
+          "label": "clear",
+          "text": "",
+          "debounceMs": 0,
+          "renderMs": 16.4,
+          "toFrameMs": 31.7,
+          "rowsAfter": 50000
+        }
+      ],
+      "selective": {
+        "n": 3,
+        "mean": 30.33,
+        "min": 24,
+        "p50": 33.5,
+        "p95": 33.5,
+        "p99": 33.5,
+        "max": 33.5
+      },
+      "broad": {
+        "n": 3,
+        "mean": 33.47,
+        "min": 33.4,
+        "p50": 33.5,
+        "p95": 33.5,
+        "p99": 33.5,
+        "max": 33.5
+      },
+      "clear": {
+        "n": 3,
+        "mean": 32.6,
+        "min": 31.7,
+        "p50": 32.9,
+        "p95": 33.2,
+        "p99": 33.2,
+        "max": 33.2
+      },
+      "headline": {
+        "label": "filter input -> next frame",
+        "unit": "ms",
+        "p50": 33.4,
+        "p95": 33.5,
+        "p99": 33.5,
+        "max": 33.5
+      },
+      "wallMs": 737,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 190,
+        "nodes": 322,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "scroll": {
+      "status": "ok",
+      "rows": 50000,
+      "smooth": {
+        "status": "ok",
+        "framesDone": 200,
+        "wallMs": 3318,
+        "frames": {
+          "n": 200,
+          "mean": 16.66,
+          "min": 16.16,
+          "p50": 16.67,
+          "p95": 16.78,
+          "p99": 16.89,
+          "max": 17.07,
+          "over16_7": 27.5,
+          "over20": 0,
+          "over33": 0,
+          "overRefresh1_5": 0
+        },
+        "handler": {
+          "n": 200,
+          "mean": 0.04,
+          "min": 0.03,
+          "p50": 0.04,
+          "p95": 0.05,
+          "p99": 0.06,
+          "max": 0.13,
+          "totalMs": 7.5
+        },
+        "headline": {
+          "label": "frame interval",
+          "unit": "ms",
+          "p50": 16.67,
+          "p95": 16.78,
+          "p99": 16.89,
+          "max": 17.07
+        }
+      },
+      "jumps": {
+        "status": "ok",
+        "framesDone": 50,
+        "wallMs": 850,
+        "frames": {
+          "n": 50,
+          "mean": 16.66,
+          "min": 16.47,
+          "p50": 16.66,
+          "p95": 16.81,
+          "p99": 16.86,
+          "max": 16.86,
+          "over16_7": 38,
+          "over20": 0,
+          "over33": 0,
+          "overRefresh1_5": 0
+        },
+        "handler": {
+          "n": 50,
+          "mean": 0.04,
+          "min": 0.03,
+          "p50": 0.04,
+          "p95": 0.05,
+          "p99": 0.09,
+          "max": 0.09,
+          "totalMs": 1.9
+        },
+        "headline": {
+          "label": "frame interval",
+          "unit": "ms",
+          "p50": 16.66,
+          "p95": 16.81,
+          "p99": 16.86,
+          "max": 16.86
+        }
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 16.67,
+        "p95": 16.78,
+        "p99": 16.89,
+        "max": 17.07
+      },
+      "wallMs": 4309,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 193,
+        "nodes": 328,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "wheel-zoom": {
+      "status": "ok",
+      "framesDone": 120,
+      "wallMs": 2127,
+      "frames": {
+        "n": 120,
+        "mean": 16.66,
+        "min": 16.28,
+        "p50": 16.67,
+        "p95": 16.78,
+        "p99": 16.83,
+        "max": 16.92,
+        "over16_7": 22.5,
+        "over20": 0,
+        "over33": 0,
+        "overRefresh1_5": 0
+      },
+      "handler": {
+        "n": 120,
+        "mean": 0.11,
+        "min": 0.08,
+        "p50": 0.1,
+        "p95": 0.13,
+        "p99": 0.28,
+        "max": 0.78,
+        "totalMs": 13
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 16.67,
+        "p95": 16.78,
+        "p99": 16.83,
+        "max": 16.92
+      },
+      "framesRequested": 120,
+      "zoomAfter": 1,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 190,
+        "nodes": 322,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "drag-pan": {
+      "status": "ok",
+      "framesDone": 120,
+      "wallMs": 2119,
+      "frames": {
+        "n": 120,
+        "mean": 16.66,
+        "min": 16.43,
+        "p50": 16.67,
+        "p95": 16.78,
+        "p99": 16.9,
+        "max": 16.9,
+        "over16_7": 30.8,
+        "over20": 0,
+        "over33": 0,
+        "overRefresh1_5": 0
+      },
+      "handler": {
+        "n": 120,
+        "mean": 0.11,
+        "min": 0.09,
+        "p50": 0.11,
+        "p95": 0.13,
+        "p99": 0.21,
+        "max": 0.25,
+        "totalMs": 13.2
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 16.67,
+        "p95": 16.78,
+        "p99": 16.9,
+        "max": 16.9
+      },
+      "framesRequested": 120,
+      "zoomRequested": 20,
+      "zoomAchieved": 20.086,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 193,
+        "nodes": 328,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "hover-after-zoom": {
+      "status": "ok",
+      "framesDone": 150,
+      "wallMs": 2765,
+      "frames": {
+        "n": 150,
+        "mean": 16.66,
+        "min": 16.43,
+        "p50": 16.67,
+        "p95": 16.77,
+        "p99": 16.84,
+        "max": 16.85,
+        "over16_7": 28.7,
+        "over20": 0,
+        "over33": 0,
+        "overRefresh1_5": 0
+      },
+      "handler": {
+        "n": 150,
+        "mean": 0.45,
+        "min": 0.07,
+        "p50": 0.48,
+        "p95": 0.6,
+        "p99": 0.71,
+        "max": 0.77,
+        "totalMs": 67.8
+      },
+      "headline": {
+        "label": "frame interval",
+        "unit": "ms",
+        "p50": 16.67,
+        "p95": 16.77,
+        "p99": 16.84,
+        "max": 16.85
+      },
+      "framesRequested": 150,
+      "visibleRows": [
+        16666,
+        16683
+      ],
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 193,
+        "nodes": 328,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    },
+    "select-after-zoom": {
+      "status": "ok",
+      "samples": 11,
+      "handler": {
+        "n": 11,
+        "mean": 0.13,
+        "min": 0.1,
+        "p50": 0.12,
+        "p95": 0.23,
+        "p99": 0.23,
+        "max": 0.23
+      },
+      "toFrame": {
+        "n": 11,
+        "mean": 19.08,
+        "min": 18.48,
+        "p50": 18.9,
+        "p95": 21.24,
+        "p99": 21.24,
+        "max": 21.24
+      },
+      "headline": {
+        "label": "action -> next frame",
+        "unit": "ms",
+        "p50": 18.9,
+        "p95": 21.24,
+        "p99": 21.24,
+        "max": 21.24
+      },
+      "selected": 12,
+      "heavySpan": {
+        "events": 2000,
+        "handlerMs": 0.1,
+        "toFrameMs": 21.6,
+        "detailNodes": 1544
+      },
+      "detailNodesTypical": 68,
+      "wallMs": 706,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0
+      },
+      "loaf": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "blockingMs": 0,
+        "renderMs": 0,
+        "styleLayoutMs": 0,
+        "forcedStyleLayoutMs": 0,
+        "top": []
+      },
+      "eventTiming": {
+        "count": 0,
+        "duration": {
+          "n": 0
+        },
+        "inputDelay": {
+          "n": 0
+        },
+        "interactions": 0,
+        "inpMs": null,
+        "byName": {}
+      },
+      "dom": {
+        "elements": 163,
+        "nodes": 273,
+        "shadowRoots": 1,
+        "walkMs": 0
+      }
+    }
+  },
+  "warnings": [],
+  "watchdog": null,
+  "visibilityChanges": [],
+  "probeEnd": {
+    "cpu": {
+      "minMs": 8.13,
+      "p50Ms": 8.19,
+      "maxMs": 8.95
+    },
+    "pipeline": {
+      "frames": 89,
+      "p50": 16.66,
+      "p95": 16.78,
+      "p99": 16.83,
+      "max": 16.83,
+      "overRefresh1_5": 0
+    }
+  },
+  "totalMs": 32729,
+  "rafStalls": 0,
+  "summary": {
+    "status": "complete",
+    "spans": 50000,
+    "events": 152284,
+    "firstRender": {
+      "jsMs": 257.9,
+      "toFirstFrameMs": 323.1,
+      "doubleRafMs": 323.8,
+      "domElements": 80
+    },
+    "wheelZoom": {
+      "p50": 16.67,
+      "p95": 16.78,
+      "p99": 16.83,
+      "max": 16.92,
+      "over16_7": 22.5,
+      "over20": 0,
+      "over33": 0,
+      "framesDone": 120,
+      "status": "ok"
+    },
+    "dragPan": {
+      "p50": 16.67,
+      "p95": 16.78,
+      "p99": 16.9,
+      "max": 16.9,
+      "over16_7": 30.8,
+      "over20": 0,
+      "over33": 0,
+      "framesDone": 120,
+      "status": "ok"
+    },
+    "scrollSmooth": {
+      "p50": 16.67,
+      "p95": 16.78,
+      "p99": 16.89,
+      "max": 17.07,
+      "over16_7": 27.5,
+      "over20": 0,
+      "over33": 0,
+      "framesDone": 200,
+      "status": "ok"
+    },
+    "scrollJumps": {
+      "p50": 16.66,
+      "p95": 16.81,
+      "p99": 16.86,
+      "max": 16.86,
+      "over16_7": 38,
+      "over20": 0,
+      "over33": 0,
+      "framesDone": 50,
+      "status": "ok"
+    },
+    "hover": {
+      "p50": 16.66,
+      "p95": 16.95,
+      "p99": 17.33,
+      "max": 99.93,
+      "over16_7": 32,
+      "over20": 1,
+      "over33": 0.7,
+      "framesDone": 300,
+      "status": "ok"
+    },
+    "select": {
+      "p50": 18.78,
+      "p95": 21.13,
+      "max": 37.21,
+      "heavyToFrameMs": 21.9,
+      "heavyDetailNodes": 1544,
+      "status": "ok"
+    },
+    "hoverAfterZoom": {
+      "p50": 16.67,
+      "p95": 16.77,
+      "p99": 16.84,
+      "max": 16.85,
+      "over16_7": 28.7,
+      "over20": 0,
+      "over33": 0,
+      "framesDone": 150,
+      "status": "ok"
+    },
+    "selectAfterZoom": {
+      "p50": 18.9,
+      "p95": 21.24,
+      "max": 21.24,
+      "heavyToFrameMs": 21.6,
+      "status": "ok"
+    },
+    "resize": {
+      "p50": 16.66,
+      "p95": 16.76,
+      "p99": 16.78,
+      "max": 16.78,
+      "over16_7": 22.5,
+      "over20": 0,
+      "over33": 0,
+      "framesDone": 40,
+      "status": "ok"
+    },
+    "collapse": {
+      "collapseP50": 18.01,
+      "expandP50": 18.03,
+      "collapseAllMs": 17.43,
+      "expandAllMs": 18.19,
+      "opsDone": 46,
+      "status": "ok"
+    },
+    "filter": {
+      "selectiveP50": 33.5,
+      "broadP50": 33.5,
+      "clearP50": 32.9,
+      "status": "ok"
+    },
+    "memoryMB": {
+      "dataReady": 80.7,
+      "afterFirstRender": 100.8,
+      "end": 96.6,
+      "source": "performance.memory (JS heap only)"
+    }
+  }
+}
