@@ -58,6 +58,21 @@ export class FilterBar {
     for (const control of this.controls) control.sync(model.get(control.field, control.source));
   }
 
+  /**
+   * Put the keyboard focus on the first control worth typing into: a local text filter, else the
+   * first text filter, else the first control. False when the bar is hidden or has none.
+   */
+  focusFirst(): boolean {
+    if (this.element.hidden) return false;
+    const target = this.element.querySelector<HTMLElement>('input[data-filter-type="text"][data-filter-source="local"]')
+      ?? this.element.querySelector<HTMLElement>('input[data-filter-type="text"]')
+      ?? this.element.querySelector<HTMLElement>('input, select, button');
+    if (target === null) return false;
+    target.focus();
+    if (target instanceof HTMLInputElement && target.type === 'text') target.select();
+    return true;
+  }
+
   /** Close an open multiselect panel. */
   closePanels(): void {
     this.openField = null;

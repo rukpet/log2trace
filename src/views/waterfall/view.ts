@@ -176,6 +176,10 @@ export class WaterfallView implements TraceView {
     return this.mounted?.controller.commands() ?? [];
   }
 
+  focus(): void {
+    this.mounted?.plot.focus({ preventScroll: true });
+  }
+
   reveal(id: SpanId): void {
     const m = this.mounted;
     const span = m?.controller.index.spans.get(id);
