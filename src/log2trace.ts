@@ -40,7 +40,7 @@ export { TraceVisualizerElement } from './element/trace-visualizer.ts';
 export type { LogDataInput, SelectSpanOptions } from './element/trace-visualizer.ts';
 export type { TraceVisualizerConfig } from './element/config.ts';
 
-// The view contract: register a view of your own next to the waterfall and the inspector
+// The view contract: register a view of your own next to the waterfall, the inspector and the flame graph
 export { getView, listViews, registerView } from './kit/view.ts';
 export type { RendererKind, TraceView, ViewContext, ViewDefinition, ViewHit } from './kit/view.ts';
 export { choiceOption, flagOption, numberOption, type ViewOptions } from './kit/view-options.ts';
