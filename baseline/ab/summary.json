@@ -1,0 +1,672 @@
+[
+  {
+    "browser": "chrome",
+    "config": "dpr1",
+    "size": 5000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 94.2,
+        "canvas": 131.45,
+        "ratio": 0.7166222898440473,
+        "verdict": "canvas slower by 40 %"
+      },
+      "zoomP95": {
+        "dom": 16.89,
+        "canvas": 16.785,
+        "ratio": 1.0062555853440571,
+        "verdict": ""
+      },
+      "panP95": {
+        "dom": 16.9,
+        "canvas": 16.785,
+        "ratio": 1.0068513553768244,
+        "verdict": ""
+      },
+      "scrollP95": {
+        "dom": 16.965,
+        "canvas": 16.825,
+        "ratio": 1.0083209509658246,
+        "verdict": ""
+      },
+      "hoverP95": {
+        "dom": 17.259999999999998,
+        "canvas": 17.115000000000002,
+        "ratio": 1.0084721004966402,
+        "verdict": ""
+      },
+      "selectP95": {
+        "dom": 29.91,
+        "canvas": 27.625,
+        "ratio": 1.082714932126697,
+        "verdict": ""
+      },
+      "collapseAll": {
+        "dom": 19.25,
+        "canvas": 18.240000000000002,
+        "ratio": 1.0553728070175437,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 2,
+        "canvas": 2,
+        "ratio": 1,
+        "verdict": ""
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 8.879999999999999,
+        "canvas": 9.285,
+        "ratio": 0.9563812600969304,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "chrome",
+    "config": "dpr1",
+    "size": 50000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 256.7,
+        "canvas": 349.4,
+        "ratio": 0.7346880366342301,
+        "verdict": "canvas slower by 36 %"
+      },
+      "zoomP95": {
+        "dom": 16.915,
+        "canvas": 16.770000000000003,
+        "ratio": 1.0086463923673223,
+        "verdict": ""
+      },
+      "panP95": {
+        "dom": 16.814999999999998,
+        "canvas": 16.795,
+        "ratio": 1.0011908306043462,
+        "verdict": ""
+      },
+      "scrollP95": {
+        "dom": 16.86,
+        "canvas": 16.865000000000002,
+        "ratio": 0.9997035280166022,
+        "verdict": ""
+      },
+      "hoverP95": {
+        "dom": 17.28,
+        "canvas": 17.125,
+        "ratio": 1.009051094890511,
+        "verdict": ""
+      },
+      "selectP95": {
+        "dom": 25.689999999999998,
+        "canvas": 23.84,
+        "ratio": 1.0776006711409396,
+        "verdict": ""
+      },
+      "collapseAll": {
+        "dom": 16.995,
+        "canvas": 17.415,
+        "ratio": 0.97588285960379,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 2,
+        "canvas": 0.5,
+        "ratio": 4,
+        "verdict": "dom slower by 300 %"
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 15.82,
+        "canvas": 8.34,
+        "ratio": 1.8968824940047961,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "chrome",
+    "config": "dpr2-cpu4",
+    "size": 5000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 633.15,
+        "canvas": 429.85,
+        "ratio": 1.4729556822147258,
+        "verdict": "dom slower by 47 %"
+      },
+      "zoomP95": {
+        "dom": 83.21,
+        "canvas": 16.78,
+        "ratio": 4.958879618593563,
+        "verdict": "dom over budget; dom slower by 396 %"
+      },
+      "panP95": {
+        "dom": 33.385000000000005,
+        "canvas": 17.085,
+        "ratio": 1.9540532630962835,
+        "verdict": "dom over budget; dom slower by 95 %"
+      },
+      "scrollP95": {
+        "dom": 91.5,
+        "canvas": 49.989999999999995,
+        "ratio": 1.8303660732146432,
+        "verdict": "dom over budget, canvas over budget; dom slower by 83 %"
+      },
+      "hoverP95": {
+        "dom": 41.765,
+        "canvas": 49.955,
+        "ratio": 0.8360524472024823,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "selectP95": {
+        "dom": 91.9,
+        "canvas": 91.97,
+        "ratio": 0.9992388822442101,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "collapseAll": {
+        "dom": 19.5,
+        "canvas": 20.83,
+        "ratio": 0.9361497839654346,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 107.5,
+        "canvas": 41,
+        "ratio": 2.6219512195121952,
+        "verdict": "dom slower by 162 %"
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 38.625,
+        "canvas": 50.695,
+        "ratio": 0.7619094585264818,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "chrome",
+    "config": "dpr2-cpu4",
+    "size": 50000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 1862.1999999999998,
+        "canvas": 1469.4499999999998,
+        "ratio": 1.2672768722991596,
+        "verdict": ""
+      },
+      "zoomP95": {
+        "dom": 16.814999999999998,
+        "canvas": 16.8,
+        "ratio": 1.000892857142857,
+        "verdict": ""
+      },
+      "panP95": {
+        "dom": 25.1,
+        "canvas": 16.85,
+        "ratio": 1.489614243323442,
+        "verdict": "dom over budget; dom slower by 49 %"
+      },
+      "scrollP95": {
+        "dom": 33.32,
+        "canvas": 16.799999999999997,
+        "ratio": 1.9833333333333336,
+        "verdict": "dom over budget; dom slower by 98 %"
+      },
+      "hoverP95": {
+        "dom": 41.625,
+        "canvas": 16.86,
+        "ratio": 2.468861209964413,
+        "verdict": "dom over budget; dom slower by 147 %"
+      },
+      "selectP95": {
+        "dom": 103.255,
+        "canvas": 62.265,
+        "ratio": 1.658315265397896,
+        "verdict": "dom over budget, canvas over budget; dom slower by 66 %"
+      },
+      "collapseAll": {
+        "dom": 24.15,
+        "canvas": 21.62,
+        "ratio": 1.1170212765957446,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 44.5,
+        "canvas": 22.5,
+        "ratio": 1.9777777777777779,
+        "verdict": "dom slower by 98 %"
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 45.695,
+        "canvas": 59.975,
+        "ratio": 0.7619007919966653,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "chrome",
+    "config": "dpr2",
+    "size": 5000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 93.19999999999999,
+        "canvas": 150.75,
+        "ratio": 0.6182421227197346,
+        "verdict": "canvas slower by 62 %"
+      },
+      "zoomP95": {
+        "dom": 16.86,
+        "canvas": 16.814999999999998,
+        "ratio": 1.0026761819803747,
+        "verdict": ""
+      },
+      "panP95": {
+        "dom": 16.805,
+        "canvas": 16.94,
+        "ratio": 0.9920306965761511,
+        "verdict": ""
+      },
+      "scrollP95": {
+        "dom": 16.785,
+        "canvas": 16.8,
+        "ratio": 0.9991071428571429,
+        "verdict": ""
+      },
+      "hoverP95": {
+        "dom": 16.885,
+        "canvas": 17.17,
+        "ratio": 0.983401281304601,
+        "verdict": ""
+      },
+      "selectP95": {
+        "dom": 24.744999999999997,
+        "canvas": 22.39,
+        "ratio": 1.1051808843233586,
+        "verdict": ""
+      },
+      "collapseAll": {
+        "dom": 17.91,
+        "canvas": 17.485,
+        "ratio": 1.0243065484701173,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 0.5,
+        "canvas": 1,
+        "ratio": 0.5,
+        "verdict": "canvas slower by 100 %"
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 8.719999999999999,
+        "canvas": 8.56,
+        "ratio": 1.0186915887850465,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "chrome",
+    "config": "dpr2",
+    "size": 50000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 277.8,
+        "canvas": 346.25,
+        "ratio": 0.8023104693140795,
+        "verdict": ""
+      },
+      "zoomP95": {
+        "dom": 16.88,
+        "canvas": 33.225,
+        "ratio": 0.5080511662904439,
+        "verdict": "canvas over budget; canvas slower by 97 %"
+      },
+      "panP95": {
+        "dom": 16.795,
+        "canvas": 16.880000000000003,
+        "ratio": 0.9949644549763033,
+        "verdict": ""
+      },
+      "scrollP95": {
+        "dom": 16.85,
+        "canvas": 16.895000000000003,
+        "ratio": 0.9973364900858241,
+        "verdict": ""
+      },
+      "hoverP95": {
+        "dom": 16.939999999999998,
+        "canvas": 17.07,
+        "ratio": 0.9923842999414175,
+        "verdict": ""
+      },
+      "selectP95": {
+        "dom": 28.875,
+        "canvas": 20.825,
+        "ratio": 1.3865546218487395,
+        "verdict": ""
+      },
+      "collapseAll": {
+        "dom": 18.37,
+        "canvas": 17.485,
+        "ratio": 1.050614812696597,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 2,
+        "canvas": 1.5,
+        "ratio": 1.3333333333333333,
+        "verdict": "dom slower by 33 %"
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 8.350000000000001,
+        "canvas": 8.555,
+        "ratio": 0.9760374050263007,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "firefox",
+    "config": "dpr1",
+    "size": 5000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 286.5,
+        "canvas": 350.1,
+        "ratio": 0.8183376178234789,
+        "verdict": ""
+      },
+      "zoomP95": {
+        "dom": 42.55,
+        "canvas": 60.66,
+        "ratio": 0.7014507088691065,
+        "verdict": "dom over budget, canvas over budget; canvas slower by 43 %"
+      },
+      "panP95": {
+        "dom": 58.84,
+        "canvas": 25.25,
+        "ratio": 2.3302970297029706,
+        "verdict": "dom over budget, canvas over budget; dom slower by 133 %"
+      },
+      "scrollP95": {
+        "dom": 37.85,
+        "canvas": 59.120000000000005,
+        "ratio": 0.6402232746955345,
+        "verdict": "dom over budget, canvas over budget; canvas slower by 56 %"
+      },
+      "hoverP95": {
+        "dom": 38.59,
+        "canvas": 54.870000000000005,
+        "ratio": 0.7032987060324403,
+        "verdict": "dom over budget, canvas over budget; canvas slower by 42 %"
+      },
+      "selectP95": {
+        "dom": 32.3,
+        "canvas": 98.41,
+        "ratio": 0.3282186769637232,
+        "verdict": "canvas over budget; canvas slower by 205 %"
+      },
+      "collapseAll": {
+        "dom": 22.63,
+        "canvas": 21.509999999999998,
+        "ratio": 1.0520688052068805,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 0,
+        "canvas": 0,
+        "ratio": null,
+        "verdict": ""
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 8.17,
+        "canvas": 23.81,
+        "ratio": 0.34313313733725326,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "firefox",
+    "config": "dpr1",
+    "size": 50000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 659.5,
+        "canvas": 770.45,
+        "ratio": 0.8559932506976442,
+        "verdict": ""
+      },
+      "zoomP95": {
+        "dom": 44.480000000000004,
+        "canvas": 55.160000000000004,
+        "ratio": 0.8063814358230602,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "panP95": {
+        "dom": 42.5,
+        "canvas": 45.55,
+        "ratio": 0.9330406147091109,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "scrollP95": {
+        "dom": 43.25,
+        "canvas": 77.74000000000001,
+        "ratio": 0.5563416516593773,
+        "verdict": "dom over budget, canvas over budget; canvas slower by 80 %"
+      },
+      "hoverP95": {
+        "dom": 42.53,
+        "canvas": 38.54,
+        "ratio": 1.1035288012454594,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "selectP95": {
+        "dom": 71.37,
+        "canvas": 118.02,
+        "ratio": 0.6047280122013219,
+        "verdict": "dom over budget, canvas over budget; canvas slower by 65 %"
+      },
+      "collapseAll": {
+        "dom": 19.14,
+        "canvas": 19.09,
+        "ratio": 1.00261917234154,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 0,
+        "canvas": 0,
+        "ratio": null,
+        "verdict": ""
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 35.52,
+        "canvas": 10.89,
+        "ratio": 3.2617079889807163,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "firefox",
+    "config": "dpr2",
+    "size": 5000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 389.85,
+        "canvas": 274.4,
+        "ratio": 1.4207361516034986,
+        "verdict": "dom slower by 42 %"
+      },
+      "zoomP95": {
+        "dom": 62.15,
+        "canvas": 69.82,
+        "ratio": 0.8901460899455744,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "panP95": {
+        "dom": 43.55,
+        "canvas": 76.7,
+        "ratio": 0.5677966101694915,
+        "verdict": "dom over budget, canvas over budget; canvas slower by 76 %"
+      },
+      "scrollP95": {
+        "dom": 57.940000000000005,
+        "canvas": 102.46000000000001,
+        "ratio": 0.5654889713058755,
+        "verdict": "dom over budget, canvas over budget; canvas slower by 77 %"
+      },
+      "hoverP95": {
+        "dom": 51.510000000000005,
+        "canvas": 59.28,
+        "ratio": 0.868927125506073,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "selectP95": {
+        "dom": 86.86,
+        "canvas": 131.41,
+        "ratio": 0.6609847043603988,
+        "verdict": "dom over budget, canvas over budget; canvas slower by 51 %"
+      },
+      "collapseAll": {
+        "dom": 36.3,
+        "canvas": 23.450000000000003,
+        "ratio": 1.5479744136460551,
+        "verdict": ""
+      },
+      "longTasks": {
+        "dom": 0,
+        "canvas": 0,
+        "ratio": null,
+        "verdict": ""
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 30.65,
+        "canvas": 8.15,
+        "ratio": 3.760736196319018,
+        "verdict": ""
+      }
+    }
+  },
+  {
+    "browser": "firefox",
+    "config": "dpr2",
+    "size": 50000,
+    "metrics": {
+      "firstFrame": {
+        "dom": 1046.85,
+        "canvas": 1087.1,
+        "ratio": 0.9629748873148745,
+        "verdict": ""
+      },
+      "zoomP95": {
+        "dom": 78.89,
+        "canvas": 70.28999999999999,
+        "ratio": 1.1223502631953337,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "panP95": {
+        "dom": 52.620000000000005,
+        "canvas": 61.19,
+        "ratio": 0.8599444353652559,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "scrollP95": {
+        "dom": 102.84,
+        "canvas": 108.3,
+        "ratio": 0.9495844875346261,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "hoverP95": {
+        "dom": 63.03,
+        "canvas": 76.64,
+        "ratio": 0.8224164926931107,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "selectP95": {
+        "dom": 85.59,
+        "canvas": 81.98,
+        "ratio": 1.044035130519639,
+        "verdict": "dom over budget, canvas over budget"
+      },
+      "collapseAll": {
+        "dom": 24.75,
+        "canvas": 90.67999999999999,
+        "ratio": 0.2729378032642259,
+        "verdict": "canvas over budget; canvas slower by 266 %"
+      },
+      "longTasks": {
+        "dom": 0,
+        "canvas": 0,
+        "ratio": null,
+        "verdict": ""
+      },
+      "domElements": {
+        "dom": 570,
+        "canvas": 80,
+        "ratio": 7.125,
+        "verdict": "dom slower by 613 %"
+      },
+      "cpuProbe": {
+        "dom": 13.17,
+        "canvas": 13.35,
+        "ratio": 0.9865168539325843,
+        "verdict": ""
+      }
+    }
+  }
+]
