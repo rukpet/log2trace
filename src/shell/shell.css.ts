@@ -159,3 +159,39 @@ export const spinner = style({
   animation: `${spin} 1s linear infinite`,
   '@media': { '(prefers-reduced-motion: reduce)': { animationDuration: '4s' } },
 });
+
+// ---- View tabs ----
+export const tabs = style({
+  display: 'flex',
+  gap: 2,
+  padding: '4px 10px 0',
+  flex: 'none',
+  background: vars.color.surface,
+  borderBottom: `1px solid ${vars.color.border}`,
+  selectors: { '&[hidden]': { display: 'none' } },
+});
+
+export const tab = style({
+  font: 'inherit',
+  fontSize: 12,
+  color: vars.color.textMuted,
+  background: 'transparent',
+  border: '1px solid transparent',
+  borderBottom: 'none',
+  borderRadius: '4px 4px 0 0',
+  padding: '5px 12px',
+  marginBottom: -1,
+  cursor: 'pointer',
+  selectors: {
+    '&:hover': { color: vars.color.text },
+    '&:focus-visible': { outline: `2px solid ${vars.color.accent}`, outlineOffset: -2 },
+  },
+});
+
+export const tabActive = style({
+  color: vars.color.text,
+  fontWeight: 600,
+  background: vars.color.background,
+  borderColor: vars.color.border,
+  borderBottom: `1px solid ${vars.color.background}`,
+});

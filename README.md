@@ -71,6 +71,7 @@ Markup, the data attributes, `<trace-filter>`, `<span-kind-rule>`, `traceData`, 
 - `color-scheme` still works; `kind-colors` is its new name. Span-kind colours can also be set with the `--l2t-color-kindServer`-style custom properties (`kindInternal`, `kindClient`, …).
 - The `virtual-scroll-activated` event is gone: rows are always virtualized.
 - `span-selected` fires only for the user's own clicks and keys, not for `selectSpan()`.
+- New: `views` and `view` attributes (tabs), the `view-changed` event, and `registerView()` for views of your own.
 - The exports `TraceViewModel`, `Template`, `resolveDisplayDefaults`, `DisplayConfig` and `ViewSpan` are removed. `TraceVisualizerConfig` remains (without the removed display fields). The headless functions (`transformLogs`, `buildSpanIndex`, `matchSpans`, …) are unchanged.
 - The inner DOM changed (`[data-role]` hooks and the old class names are gone); style through the custom properties and the exposed `part` names (`root`, `plot`, `filter-bar`, `legend`).
 

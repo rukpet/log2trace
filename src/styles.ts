@@ -16,4 +16,7 @@ import './kit/theme/probe.css.ts';
 import './views/waterfall/paint/dom.css.ts';
 import './shell/shell.css.ts';
 import './shell/filter-bar.css.ts';
+import './kit/a11y.css.ts';
+import './views/waterfall/view.css.ts';
+import './views/inspector/view.css.ts';
 import './element/element.css.ts';

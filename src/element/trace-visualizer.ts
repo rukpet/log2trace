@@ -1,23 +1,21 @@
 /**
  * The `<trace-visualizer>` element: the 2.0 trace view.
  *
- * It joins the pieces: the shared store (data, selection, collapse, filter result), the waterfall
- * controller and its painter (Canvas 2D or the virtualized DOM, chosen by `renderer`), the input
- * binding on the native scroller, the frame scheduler, the theme probe and the shell (filter bar,
- * toolbar with legend, tooltip, detail panel). It holds no trace logic of its own.
- *
- * DOM, from the back: the stage holds what the painter adds (two canvases, or a layer of row
- * elements) and the scroller (`part="plot"`), a transparent native scroller whose spacer gives the
- * rows their scroll range, so the wheel, touch, keyboard and scrollbar all work natively while the
- * painter redraws from the scroll position. The status message, the tooltip and, for the canvas, a
- * visually hidden accessibility tree sit above.
+ * It owns what every view shares and hosts one view at a time. The shared part: the store (data,
+ * selection, hover, collapse, filter result, time window), the filter bar and its controller, the
+ * toolbar with the legend, the view tabs, the tooltip, the detail panel, the status message, the
+ * live region, the configuration and the data loading. The view is whatever `view` names
+ * (`waterfall` or `inspector` out of the box, anything registered with `registerView`): it is
+ * mounted into one surface, reads and writes the store, and reports hovers through its context.
+ * Only the active view is mounted; switching saves its state (`getState`) and restores it when
+ * the tab is shown again.
  *
  * Data comes from `traceData`, `logData`, `data-url` (OTel trace data, or raw logs when the
  * transform attributes are given) or from external filters and `fetchCallback`. Configuration is
- * the same set of attributes and `<trace-filter>` and `<span-kind-rule>` children as ever, plus
- * `theme` (`light`, `dark`, default follows the page), `wheel-zoom`, `gutter-width`, `kind-colors`
- * and `renderer` (`canvas`, `dom`, or `auto`, the default, which is `dom`). Changing `renderer`
- * swaps the painter and keeps the camera, scroll and selection.
+ * the set of attributes and `<trace-filter>` and `<span-kind-rule>` children, plus `theme`
+ * (`light`, `dark`, default follows the page), `wheel-zoom`, `gutter-width`, `kind-colors`,
+ * `renderer` (`canvas`, `dom`, or `auto`, the default, which is `dom`), `view` (the active view) and
+ * `views` (a comma-separated list of view ids; with more than one, tabs appear).
  */
 
 import componentCss from 'virtual:component-css';
@@ -41,30 +39,42 @@ import {
 } from '../core.ts';
 import { measure } from '../core/instrumentation.ts';
 import type { SpanIndex } from '../core/span-index.ts';
+import * as a11yStyles from '../kit/a11y.css.ts';
 import { h } from '../kit/dom.ts';
-import { createTextMeter, measureWithContext, type TextMeter } from '../kit/canvas/text-cache.ts';
-import { bindInput } from '../kit/input/bind.ts';
-import { InputActionKind, Key, type InputAction } from '../kit/input/types.ts';
-import { getFrameScheduler, type FrameHandle } from '../kit/scheduler.ts';
-import { KIND_TOKENS, ThemeProbe, cssVariableName } from '../kit/theme/theme.ts';
-import * as probeStyles from '../kit/theme/probe.css.ts';
+import { getFrameScheduler } from '../kit/scheduler.ts';
+import { KIND_TOKENS, cssVariableName } from '../kit/theme/theme.ts';
 import { vars } from '../kit/theme/tokens.css.ts';
-import { DEFAULT_METRICS, metricsFromSpanSizes, type WaterfallMetrics } from '../views/waterfall/model/layout.ts';
-import { WaterfallController, type UpdateResult } from '../views/waterfall/controller.ts';
-import { WaterfallDirty, type Cursor, type WaterfallInput } from '../views/waterfall/model/interaction.ts';
-import { mountCanvasPainter } from '../views/waterfall/paint/canvas.ts';
-import { mountDomPainter } from '../views/waterfall/paint/dom-mount.ts';
-import type { PainterFactory, PainterStats, RendererKind, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
+import {
+  getView,
+  listViews,
+  parseViewIds,
+  registerView,
+  resolveRenderer,
+  type RendererKind,
+  type TraceView,
+  type ViewContext,
+  type ViewDefinition,
+  type ViewHit,
+  type ViewSettings,
+} from '../kit/view.ts';
 import { DetailPanel } from '../shell/detail.ts';
 import { FilterBar } from '../shell/filter-bar.ts';
 import { createLegend } from '../shell/legend.ts';
 import * as shellStyles from '../shell/shell.css.ts';
 import { createToolbar, type Toolbar } from '../shell/toolbar.ts';
 import { Tooltip } from '../shell/tooltip.ts';
+import { createViewTabs, type ViewTabs } from '../shell/view-tabs.ts';
+import { inspectorDefinition } from '../views/inspector/view.ts';
+import type { WaterfallController } from '../views/waterfall/controller.ts';
+import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
+import { WaterfallView, waterfallDefinition } from '../views/waterfall/view.ts';
 import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, type TraceVisualizerConfig } from './config.ts';
 import { fetchJson, payloadToIndex } from './data-source.ts';
 import { FilterController } from './filter-controller.ts';
 import * as styles from './element.css.ts';
+
+registerView(waterfallDefinition);
+registerView(inspectorDefinition);
 
 const styleSheet = new CSSStyleSheet();
 styleSheet.replaceSync(componentCss);
@@ -77,53 +87,37 @@ export interface LogDataInput {
 
 /** Options of {@link TraceVisualizerElement.selectSpan}. */
 export interface SelectSpanOptions {
-  /** Scroll and pan so the span is in view. Default true. */
+  /** Bring the span into view in the active view. Default true. */
   readonly reveal?: boolean;
 }
 
 let instances = 0;
 
-/** Maps the keys of the input kit to the `KeyboardEvent.key` values the view's reducer knows. */
-const KEY_NAMES: Readonly<Record<Key, string>> = {
-  [Key.ArrowUp]: 'ArrowUp',
-  [Key.ArrowDown]: 'ArrowDown',
-  [Key.ArrowLeft]: 'ArrowLeft',
-  [Key.ArrowRight]: 'ArrowRight',
-  [Key.Home]: 'Home',
-  [Key.End]: 'End',
-  [Key.PageUp]: 'PageUp',
-  [Key.PageDown]: 'PageDown',
-  [Key.Enter]: 'Enter',
-  [Key.Space]: ' ',
-  [Key.Escape]: 'Escape',
-  [Key.Plus]: '+',
-  [Key.Minus]: '-',
-  [Key.Zero]: '0',
-};
-
 /** The attributes the element reacts to. */
 const OBSERVED = [
-  'data-url', 'theme', 'wheel-zoom', 'renderer',
+  'data-url', 'theme', 'wheel-zoom', 'renderer', 'view', 'views',
   'trace-id-field', 'span-group-fields', 'span-name-field', 'service-name-field', 'timestamp-field',
   'end-time-field', 'parent-span-id-field', 'parent-span-lookup-fields', 'span-id-field', 'status-code-field', 'default-span-kind',
   'height', 'span-height', 'span-padding', 'gutter-width', 'show-legend', 'full-width', 'detail-panel-width',
   'kind-colors', 'color-scheme', 'auto-fetch',
 ];
 
-/** Everything that exists only while the element is in a document. */
-interface Mounted {
-  painter: WaterfallPainter | null;
-  readonly probe: ThemeProbe;
-  readonly meter: TextMeter;
-  readonly a11y: FrameHandle;
-  readonly cleanups: Array<() => void>;
-}
-
 /** What the status message says, or nothing when the view is showing data. */
 interface Status {
   readonly kind: 'loading' | 'required' | 'error' | 'empty' | 'no-match';
   readonly text: string;
   readonly spinner?: boolean;
+}
+
+/** The view being shown. */
+interface ActiveView {
+  readonly definition: ViewDefinition;
+  readonly view: TraceView;
+}
+
+/** Everything that exists only while the element is in a document. */
+interface Connected {
+  readonly cleanups: Array<() => void>;
 }
 
 /** Custom element backing the `<trace-visualizer>` tag. */
@@ -133,25 +127,26 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private readonly shared: TraceStore;
-  private readonly controller: WaterfallController;
   private readonly shadow: ShadowRoot;
-  private readonly plot: HTMLElement;
-  private readonly spacer: HTMLElement;
   private readonly stage: HTMLElement;
+  private readonly surface: HTMLElement;
   private readonly message: HTMLElement;
-  private readonly a11yRoot: HTMLElement;
   private readonly live: HTMLElement;
   private readonly legend: HTMLElement;
+  private readonly toolbarSlot: HTMLElement;
+  private readonly tabs: ViewTabs;
   private readonly tooltip = new Tooltip();
   private readonly detail: DetailPanel;
-  private readonly toolbar: Toolbar;
   private readonly filters: FilterController<FilterBar>;
-  private mounted: Mounted | null = null;
+  private readonly instance = ++instances;
+  private toolbar: Toolbar | null = null;
+  private connected: Connected | null = null;
+  private active: ActiveView | null = null;
+  private readonly viewStates = new Map<string, unknown>();
+  private readonly selectionWhenHidden = new Map<string, SpanId | null>();
   private programmatic: TraceVisualizerConfig = {};
   private fetchCallbackValue: FetchCallback | null = null;
-  private a11yKey = '';
   private statusKey = '';
-  private cursorName: Cursor = 'default';
   private loadToken = 0;
   private apiSelecting = false;
   private appliedHeight: number | undefined;
@@ -161,23 +156,22 @@ export class TraceVisualizerElement extends HTMLElement {
     super();
     const scheduler = getFrameScheduler();
     this.shared = createTraceStore({ schedule: scheduler.schedule });
-    this.controller = new WaterfallController({ store: this.shared, origin: `waterfall-${++instances}` });
 
     this.shadow = this.attachShadow({ mode: 'open' });
     this.shadow.adoptedStyleSheets = [styleSheet];
 
-    this.spacer = h('div', { class: styles.spacer });
-    this.plot = h('div', { class: [styles.plot, styles.cursor.default], part: 'plot', tabindex: 0, role: 'application', 'aria-label': 'Trace waterfall' }, this.spacer);
+    const panelId = `l2t-view-${this.instance}`;
+    this.surface = h('div', { class: styles.surface });
     this.message = h('div', { class: styles.message, role: 'status', hidden: true });
-    this.a11yRoot = h('div', { class: styles.visuallyHidden });
-    this.live = h('div', { class: styles.visuallyHidden, role: 'status', 'aria-live': 'polite' });
-    this.stage = h('div', { class: styles.stage }, this.plot, this.message, this.tooltip.element, this.a11yRoot, this.live);
+    this.live = h('div', { class: a11yStyles.visuallyHidden, role: 'status', 'aria-live': 'polite' });
+    this.stage = h('div', { class: styles.stage, id: panelId, role: 'tabpanel' }, this.surface, this.message, this.tooltip.element, this.live);
     this.detail = new DetailPanel(() => this.shared.setSelection([], { origin: 'shell' }));
+    this.tabs = createViewTabs((id) => { this.view = id; }, panelId);
+    this.toolbarSlot = h('div', { class: styles.toolbarSlot });
 
     const kinds = KIND_TOKENS.map((token, kind) => ({ token, kind })).filter(({ kind }) => kind !== SpanKind.Unspecified);
     this.legend = createLegend(kinds.map(({ token, kind }) => ({ token, label: spanKindName(kind) || 'Unknown' })));
     this.legend.hidden = true;
-    this.toolbar = createToolbar(this.controller.commands(), [this.legend]);
 
     this.filters = new FilterController(
       {
@@ -190,10 +184,11 @@ export class TraceVisualizerElement extends HTMLElement {
       (events) => new FilterBar(events),
     );
 
-    this.shadow.append(h('div', { class: styles.root, part: 'root' }, this.filters.bar.element, this.toolbar.element, h('div', { class: styles.body }, this.stage, this.detail.element)));
+    this.shadow.append(
+      h('div', { class: styles.root, part: 'root' }, this.filters.bar.element, this.tabs.element, this.toolbarSlot, h('div', { class: styles.body }, this.stage, this.detail.element)),
+    );
 
     this.shared.subscribe((change) => this.onStoreChange(change));
-    this.plot.addEventListener('scroll', () => this.run({ type: 'scroll', top: this.plot.scrollTop }));
   }
 
   // ---------------------------------------------------------------------------
@@ -248,12 +243,26 @@ export class TraceVisualizerElement extends HTMLElement {
     return [...this.shared.state.selection.ids];
   }
 
+  /** The id of the view being shown. Setting it switches the view (and the `view` attribute follows). */
+  get view(): string {
+    return this.active?.definition.id ?? this.wantedView();
+  }
+
+  set view(id: string) {
+    if (this.getAttribute('view') !== id) this.setAttribute('view', id);
+    else this.showView(id);
+  }
+
   /** Select a span and, by default, bring it into view. Does not fire `span-selected`. */
   selectSpan(id: SpanId, options: SelectSpanOptions = {}): void {
+    if (!this.shared.state.data.index.spans.has(id)) return;
     this.apiSelecting = true;
     try {
-      this.controller.select(id, options.reveal !== false);
+      this.shared.expandAncestors(id, { origin: API_ORIGIN });
+      this.shared.setSelection([id], { origin: API_ORIGIN, primary: id });
+      // the rows change when ancestors expand: bring the view up to date before it looks for the span
       this.shared.flushSync();
+      if (options.reveal !== false) this.active?.view.reveal?.(id);
     } finally {
       this.apiSelecting = false;
     }
@@ -287,31 +296,32 @@ export class TraceVisualizerElement extends HTMLElement {
     await this.loadFrom(url, config);
   }
 
-  /** The painter in use, or the one that will be used once the element is in a document. */
+  /** The backend of the active view, or the one the waterfall will use once the element is in a document. */
   get renderer(): RendererKind {
-    return this.mounted?.painter?.kind ?? this.chooseRenderer();
+    return this.active?.view.renderer ?? resolveRenderer(this.viewSettings().renderer, waterfallDefinition.renderers);
   }
 
-  /** Parts of the element for tests and the performance harness; not a public API. */
-  get internals(): { readonly controller: WaterfallController; readonly store: TraceStore; readonly painter: WaterfallPainter | null; readonly plot: HTMLElement } {
-    return { controller: this.controller, store: this.shared, painter: this.mounted?.painter ?? null, plot: this.plot };
+  /** Parts of the active waterfall for tests and the performance harness; not a public API. */
+  get internals(): { readonly controller: WaterfallController | null; readonly store: TraceStore; readonly painter: WaterfallPainter | null; readonly plot: HTMLElement | null } {
+    const view = this.active?.view;
+    const inner = view instanceof WaterfallView ? view.internals : null;
+    return { controller: inner?.controller ?? null, store: this.shared, painter: inner?.painter ?? null, plot: inner?.plot ?? null };
   }
 
   /** What the recent frames cost and how much the painter drew, for the performance harness. */
   frameStats(): { readonly frames: ReturnType<ReturnType<typeof getFrameScheduler>['stats']>; readonly painter: PainterStats | null } {
-    return { frames: getFrameScheduler().stats(), painter: this.mounted?.painter?.stats ?? null };
+    const view = this.active?.view;
+    return { frames: getFrameScheduler().stats(), painter: view instanceof WaterfallView ? view.painterStats : null };
   }
 
   /** Read the theme tokens again and repaint: after the host changed a `--l2t-*` property from script. */
   refreshTheme(): void {
-    const mounted = this.mounted;
-    if (mounted === null) return;
-    mounted.painter?.setTheme(mounted.probe.resolve());
+    this.active?.view.themeChanged();
   }
 
   /** Called by `<trace-filter>` and `<span-kind-rule>` children when their attributes change. */
   _rerender(): void {
-    if (this.mounted !== null) this.configChanged();
+    if (this.connected !== null) this.configChanged();
   }
 
   // ---------------------------------------------------------------------------
@@ -332,16 +342,20 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
-    if (oldValue === newValue || this.mounted === null) return;
+    if (oldValue === newValue || this.connected === null) return;
     switch (name) {
       case 'theme':
         this.refreshTheme();
         break;
       case 'renderer':
-        this.swapPainter();
-        break;
       case 'wheel-zoom':
-        this.controller.wheelZoom = newValue !== null;
+        this.active?.view.settingsChanged();
+        break;
+      case 'view':
+        this.showView(this.wantedView());
+        break;
+      case 'views':
+        this.syncTabs();
         break;
       case 'data-url':
         this.configChanged();
@@ -354,22 +368,8 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   private mount(): void {
-    if (this.mounted !== null) return;
-    const scheduler = getFrameScheduler();
+    if (this.connected !== null) return;
     const cleanups: Array<() => void> = [];
-
-    const probe = new ThemeProbe(this.shadow, {
-      container: probeStyles.container,
-      color: probeStyles.color,
-      font: probeStyles.font,
-    });
-    const measureContext = document.createElement('canvas').getContext('2d');
-    if (measureContext === null) throw new Error('trace-visualizer needs a 2D canvas');
-    const meter = createTextMeter({ measure: measureWithContext(measureContext) });
-    cleanups.push(bindInput(this.plot, {
-      onAction: (action) => this.onAction(action),
-      wheelZoom: () => this.controller.wheelZoom,
-    }));
 
     const query = globalThis.matchMedia?.('(prefers-color-scheme: dark)');
     if (query !== undefined) {
@@ -385,62 +385,125 @@ export class TraceVisualizerElement extends HTMLElement {
     this.shadow.addEventListener('click', onOutside, true);
     cleanups.push(() => this.shadow.removeEventListener('click', onOutside, true));
 
-    const a11y = scheduler.register({ paint: () => this.renderA11y() });
-    this.mounted = { painter: null, probe, meter, a11y, cleanups };
-    this.mountPainter();
-
-    this.controller.wheelZoom = this.hasAttribute('wheel-zoom');
-    this.syncSpacer();
+    this.connected = { cleanups };
+    this.syncTabs();
     this.renderStatus();
     this.renderSelection();
-    a11y.mark(1);
   }
 
   private unmount(): void {
-    const mounted = this.mounted;
-    if (mounted === null) return;
-    this.mounted = null;
-    for (const cleanup of mounted.cleanups) cleanup();
-    mounted.a11y.dispose();
-    mounted.painter?.dispose();
-    mounted.probe.dispose();
+    const connected = this.connected;
+    if (connected === null) return;
+    this.connected = null;
+    for (const cleanup of connected.cleanups) cleanup();
+    this.leaveView();
     this.filters.dispose();
     this.tooltip.hide();
   }
 
-  /**
-   * The renderer the attribute asks for. `auto` is the DOM painter: at 50,000 spans it keeps the frame
-   * interval of the canvas on every scenario of the harness (see the stage 3 A/B in the plan), and it brings
-   * text selection, find-in-page, a real accessibility tree and forced colours for free.
-   */
-  private chooseRenderer(): RendererKind {
-    return this.getAttribute('renderer') === 'canvas' ? 'canvas' : 'dom';
+  // ---------------------------------------------------------------------------
+  // Views
+  // ---------------------------------------------------------------------------
+
+  /** The ids shown as tabs: the `views` attribute, limited to the registered views. */
+  private viewIds(): string[] {
+    return parseViewIds(this.getAttribute('views'), listViews().map((definition) => definition.id));
   }
 
-  private mountPainter(): void {
-    const mounted = this.mounted;
-    if (mounted === null) return;
-    const factory: PainterFactory = this.chooseRenderer() === 'dom' ? mountDomPainter : mountCanvasPainter;
-    mounted.painter = factory({
-      controller: this.controller,
-      host: this.stage,
-      meter: mounted.meter,
-      theme: mounted.probe.resolve(),
-      scheduler: getFrameScheduler(),
-      onSize: (width, height) => this.apply(this.controller.resize(width, height)),
+  /** The view the attributes ask for: `view` when it is among the tabs, else the first tab. */
+  private wantedView(): string {
+    const ids = this.viewIds();
+    const asked = this.getAttribute('view');
+    return asked !== null && ids.includes(asked) ? asked : ids[0];
+  }
+
+  /** Draw the tabs for the current `views` and show the view that is wanted. */
+  private syncTabs(): void {
+    const tabs = this.viewIds().flatMap((id) => {
+      const definition = getView(id);
+      return definition === undefined ? [] : [{ id, label: definition.label }];
     });
-    this.a11yKey = '';
-    mounted.a11y.mark(1);
-    mounted.painter.mark(WaterfallDirty.Rows | WaterfallDirty.Scroll | WaterfallDirty.Camera | WaterfallDirty.Selection | WaterfallDirty.Hover | WaterfallDirty.Theme | WaterfallDirty.Size);
+    const wanted = this.wantedView();
+    this.tabs.set(tabs, wanted);
+    this.showView(wanted);
   }
 
-  /** Replace the painter after `renderer` changed; the camera, scroll position and selection stay, they are not the painter's. */
-  private swapPainter(): void {
-    const mounted = this.mounted;
-    if (mounted === null) return;
-    if (mounted.painter !== null && mounted.painter.kind === this.chooseRenderer()) return;
-    mounted.painter?.dispose();
-    this.mountPainter();
+  /** The settings of the views, read from the configuration and the attributes that concern drawing. */
+  private viewSettings(): ViewSettings {
+    const config = this.config;
+    const asked = this.getAttribute('renderer');
+    return {
+      spanHeight: config.spanHeight,
+      spanPadding: config.spanPadding,
+      gutterWidth: config.gutterWidth,
+      wheelZoom: this.hasAttribute('wheel-zoom'),
+      renderer: asked === 'canvas' || asked === 'dom' ? asked : undefined,
+    };
+  }
+
+  private viewContext(definition: ViewDefinition): ViewContext {
+    return {
+      origin: `${definition.id}-${this.instance}`,
+      store: this.shared,
+      settings: () => this.viewSettings(),
+      hover: (hit) => this.showHover(hit),
+      refreshCommands: () => this.toolbar?.refresh(),
+    };
+  }
+
+  /** Unmount the active view, keeping what it needs to come back as it was. */
+  private leaveView(): void {
+    const active = this.active;
+    if (active === null) return;
+    this.active = null;
+    this.viewStates.set(active.definition.id, active.view.getState());
+    this.selectionWhenHidden.set(active.definition.id, this.shared.state.selection.primary);
+    active.view.unmount();
+    this.surface.replaceChildren();
+    this.tooltip.hide();
+    this.toolbar = null;
+    this.toolbarSlot.replaceChildren();
+  }
+
+  /** Show a view: the same one again does nothing, another one replaces the active view. */
+  private showView(id: string): void {
+    if (this.connected === null) return;
+    const definition = getView(id);
+    if (definition === undefined || this.active?.definition.id === id) return;
+
+    const previous = this.active?.definition.id;
+    this.leaveView();
+
+    const view = definition.create();
+    this.active = { definition, view };
+    view.mount(this.surface, this.viewContext(definition));
+    this.toolbar = createToolbar(view.commands(), [this.legend]);
+    this.toolbarSlot.replaceChildren(this.toolbar.element);
+    this.tabs.setActive(id);
+    this.syncLegend();
+
+    const saved = this.viewStates.get(id);
+    if (saved !== undefined && saved !== null) view.setState(saved);
+    // a span selected while this view was away is brought into view; otherwise the view stays where it was left
+    const primary = this.shared.state.selection.primary;
+    if (primary !== null && this.selectionWhenHidden.has(id) && this.selectionWhenHidden.get(id) !== primary) view.reveal?.(primary);
+
+    this.renderStatus();
+    if (previous !== undefined) this.emit('view-changed', { view: id, previous });
+  }
+
+  /** The legend shows when the configuration asks for it and the active view has colours to explain. */
+  private syncLegend(): void {
+    this.legend.hidden = !(this.config.showLegend === true && this.active?.definition.capabilities.legend === true);
+  }
+
+  private showHover(hit: ViewHit | null): void {
+    const model = hit?.info() ?? null;
+    if (hit === null || model === null) {
+      this.tooltip.hide();
+      return;
+    }
+    this.tooltip.show(hit.key, model, hit.anchor, hit.bounds);
   }
 
   // ---------------------------------------------------------------------------
@@ -449,14 +512,14 @@ export class TraceVisualizerElement extends HTMLElement {
 
   /** Apply the configuration to everything it touches. */
   private configChanged(): void {
-    if (this.mounted === null) return;
+    if (this.connected === null) return;
     const config = this.config;
-    this.legend.hidden = config.showLegend !== true;
+    this.syncLegend();
     if (config.fullWidth !== undefined) this.classList.toggle('full-width', config.fullWidth);
     this.detail.setWidth(config.detailPanelWidth);
     this.applyHeight(config.height);
     this.applyKindColors(config.kindColors);
-    this.applyMetrics(config);
+    this.active?.view.settingsChanged();
     this.filters.configure();
   }
 
@@ -475,14 +538,6 @@ export class TraceVisualizerElement extends HTMLElement {
     for (const [name, color] of next) this.style.setProperty(name, color);
     this.appliedKindVars = new Set(next.keys());
     if (!unchanged || next.size > 0) this.refreshTheme();
-  }
-
-  private applyMetrics(config: TraceVisualizerConfig): void {
-    const metrics: Partial<WaterfallMetrics> = {
-      ...metricsFromSpanSizes(config.spanHeight ?? Number.NaN, config.spanPadding ?? Number.NaN),
-      gutterWidth: config.gutterWidth ?? DEFAULT_METRICS.gutterWidth,
-    };
-    this.apply(this.controller.setMetrics(metrics));
   }
 
   // ---------------------------------------------------------------------------
@@ -519,22 +574,18 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   // ---------------------------------------------------------------------------
-  // Store and input
+  // Store
   // ---------------------------------------------------------------------------
 
   private onStoreChange(change: ChangeSet): void {
-    this.apply(this.controller.update(change));
-    if (touches(change, Slice.Data)) {
-      this.syncSpacer();
-      this.filters.refresh();
-    }
+    this.active?.view.update(change);
+    if (touches(change, Slice.Data)) this.filters.refresh();
     if (touches(change, Slice.Data | Slice.Filter | Slice.Collapse)) {
       this.renderStatus();
       if (touches(change, Slice.Filter)) this.announceMatches();
     }
     if (touches(change, Slice.Selection)) {
       this.renderSelection();
-      this.mounted?.a11y.mark(1);
       if (change.origin !== API_ORIGIN && !this.apiSelecting) this.announceSelection();
     }
   }
@@ -546,7 +597,7 @@ export class TraceVisualizerElement extends HTMLElement {
     const indexed = data.index.spans.get(primary);
     if (indexed === undefined) return;
     this.live.textContent = `Selected ${indexed.span.name}`;
-    this.emit('span-selected', { span: indexed.span, spanId: primary, spanIds: [...selection.ids], view: 'waterfall' });
+    this.emit('span-selected', { span: indexed.span, spanId: primary, spanIds: [...selection.ids], view: this.active?.definition.id ?? '' });
   }
 
   private announceMatches(): void {
@@ -554,76 +605,9 @@ export class TraceVisualizerElement extends HTMLElement {
     this.live.textContent = matched === null ? '' : `${matched.size} of ${data.index.size} spans match`;
   }
 
-  /** Run an input through the controller and carry out what it asks for. */
-  private run(input: WaterfallInput): boolean {
-    const result = this.controller.input(input);
-    this.apply({ dirty: result.dirty, scrollTo: result.scrollTo });
-    if (result.cursor !== this.cursorName) {
-      this.plot.classList.replace(styles.cursor[this.cursorName], styles.cursor[result.cursor]);
-      this.cursorName = result.cursor;
-    }
-    return result.handled;
-  }
-
-  private onAction(action: InputAction): boolean {
-    switch (action.kind) {
-      case InputActionKind.Hover:
-        this.run({ type: 'hover', x: action.x, y: action.y });
-        return true;
-      case InputActionKind.HoverEnd:
-        this.run({ type: 'leave' });
-        return true;
-      case InputActionKind.Click:
-        this.run({ type: 'click', x: action.x, y: action.y, additive: action.ctrlKey || action.metaKey || action.shiftKey });
-        return true;
-      case InputActionKind.DoubleClick:
-        this.run({ type: 'doubleClick', x: action.x, y: action.y });
-        return true;
-      case InputActionKind.Pan:
-        if (action.dx !== 0) this.run({ type: 'pan', dx: action.dx });
-        if (action.dy !== 0) this.plot.scrollTop -= action.dy;
-        return true;
-      case InputActionKind.Zoom:
-        this.run({ type: 'pinch', x: action.x, scale: 1 / action.factor });
-        return true;
-      case InputActionKind.KeyDown:
-        if (action.key === Key.Escape) {
-          if (this.shared.state.selection.ids.size === 0) return false;
-          this.shared.setSelection([], { origin: 'shell' });
-          return true;
-        }
-        return this.run({ type: 'key', key: KEY_NAMES[action.key], shift: action.shiftKey, ctrl: false, alt: false });
-      default:
-        return true;
-    }
-  }
-
-  /** Carry out what the controller asked for after a change of the store, an input or a resize. */
-  private apply(result: UpdateResult): void {
-    const { dirty } = result;
-    if (dirty === 0 && !result.scrollTo) return;
-
-    if ((dirty & (WaterfallDirty.Rows | WaterfallDirty.Size)) !== 0) this.syncSpacer();
-    if (result.scrollTo && this.plot.scrollTop !== this.controller.state.scrollTop) this.plot.scrollTop = this.controller.state.scrollTop;
-    if ((dirty & (WaterfallDirty.Camera | WaterfallDirty.Rows)) !== 0) this.toolbar.refresh();
-
-    const mounted = this.mounted;
-    if (mounted !== null) {
-      mounted.painter?.mark(dirty);
-      if ((dirty & (WaterfallDirty.Rows | WaterfallDirty.Scroll | WaterfallDirty.Selection | WaterfallDirty.Size)) !== 0) mounted.a11y.mark(1);
-    }
-    this.renderTooltip(dirty);
-  }
-
   // ---------------------------------------------------------------------------
-  // Rendering of the parts around the painter
+  // Rendering of the parts around the view
   // ---------------------------------------------------------------------------
-
-  /** The height of the spacer gives the scroller exactly the scroll range of the rows. */
-  private syncSpacer(): void {
-    const { layout, projection } = this.controller;
-    this.spacer.style.height = `${layout.headerHeight + projection.count * layout.rowHeight}px`;
-  }
 
   /** What the status message says now. */
   private status(): Status | null {
@@ -633,7 +617,7 @@ export class TraceVisualizerElement extends HTMLElement {
     if (data.phase === 'loading') return { kind: 'loading', text: 'Loading trace data...', spinner: true };
     if (data.phase === 'error') return { kind: 'error', text: `Error: ${data.error ?? 'Failed to load trace data'}` };
     if (data.index.size === 0) return { kind: 'empty', text: 'No trace data loaded. Set the data-url attribute or use the traceData property.' };
-    if (matched !== null && this.controller.projection.count === 0) return { kind: 'no-match', text: 'No spans match current filters' };
+    if (matched !== null && matched.size === 0) return { kind: 'no-match', text: 'No spans match current filters' };
     return null;
   }
 
@@ -652,54 +636,6 @@ export class TraceVisualizerElement extends HTMLElement {
     const { selection, data } = this.shared.state;
     const primary = selection.primary;
     this.detail.show(primary === null ? null : `${data.generation}:${primary}`, primary === null ? null : describeSpan(data.index, primary, 'full'));
-  }
-
-  private renderTooltip(dirty: number): void {
-    const hover = this.controller.state.hover;
-    if (hover === null || (dirty & (WaterfallDirty.Camera | WaterfallDirty.Scroll | WaterfallDirty.Rows)) !== 0) {
-      this.tooltip.hide();
-      return;
-    }
-    const { index } = this.controller;
-    const id = index.table.ids[hover.span];
-    const model = describeSpan(index, id, 'brief');
-    if (model === null) {
-      this.tooltip.hide();
-      return;
-    }
-    const { layout } = this.controller;
-    this.tooltip.show(`${id}:${hover.event}`, model, hover, { width: layout.width, height: layout.height });
-  }
-
-  /** Rebuild the accessibility tree of the rows in view when it changed (canvas only). */
-  private renderA11y(): void {
-    if (this.mounted?.painter?.kind !== 'canvas') {
-      // the DOM painter's rows are the tree
-      if (this.a11yKey !== 'dom') this.a11yRoot.replaceChildren();
-      this.a11yKey = 'dom';
-      return;
-    }
-    const tree = this.controller.a11y('Spans');
-    const first = tree.items[0]?.position ?? 0;
-    const key = `${tree.size}|${first}|${tree.items.length}|${tree.activeId ?? ''}`;
-    if (key === this.a11yKey) return;
-    this.a11yKey = key;
-
-    this.a11yRoot.replaceChildren(
-      h(
-        'div',
-        { role: 'tree', 'aria-label': tree.label },
-        tree.items.map((item) =>
-          h('div', {
-            role: 'treeitem',
-            'aria-level': item.level + 1,
-            'aria-expanded': item.expanded,
-            'aria-selected': item.selected,
-            'aria-posinset': item.position,
-            'aria-setsize': tree.size,
-          }, item.label)),
-      ),
-    );
   }
 }
 
