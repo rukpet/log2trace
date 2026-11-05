@@ -1,7 +1,7 @@
 /**
  * Small, hand-made cases for the data layer: field access, SpanKind, log
  * grouping in `transformLogs`, and parent/child resolution in `buildSpanIndex`.
- * Expectations record the behaviour of the pre-v2 implementation.
+ * Expectations record the behaviour of the pre-rework implementation (1.0.0-RC2).
  */
 
 import { test } from 'node:test';

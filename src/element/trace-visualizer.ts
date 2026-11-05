@@ -1,5 +1,5 @@
 /**
- * The `<trace-visualizer>` element: the 2.0 trace view.
+ * The `<trace-visualizer>` element: the trace view.
  *
  * It owns what every view shares and hosts one view at a time. The shared part: the store (data,
  * selection, hover, collapse, filter result, time window), the filter bar and its controller, the

@@ -1,7 +1,7 @@
 /**
  * Characterisation tests for the data layer (transform + index) on the demo data.
  *
- * The numbers below were recorded from the implementation before the v2 rework.
+ * The numbers below were recorded from the implementation before the rework (1.0.0-RC2).
  * They are the safety net for moving the data layer into `core/`: a failure means
  * behaviour changed. When a change is intended, update the value deliberately.
  */
