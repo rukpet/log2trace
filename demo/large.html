@@ -24,6 +24,7 @@
       <select id="renderer"><option value="">auto</option><option>canvas</option><option>dom</option></select>
     </label>
     <label><input type="checkbox" id="wheel-zoom"> wheel zooms</label>
+    <label><input type="checkbox" id="tabs"> inspector tab</label>
     <span id="info"></span>
     <span>Data: <code>#n=50000&amp;renderer=dom</code> for a generated trace (also <code>seed</code>, <code>ev</code>), otherwise the sample OTel file.</span>
   </header>
@@ -46,6 +47,9 @@
     });
     if (params.get('renderer')) { el.setAttribute('renderer', params.get('renderer')); renderer.value = params.get('renderer'); }
     document.getElementById('wheel-zoom').addEventListener('change', (e) => el.toggleAttribute('wheel-zoom', e.target.checked));
+    const tabs = document.getElementById('tabs');
+    if (params.get('views')) { el.setAttribute('views', params.get('views')); tabs.checked = true; }
+    tabs.addEventListener('change', (e) => { if (e.target.checked) el.setAttribute('views', 'waterfall,inspector'); else el.removeAttribute('views'); });
 
     if (params.get('n')) {
       const t0 = performance.now();

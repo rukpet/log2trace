@@ -13,12 +13,13 @@
 import type { FrameScheduler } from '../../../kit/scheduler.ts';
 import { Dirty } from '../../../kit/scheduler.ts';
 import type { TextMeter } from '../../../kit/canvas/text-cache.ts';
+import type { RendererKind } from '../../../kit/view.ts';
 import type { ResolvedTheme } from '../../../kit/theme/theme.ts';
 import type { WaterfallController } from '../controller.ts';
 import { WaterfallDirty } from '../model/interaction.ts';
 
-/** The kinds of painter. */
-export type RendererKind = 'canvas' | 'dom';
+/** The kinds of painter (declared by the view contract, which lets a view name its backends). */
+export type { RendererKind };
 
 /** Counters for the harness: what the painter did. */
 export interface PainterStats {

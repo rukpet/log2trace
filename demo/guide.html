@@ -337,6 +337,7 @@
   <div class="toc-group">
     <span class="toc-group-label">Advanced</span>
     <a href="#ex-23">23. Full advanced setup</a>
+    <a href="#ex-24">24. View tabs</a>
   </div>
 </nav>
 
@@ -1437,6 +1438,36 @@ el23.addEventListener('span-selected', (e) => {
   </section>
 
 
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 24 — View tabs
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-24">
+    <h2><span class="ex-num">24</span>View tabs</h2>
+    <p class="desc">
+      A trace can be drawn by more than one <em>view</em>. List them in the <code>views</code>
+      attribute and tabs appear; <code>view</code> says which one is shown first. The waterfall is
+      the default, and <code>inspector</code> is a small second view that prints the shared state
+      (selection, hover, collapsed spans, filter, time window). The views share one store, so a
+      span selected in one is selected in the other, and the waterfall comes back to the camera and
+      scroll position you left. Other views register themselves with
+      <code>registerView()</code> from the <code>log2trace-ui</code> entry. Listen for
+      <code>view-changed</code>; <code>span-selected</code> carries the <code>view</code> it came from.
+    </p>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer views="waterfall,inspector" view="waterfall" show-legend&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — click a span, then open the Inspector tab</div>
+    <div class="result-box">
+      <trace-visualizer id="ex24" views="waterfall,inspector" show-legend></trace-visualizer>
+    </div>
+    <pre id="ex24-output" class="output-pre">// switch tabs to see view-changed here</pre>
+  </section>
+
+
   <footer>
     <a href="./">&larr; Back to demos</a> &middot;
     <a href="https://github.com/rukpet/log2trace" target="_blank">GitHub</a> &middot;
@@ -1671,6 +1702,15 @@ document.querySelector('#btn-transform').addEventListener('click', () => {
   el.addEventListener('span-selected', (e) => {
     document.querySelector('#ex23-output').textContent =
       `Selected: "${e.detail.span.name}" (${e.detail.span.spanId})`;
+  });
+}
+
+// Ex 24 — View tabs
+{
+  const el = document.querySelector('#ex24');
+  el.traceData = SIMPLE_OTEL;
+  el.addEventListener('view-changed', (e) => {
+    document.querySelector('#ex24-output').textContent = `view-changed: ${e.detail.previous} -> ${e.detail.view}`;
   });
 }
 
