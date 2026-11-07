@@ -294,3 +294,93 @@ test('empty trace handles zero nodes and edges gracefully', () => {
   const graph = buildServiceGraph(topo, null);
   assert.equal(graph.totalSelfMs, 0);
 });
+
+test('computes metrics and enables selection for inferred peer nodes', () => {
+  const index = createMultiServiceTrace();
+  const topo = buildServiceTopology(index);
+  const graph = buildServiceGraph(topo, null);
+
+  // In topo.names:
+  // 4: 'kafka:receipts' (called by pay-msg: 50..56 = 6ms)
+  // 5: 'postgresql:orderdb' (called by ord-db: 65..80 = 15ms)
+  assert.equal(topo.names[4], 'kafka:receipts');
+  assert.equal(topo.names[5], 'postgresql:orderdb');
+
+  // Metrics for postgresql:orderdb
+  assert.equal(graph.spanCount[5], 1);
+  assert.equal(graph.requestCount[5], 1);
+  assert.equal(graph.errorCount[5], 0);
+  assert.equal(graph.selfMs[5], 15);
+  assert.equal(graph.totalMs[5], 15);
+  assert.equal(graph.maxMs[5], 15);
+  assert.equal(graph.p95Ms[5], 15);
+
+  // Metrics for kafka:receipts
+  assert.equal(graph.spanCount[4], 1);
+  assert.equal(graph.requestCount[4], 1);
+  assert.equal(graph.errorCount[4], 0);
+  assert.equal(graph.selfMs[4], 6);
+  assert.equal(graph.totalMs[4], 6);
+
+  // spansOfNode on inferred peer nodes
+  const dbSpans = spansOfNode(graph, 5);
+  assert.deepEqual(dbSpans.ids, ['ord-db']);
+  assert.equal(dbSpans.primary, 'ord-db');
+
+  const kafkaSpans = spansOfNode(graph, 4);
+  assert.deepEqual(kafkaSpans.ids, ['pay-msg']);
+  assert.equal(kafkaSpans.primary, 'pay-msg');
+
+  // nodesOfSpans includes both the calling service and the inferred peer node
+  const matchedNodes = nodesOfSpans(graph, new Set(['ord-db']));
+  assert.ok(matchedNodes.has(2)); // orders service
+  assert.ok(matchedNodes.has(5)); // postgresql:orderdb inferred node
+
+  // nodesMatched marks inferred peer node when filter matches calling span
+  const store = createTraceStore();
+  store.setData(index);
+  store.setMatched(new Set(['ord-db']));
+  const nMatched = nodesMatched(graph, store.state.matched);
+  assert.ok(nMatched !== null);
+  assert.equal(nMatched[2], 1); // orders
+  assert.equal(nMatched[5], 1); // postgresql:orderdb
+  assert.equal(nMatched[4], 0); // kafka:receipts not matched
+});
+
+test('links leaf peer span to existing instrumented service without creating duplicate inferred node', () => {
+  // gateway calls auth (instrumented service) directly via leaf client span with peer.service = 'auth'
+  const index = buildSpanIndex(
+    trace(
+      [
+        'gateway',
+        [
+          span('gw-root', undefined, 0, 100, { name: 'GET /checkout', kind: SpanKind.Server }),
+          span('gw-client-auth', 'gw-root', 10, 40, {
+            name: 'call-auth',
+            kind: SpanKind.Client,
+            attributes: [kv('peer.service', 'auth')],
+          }),
+        ],
+      ],
+      [
+        'auth',
+        [
+          span('auth-root', undefined, 50, 90, { name: 'background-job', kind: SpanKind.Server }),
+        ],
+      ],
+    ),
+  );
+
+  const topo = buildServiceTopology(index);
+  // Should have exactly 2 nodes (gateway, auth), NOT 3 (no duplicate inferred auth node)
+  assert.equal(topo.nodeCount, 2);
+  assert.deepEqual(topo.names, ['gateway', 'auth']);
+  assert.equal(topo.nodeKind[0], NodeKind.Service);
+  assert.equal(topo.nodeKind[1], NodeKind.Service);
+
+  // Edge connects gateway (0) -> auth (1)
+  assert.equal(topo.edgeCount, 1);
+  assert.equal(topo.source[0], 0);
+  assert.equal(topo.target[0], 1);
+});
+

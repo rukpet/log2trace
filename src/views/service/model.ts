@@ -61,6 +61,8 @@ export interface ServiceTopology {
   readonly isEntryNode: Uint8Array;
   /** Node index of each SpanTable row (`0 <= r < table.length`). */
   readonly nodeOfRow: Int32Array;
+  /** Inferred target node index called by leaf span `r`, or -1. */
+  readonly inferredTargetOfRow: Int32Array;
   /** 1 if table row `r` is a service entry span into its service. */
   readonly isEntryRow: Uint8Array;
 
@@ -184,10 +186,14 @@ export function buildServiceTopology(index: SpanIndex): ServiceTopology {
   const serviceCount = t.services.length;
 
   const nodeNames: string[] = [...t.services];
+  const serviceIndexByName = new Map<string, number>();
+  for (let s = 0; s < serviceCount; s++) serviceIndexByName.set(t.services[s], s);
   const inferredMap = new Map<string, number>();
-
-  // Identify inferred peer dependencies from leaf Client/Producer spans
+  // Target node (service or inferred) for leaf Client/Producer spans
+  const clientTargetOfRow = new Int32Array(n).fill(-1);
   const inferredTargetOfRow = new Int32Array(n).fill(-1);
+
+  // Identify inferred peer dependencies or cross-service targets from leaf Client/Producer spans
   for (let r = 0; r < n; r++) {
     const k = t.kind[r];
     // Client (3) or Producer (4)
@@ -204,13 +210,19 @@ export function buildServiceTopology(index: SpanIndex): ServiceTopology {
       if (!hasCrossServiceChild) {
         const peer = extractInferredPeer(index, r);
         if (peer !== null && peer.name !== t.services[t.svc[r]]) {
-          let infIdx = inferredMap.get(peer.name);
-          if (infIdx === undefined) {
-            infIdx = nodeNames.length;
-            inferredMap.set(peer.name, infIdx);
-            nodeNames.push(peer.name);
+          const knownServiceIdx = serviceIndexByName.get(peer.name);
+          if (knownServiceIdx !== undefined) {
+            clientTargetOfRow[r] = knownServiceIdx;
+          } else {
+            let infIdx = inferredMap.get(peer.name);
+            if (infIdx === undefined) {
+              infIdx = nodeNames.length;
+              inferredMap.set(peer.name, infIdx);
+              nodeNames.push(peer.name);
+            }
+            clientTargetOfRow[r] = infIdx;
+            inferredTargetOfRow[r] = infIdx;
           }
-          inferredTargetOfRow[r] = infIdx;
         }
       }
     }
@@ -264,12 +276,12 @@ export function buildServiceTopology(index: SpanIndex): ServiceTopology {
       });
     }
 
-    const inf = inferredTargetOfRow[r];
-    if (inf >= 0) {
+    const tgt = clientTargetOfRow[r];
+    if (tgt >= 0) {
       const isAsync = t.kind[r] === SpanKind.Producer;
       rawTransitions.push({
         source: s,
-        target: inf,
+        target: tgt,
         calleeRow: r,
         pattern: isAsync ? EdgePattern.Async : EdgePattern.Sync,
       });
@@ -360,6 +372,7 @@ export function buildServiceTopology(index: SpanIndex): ServiceTopology {
     firstRowOfNode,
     isEntryNode,
     nodeOfRow,
+    inferredTargetOfRow,
     isEntryRow,
     edgeCount,
     source,
@@ -764,6 +777,18 @@ export function buildServiceGraph(topology: ServiceTopology, window: TimeWindow 
         if (d > maxMs[u]) maxMs[u] = d;
         entryDurationsByNode[u].push(d);
       }
+
+      const inf = topology.inferredTargetOfRow[r];
+      if (inf >= 0) {
+        spanCount[inf]++;
+        requestCount[inf]++;
+        if (t.status[r] === 2) errorCount[inf]++;
+        const d = weightOfRow[r];
+        selfMs[inf] += d;
+        totalMs[inf] += d;
+        if (d > maxMs[inf]) maxMs[inf] = d;
+        entryDurationsByNode[inf].push(d);
+      }
     }
   }
 
@@ -884,14 +909,16 @@ export function spansOfNode(
   let maxDuration = -1;
 
   for (let r = 0; r < t.length; r++) {
-    if (graph.topology.nodeOfRow[r] === nodeIdx) {
+    const isNode = graph.topology.nodeOfRow[r] === nodeIdx || graph.topology.inferredTargetOfRow[r] === nodeIdx;
+    if (isNode) {
       ids.push(t.ids[r]);
       const dur = t.end[r] - t.start[r];
+      const isEntry = graph.topology.nodeOfRow[r] === nodeIdx ? graph.topology.isEntryRow[r] === 1 : true;
       if (t.status[r] === 2) {
         firstFailingAny ??= t.ids[r];
-        if (graph.topology.isEntryRow[r] === 1) firstFailingEntry ??= t.ids[r];
+        if (isEntry) firstFailingEntry ??= t.ids[r];
       }
-      if (graph.topology.isEntryRow[r] === 1 && dur > maxDuration) {
+      if (isEntry && dur > maxDuration) {
         maxDuration = dur;
         longestEntry = t.ids[r];
       }
@@ -942,6 +969,8 @@ export function nodesOfSpans(graph: ServiceGraph, ids: SpanSet | null): Set<numb
     const indexed = graph.topology.index.spans.get(id);
     if (indexed !== undefined) {
       nodes.add(graph.topology.nodeOfRow[indexed.idx]);
+      const inf = graph.topology.inferredTargetOfRow[indexed.idx];
+      if (inf >= 0) nodes.add(inf);
     }
   }
   return nodes;
@@ -966,7 +995,11 @@ export function nodesMatched(graph: ServiceGraph, matched: SpanMask | null): Uin
   if (matched === null) return null;
   const result = new Uint8Array(graph.topology.nodeCount);
   for (let r = 0; r < matched.bits.length; r++) {
-    if (matched.bits[r] === 1) result[graph.topology.nodeOfRow[r]] = 1;
+    if (matched.bits[r] === 1) {
+      result[graph.topology.nodeOfRow[r]] = 1;
+      const inf = graph.topology.inferredTargetOfRow[r];
+      if (inf >= 0) result[inf] = 1;
+    }
   }
   return result;
 }
