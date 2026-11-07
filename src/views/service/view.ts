@@ -125,6 +125,7 @@ export class ServiceView implements TraceView {
     matchedEdges: Uint8Array | null;
     matchedFor: unknown;
     initialFitDone: boolean;
+    liveText: string;
   } | null = null;
 
   mount(surface: HTMLElement, ctx: ViewContext): void {
@@ -218,6 +219,7 @@ export class ServiceView implements TraceView {
       matchedEdges: null,
       matchedFor: null,
       initialFitDone: false,
+      liveText: '',
     };
 
     observer.observe(root);
@@ -397,7 +399,6 @@ export class ServiceView implements TraceView {
       {
         class: styles.node,
         role: 'button',
-        tabindex: 0,
         'data-node-id': String(nodeIdx),
       },
       header,
@@ -554,6 +555,29 @@ export class ServiceView implements TraceView {
       const marker = isSelected || isHovered ? 'url(#l2t-arrow-selected)' : isFailed ? 'url(#l2t-arrow-error)' : 'url(#l2t-arrow-default)';
       slot.lineEl.setAttribute('marker-end', marker);
     }
+
+    let text = '';
+    const u = m.selectedNodes.values().next().value;
+    const e = m.selectedEdges.values().next().value;
+    if (u !== undefined) {
+      const errors = graph.errorCount[u];
+      const reqs = graph.requestCount[u];
+      const errText = errors > 0 ? `, ${errors} errors` : '';
+      text = `Selected service ${graph.topology.names[u]}, ${reqs} requests, ${graph.spanCount[u]} spans, self time ${formatDuration(graph.selfMs[u])}${errText}`;
+    } else if (e !== undefined) {
+      const src = graph.topology.names[graph.topology.source[e]];
+      const dst = graph.topology.names[graph.topology.target[e]];
+      const calls = graph.callCount[e];
+      const errors = graph.edgeErrorCount[e];
+      const errText = errors > 0 ? `, ${errors} errors` : '';
+      const avgText = graph.edgeAvgMs[e] > 0 ? `, avg ${formatDuration(graph.edgeAvgMs[e])}` : '';
+      text = `Selected call ${src} to ${dst}, ${calls} calls${avgText}${errText}`;
+    }
+
+    if (text !== m.liveText) {
+      m.liveText = text;
+      m.live.textContent = text;
+    }
   }
 
   private isNodeNeighborOfSelection(u: number): boolean {
@@ -649,7 +673,7 @@ export class ServiceView implements TraceView {
     return null;
   }
 
-  private onInputAction(action: InputAction): void {
+  private onInputAction(action: InputAction): boolean | void {
     const m = this.mounted;
     if (m === null) return;
 
@@ -739,8 +763,7 @@ export class ServiceView implements TraceView {
         break;
 
       case InputActionKind.KeyDown:
-        this.onKeyDown(action.key);
-        break;
+        return this.onKeyDown(action.key);
     }
   }
 
@@ -752,52 +775,57 @@ export class ServiceView implements TraceView {
     m.ctx.hover(null);
   }
 
-  private onKeyDown(key: Key): void {
+  private onKeyDown(key: Key): boolean {
     const m = this.mounted;
-    if (m === null) return;
+    if (m === null) return false;
     const cur = this.selectedNodeIdx();
 
     switch (key) {
       case Key.ArrowUp: {
         const next = neighbourNode(m.graph, cur, 'up');
         if (next >= 0) this.selectNode(next);
-        break;
+        return true;
       }
       case Key.ArrowDown: {
         const next = neighbourNode(m.graph, cur, 'down');
         if (next >= 0) this.selectNode(next);
-        break;
+        return true;
       }
       case Key.ArrowLeft: {
         const next = neighbourNode(m.graph, cur, 'left');
         if (next >= 0) this.selectNode(next);
-        break;
+        return true;
       }
       case Key.ArrowRight: {
         const next = neighbourNode(m.graph, cur, 'right');
         if (next >= 0) this.selectNode(next);
-        break;
+        return true;
       }
       case Key.Plus:
         this.zoomStep(1.2);
-        break;
+        return true;
       case Key.Minus:
         this.zoomStep(1 / 1.2);
-        break;
+        return true;
       case Key.Zero:
         this.fitAll();
-        break;
+        return true;
       case Key.Enter:
       case Key.Space:
-        if (cur >= 0) this.focusOnNode(cur);
-        break;
+        if (cur >= 0) {
+          this.focusOnNode(cur);
+          return true;
+        }
+        return false;
       case Key.Escape:
         if (m.ctx.store.state.selection.ids.size > 0) {
           m.ctx.store.setSelection([], { origin: m.ctx.origin });
-        } else {
-          this.fitAll();
+          return true;
         }
-        break;
+        this.fitAll();
+        return true;
+      default:
+        return false;
     }
   }
 }
