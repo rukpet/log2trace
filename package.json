@@ -31,6 +31,7 @@
     "build:bundle": "node esbuild.config.js",
     "build:docs": "typedoc",
     "check": "tsc --noEmit && tsc --noEmit -p tsconfig.headless.json && tsc --noEmit -p tsconfig.test.json",
+    "check:commit": "node build/check-commit-msg.js",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"test/**/*.ts\" --fix",
     "test": "node --experimental-transform-types --no-warnings --test \"test/**/*.test.ts\"",
