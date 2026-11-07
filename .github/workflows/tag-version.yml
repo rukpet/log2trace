@@ -1,0 +1,50 @@
+name: Auto Tag Version
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check version and tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ -z "$VERSION" ] || [ "$VERSION" = "undefined" ]; then
+            echo "Error: Could not read valid version from package.json" >&2
+            exit 1
+          fi
+
+          TAG_NAME="v$VERSION"
+          echo "Package version: $VERSION"
+          echo "Checking tag: $TAG_NAME"
+
+          if [ -n "$(git ls-remote --tags origin "refs/tags/$TAG_NAME")" ]; then
+            echo "Tag $TAG_NAME already exists on origin. Skipping."
+            exit 0
+          fi
+
+          echo "Creating and pushing tag $TAG_NAME..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+          echo "Tag $TAG_NAME successfully created and pushed."
