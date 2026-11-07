@@ -72,6 +72,7 @@ The element draws the trace with one view at a time. List several in the `views`
 
 - `waterfall` (the default): one row per span on a time axis. It answers "when did it happen".
 - `flame`: a flame graph. Spans with the same call path (service, name and kind of the span and of each ancestor) fold into one box, as wide as the time those spans take together, so it answers "where did the time go". Click or hover a box to select all its spans, double-click or press `F` to make it fill the width, `Escape` to leave. It draws with the DOM.
+- `service`: a service dependency map (service graph). Services and inferred peer dependencies appear as nodes, and cross-service calls as directed edges with call volume, latency, and error indicators. Click a node or edge to inspect spans, drag to pan, wheel/pinch to zoom, double-click to focus on a node, `0` or `Escape` to fit.
 - `inspector`: the shared state as text, mostly there to prove the view contract.
 
 The `view-changed` event reports a switch, and `registerView()` adds views of your own.
