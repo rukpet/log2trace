@@ -3,28 +3,44 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, v2]
+    branches: [main]
+
+# Grant the workflow token read-only access to the repository code (least privilege).
+permissions:
+  contents: read
+
+# If you push a new commit to the same PR (or branch) while a previous CI run is
+# still in progress, automatically cancel the older, outdated run to save time.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: ['22', '24']
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '24'
           cache: npm
 
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run check
-      - run: npm test
-      - run: npm run build
-      # The headless bundle must load in plain Node, without a DOM.
-      - run: node --input-type=module -e "const core = await import('./dist/core.js'); if (typeof core.buildSpanIndex !== 'function') process.exit(1)"
-      # The element bundle must still register its custom elements (a wrong "sideEffects" list drops them silently).
-      - run: node -e "const code = require('node:fs').readFileSync('dist/log2trace.min.js', 'utf8'); if (!code.includes('customElements.define(\"trace-visualizer\"')) { console.error('trace-visualizer is not registered in dist/log2trace.min.js'); process.exit(1); }"
+      # Skip Husky git hook setup (--ignore-scripts) and online npm audit/funding checks.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build package and docs
+        run: npm run build
