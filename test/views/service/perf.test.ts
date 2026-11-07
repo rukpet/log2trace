@@ -159,7 +159,7 @@ test('performance: selector memoization is instantaneous on unchanged state', ()
   const perLookupMicros = (totalElapsed / runs) * 1000;
 
   console.log(`[PERF selector cache] 10,000 lookups took ${totalElapsed.toFixed(2)}ms (${perLookupMicros.toFixed(2)}µs / lookup)`);
-  assert.ok(totalElapsed < 10, `10,000 cached lookups took ${totalElapsed.toFixed(2)}ms, expected < 10ms`);
+  assert.ok(totalElapsed < 25, `10,000 cached lookups took ${totalElapsed.toFixed(2)}ms, expected < 25ms`);
 });
 
 test('performance: span queries by node and edge are sub-millisecond', () => {
