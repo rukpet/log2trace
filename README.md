@@ -18,7 +18,7 @@ The element accepts logs in any JSON shape. You describe your log schema once vi
 **Via CDN** (no build step required):
 
 ```html
-<script type="module" src="https://unpkg.com/log2trace-ui@1.0.0-RC4/dist/log2trace.js"></script>
+<script type="module" src="https://unpkg.com/log2trace-ui@1.0.0-RC5/dist/log2trace.js"></script>
 ```
 
 **Via npm**:
@@ -32,7 +32,7 @@ npm install log2trace-ui
 Add the element to any HTML page and point it at your log data:
 
 ```html
-<script type="module" src="https://unpkg.com/log2trace-ui@1.0.0-RC4/dist/log2trace.js"></script>
+<script type="module" src="https://unpkg.com/log2trace-ui@1.0.0-RC5/dist/log2trace.js"></script>
 
 <trace-visualizer
   data-url="./logs.json"
