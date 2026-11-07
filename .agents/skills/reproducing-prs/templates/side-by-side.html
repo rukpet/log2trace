@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR Comparative Verification: {{PR_TITLE}}</title>
+  <style>
+    :root {
+      --bg-base: #0f172a;
+      --bg-panel: #1e293b;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --badge-red-bg: rgba(239, 68, 68, 0.2);
+      --badge-red-text: #f87171;
+      --badge-red-border: rgba(239, 68, 68, 0.4);
+      --badge-green-bg: rgba(34, 197, 94, 0.2);
+      --badge-green-text: #4ade80;
+      --badge-green-border: rgba(34, 197, 94, 0.4);
+      --accent: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .pr-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pr-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .pill {
+      font-size: 12px;
+      font-family: monospace;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      color: var(--accent);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    button {
+      background: #334155;
+      color: var(--text-main);
+      border: 1px solid #475569;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    button:hover {
+      background: #475569;
+    }
+
+    button.primary {
+      background: #0284c7;
+      border-color: #38bdf8;
+    }
+
+    button.primary:hover {
+      background: #0369a1;
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      background: var(--border-color);
+      min-height: 0;
+    }
+
+    .pane {
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .pane-header {
+      padding: 10px 16px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pane-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .state-badge {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .state-badge.error {
+      background: var(--badge-red-bg);
+      color: var(--badge-red-text);
+      border: 1px solid var(--badge-red-border);
+    }
+
+    .state-badge.fixed {
+      background: var(--badge-green-bg);
+      color: var(--badge-green-text);
+      border: 1px solid var(--badge-green-border);
+    }
+
+    .pane-notes {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      background: #151e2e;
+      border-bottom: 1px solid var(--border-color);
+      line-height: 1.4;
+    }
+
+    .pane-content {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+      background: #090d16;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    .probe-bar {
+      padding: 8px 16px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      font-family: monospace;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+    }
+
+    .probe-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-dot.red { background: #ef4444; }
+    .status-dot.green { background: #22c55e; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="pr-info">
+      <span class="pr-title">PR #{{PR_NUMBER}}: {{PR_TITLE}}</span>
+      <span class="pill">branch: {{PR_BRANCH}}</span>
+    </div>
+    <div class="controls">
+      <button onclick="reloadBoth()">↻ Reload Both Panes</button>
+      <button class="primary" onclick="window.close()">Finish Review</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- CASE A: Baseline with Bug -->
+    <section class="pane" id="pane-a">
+      <div class="pane-header">
+        <div class="pane-title">
+          <span>Case A: Baseline (main)</span>
+          <span class="state-badge error">With Bug</span>
+        </div>
+        <span class="pill">bundle: dist-main</span>
+      </div>
+      <div class="pane-notes">
+        <strong>Expected Bug:</strong> {{BUG_DESCRIPTION}}
+      </div>
+      <div class="pane-content">
+        <iframe id="frame-a" src="{{FRAME_A_URL}}"></iframe>
+      </div>
+      <div class="probe-bar">
+        <div class="probe-status">
+          <span class="status-dot red"></span>
+          <span>Status: <span id="status-a">{{STATUS_A_TEXT}}</span></span>
+        </div>
+        <span id="metric-a">{{METRIC_A_TEXT}}</span>
+      </div>
+    </section>
+
+    <!-- CASE B: PR with Fix -->
+    <section class="pane" id="pane-b">
+      <div class="pane-header">
+        <div class="pane-title">
+          <span>Case B: Pull Request</span>
+          <span class="state-badge fixed">Fix Verified</span>
+        </div>
+        <span class="pill">bundle: dist-pr</span>
+      </div>
+      <div class="pane-notes">
+        <strong>Expected Fix:</strong> {{FIX_DESCRIPTION}}
+      </div>
+      <div class="pane-content">
+        <iframe id="frame-b" src="{{FRAME_B_URL}}"></iframe>
+      </div>
+      <div class="probe-bar">
+        <div class="probe-status">
+          <span class="status-dot green"></span>
+          <span>Status: <span id="status-b">{{STATUS_B_TEXT}}</span></span>
+        </div>
+        <span id="metric-b">{{METRIC_B_TEXT}}</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function reloadBoth() {
+      const frameA = document.getElementById('frame-a');
+      const frameB = document.getElementById('frame-b');
+      if (frameA) frameA.src = frameA.src;
+      if (frameB) frameB.src = frameB.src;
+    }
+  </script>
+</body>
+</html>
