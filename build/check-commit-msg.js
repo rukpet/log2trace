@@ -39,6 +39,12 @@ if (lines.length === 0) {
 
 const subject = lines[0].trim();
 const body = lines.slice(1);
+
+// Exempt default Git merge commits and revert commits
+if (subject.startsWith('Merge ') || subject.startsWith('Revert ')) {
+  process.exit(0);
+}
+
 const errors = [];
 
 // Explicitly reject Conventional Commits (e.g. feat:, fix:, chore:, feat(scope):)
