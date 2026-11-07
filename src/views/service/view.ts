@@ -415,15 +415,6 @@ export class ServiceView implements TraceView {
       el.append(entryBadgeEl);
     }
 
-    el.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      this.selectNode(nodeIdx);
-    });
-    el.addEventListener('dblclick', (ev) => {
-      ev.stopPropagation();
-      this.focusOnNode(nodeIdx);
-    });
-
     m.elementToNode.set(el, nodeIdx);
     m.nodesContainer.append(el);
 
@@ -466,15 +457,6 @@ export class ServiceView implements TraceView {
 
     const labelEl = h('div', { class: styles.edgeLabel, 'data-edge-id': String(edgeIdx) });
     m.nodesContainer.append(labelEl);
-
-    groupEl.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      this.selectEdge(edgeIdx);
-    });
-    labelEl.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      this.selectEdge(edgeIdx);
-    });
 
     m.elementToEdge.set(groupEl, edgeIdx);
     m.elementToEdge.set(lineEl, edgeIdx);
@@ -646,7 +628,8 @@ export class ServiceView implements TraceView {
   private targetAt(x: number, y: number): { type: 'node' | 'edge'; idx: number } | null {
     const m = this.mounted;
     if (m === null) return null;
-    const el = document.elementFromPoint(x, y);
+    const rootNode = m.root.getRootNode() as Document | ShadowRoot;
+    const el = rootNode.elementFromPoint ? rootNode.elementFromPoint(x, y) : document.elementFromPoint(x, y);
     if (!el) return null;
 
     let cur: Element | null = el;
