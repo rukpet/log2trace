@@ -384,3 +384,102 @@ test('links leaf peer span to existing instrumented service without creating dup
   assert.equal(topo.target[0], 1);
 });
 
+test('does not attribute parent error to healthy edge into inferred dependency', () => {
+  // orders server span (ord-srv) has status 2 (error) because of a failed child (ord-fail),
+  // but it also makes a successful call (ord-db) to an inferred postgresql database peer.
+  const index = buildSpanIndex(
+    trace(
+      [
+        'gateway',
+        [
+          span('gw-root', undefined, 0, 100, { name: 'GET /checkout', kind: SpanKind.Server }),
+          span('gw-c', 'gw-root', 5, 95, { name: 'call-orders', kind: SpanKind.Client }),
+        ],
+      ],
+      [
+        'orders',
+        [
+          span('ord-srv', 'gw-c', 10, 90, { name: 'POST /orders', kind: SpanKind.Server, status: { code: 2 } }),
+          span('ord-fail', 'ord-srv', 15, 30, { name: 'failed-step', kind: SpanKind.Internal, status: { code: 2 } }),
+          span('ord-db', 'ord-srv', 35, 60, {
+            name: 'SELECT orders',
+            kind: SpanKind.Client,
+            attributes: [kv('db.system', 'postgresql'), kv('db.name', 'orderdb')],
+          }),
+        ],
+      ],
+    ),
+  );
+
+  const topo = buildServiceTopology(index);
+  const graph = buildServiceGraph(topo, null);
+
+  // Identify the edge from orders to postgresql:orderdb
+  const dbEdge = topo.source.findIndex(
+    (src, idx) => topo.names[src] === 'orders' && topo.names[topo.target[idx]] === 'postgresql:orderdb',
+  );
+  assert.ok(dbEdge >= 0, 'Edge to postgresql:orderdb should exist');
+  assert.equal(topo.nodeKind[topo.target[dbEdge]], NodeKind.Inferred);
+
+  // The database call itself succeeded (ord-db has status 0 or 1, not 2).
+  // The edge error count must be 0 despite ord-srv having status 2.
+  assert.equal(graph.edgeErrorCount[dbEdge], 0);
+
+  // Gateway -> orders edge SHOULD reflect the error since ord-srv failed
+  const gwEdge = topo.source.findIndex(
+    (src, idx) => topo.names[src] === 'gateway' && topo.names[topo.target[idx]] === 'orders',
+  );
+  assert.ok(gwEdge >= 0);
+  assert.equal(graph.edgeErrorCount[gwEdge], 1);
+});
+
+test('handles spans with multiple transitions cleanly via edgesOfRow and edgesOfSpans', () => {
+  // worker-job receives a call from orders (orders -> worker)
+  // and also has a cross-service link from billing (billing -> worker).
+  const index = buildSpanIndex(
+    trace(
+      [
+        'orders',
+        [
+          span('ord-root', undefined, 0, 100, { name: 'POST /orders', kind: SpanKind.Server }),
+          span('ord-c', 'ord-root', 10, 50, { name: 'send-job', kind: SpanKind.Producer }),
+        ],
+      ],
+      [
+        'billing',
+        [
+          span('bill-root', undefined, 5, 40, { name: 'invoice' }),
+        ],
+      ],
+      [
+        'worker',
+        [
+          span('worker-job', 'ord-c', 20, 80, {
+            name: 'process-job',
+            kind: SpanKind.Consumer,
+            links: [{ spanId: 'bill-root', traceId: 't1' }],
+          }),
+        ],
+      ],
+    ),
+  );
+
+  const topo = buildServiceTopology(index);
+  assert.ok(topo.edgesOfRow !== undefined);
+
+  const workerJob = index.spans.get('worker-job');
+  assert.ok(workerJob !== undefined);
+  const workerJobRow = workerJob.idx;
+  // worker-job participates in:
+  // 1. Incoming cross-service transition from orders -> worker (parent-child)
+  // 2. Incoming cross-service transition from billing -> worker (span link)
+  const rowEdges = topo.edgesOfRow[workerJobRow];
+  assert.ok(rowEdges !== undefined);
+  assert.equal(rowEdges.length, 2);
+
+  const graph = buildServiceGraph(topo, null);
+  const matchedEdges = edgesOfSpans(graph, new Set(['worker-job']));
+  assert.equal(matchedEdges.size, 2);
+  assert.ok(matchedEdges.has(rowEdges[0]));
+  assert.ok(matchedEdges.has(rowEdges[1]));
+});

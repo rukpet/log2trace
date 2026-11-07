@@ -78,8 +78,11 @@ export interface ServiceTopology {
   readonly isSelfLoop: Uint8Array;
   /** 1 if the edge was reversed during DAG ranking to break a causal cycle. */
   readonly reversed: Uint8Array;
-  /** Edge index for each incoming cross-service transition row `r`, or -1. */
+
+  /** Edge index for each incoming cross-service transition row `r`, or -1 (primary transition). */
   readonly edgeOfRow: Int32Array;
+  /** All edge indices associated with table row `r` as callee/producer transition. */
+  readonly edgesOfRow: readonly (readonly number[] | undefined)[];
   /** Transition callee rows per edge: edgeRows[edgeRowOff[e] … edgeRowOff[e+1]-1]. */
   readonly edgeRowOff: Int32Array;
   readonly edgeRows: Int32Array;
@@ -311,6 +314,7 @@ export function buildServiceTopology(index: SpanIndex): ServiceTopology {
   const edgePatterns: EdgePattern[] = [];
   const edgeRowLists: number[][] = [];
   const edgeOfRow = new Int32Array(n).fill(-1);
+  const edgesOfRow: (number[] | undefined)[] = new Array(n);
 
   for (const trans of rawTransitions) {
     const key = `${trans.source}|${trans.target}`;
@@ -326,7 +330,15 @@ export function buildServiceTopology(index: SpanIndex): ServiceTopology {
       if (edgePatterns[e] !== trans.pattern) edgePatterns[e] = EdgePattern.Mixed;
       edgeRowLists[e].push(trans.calleeRow);
     }
-    edgeOfRow[trans.calleeRow] = e;
+    const callee = trans.calleeRow;
+    if (edgeOfRow[callee] < 0) edgeOfRow[callee] = e;
+    let list = edgesOfRow[callee];
+    if (list === undefined) {
+      list = [e];
+      edgesOfRow[callee] = list;
+    } else if (!list.includes(e)) {
+      list.push(e);
+    }
   }
 
   const edgeCount = edgeSources.length;
@@ -381,6 +393,7 @@ export function buildServiceTopology(index: SpanIndex): ServiceTopology {
     isSelfLoop,
     reversed,
     edgeOfRow,
+    edgesOfRow,
     edgeRowOff,
     edgeRows,
     width,
@@ -811,6 +824,7 @@ export function buildServiceGraph(topology: ServiceTopology, window: TimeWindow 
   const edgeMaxMs = new Float64Array(edgeCount);
 
   for (let e = 0; e < edgeCount; e++) {
+    const isToInferred = topology.nodeKind[topology.target[e]] === NodeKind.Inferred;
     const fromRow = edgeRowOff[e];
     const toRow = edgeRowOff[e + 1];
     const durs: number[] = [];
@@ -827,7 +841,10 @@ export function buildServiceGraph(topology: ServiceTopology, window: TimeWindow 
         sum += d;
         if (d > max) max = d;
         durs.push(d);
-        if (t.status[r] === 2 || (t.parent[r] >= 0 && t.status[t.parent[r]] === 2)) errors++;
+        const hasError = isToInferred
+          ? t.status[r] === 2
+          : t.status[r] === 2 || (t.parent[r] >= 0 && t.status[t.parent[r]] === 2);
+        if (hasError) errors++;
       }
     }
 
@@ -983,8 +1000,14 @@ export function edgesOfSpans(graph: ServiceGraph, ids: SpanSet | null): Set<numb
   for (const id of ids) {
     const indexed = graph.topology.index.spans.get(id);
     if (indexed !== undefined) {
-      const e = graph.topology.edgeOfRow[indexed.idx];
-      if (e >= 0) edges.add(e);
+      const r = indexed.idx;
+      const rowEdges = graph.topology.edgesOfRow?.[r];
+      if (rowEdges !== undefined && rowEdges.length > 0) {
+        for (let i = 0; i < rowEdges.length; i++) edges.add(rowEdges[i]);
+      } else {
+        const e = graph.topology.edgeOfRow[r];
+        if (e >= 0) edges.add(e);
+      }
     }
   }
   return edges;
