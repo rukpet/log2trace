@@ -1,33 +1,153 @@
-name: Publish Package
+name: Release and Publish Package
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
-  id-token: write  # Required for OIDC
-  contents: read
+  contents: write
+  id-token: write
 
 jobs:
-  publish:
+  release-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test --if-present
-      - name: Publish
+          cache: npm
+
+      - name: Check version change and tags
+        id: check_release
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          if [[ "$VERSION" == *"-"* ]]; then
-            TAG=$(node -p "require('./package.json').version.split('-')[1].replace(/[\\.\\d]+$/, '').toLowerCase() || 'next'")
-            npm publish --tag "$TAG"
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          TAG_NAME="v$CURRENT_VERSION"
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+
+          # 1. Triggered by manual tag push (e.g. git push origin v1.0.0)
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "Workflow triggered by tag push: ${{ github.ref_name }}"
+            echo "create_tag=false" >> "$GITHUB_OUTPUT"
+            echo "execute_release=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 2. Triggered manually via workflow_dispatch
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Workflow triggered manually via workflow_dispatch"
+            if git ls-remote --exit-code --tags origin "refs/tags/$TAG_NAME" >/dev/null 2>&1; then
+              echo "Tag $TAG_NAME already exists on remote origin."
+              echo "create_tag=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Tag $TAG_NAME does not exist on remote origin. Will create tag."
+              echo "create_tag=true" >> "$GITHUB_OUTPUT"
+            fi
+            echo "execute_release=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 3. Triggered by push to main:
+          # Check if tag already exists in remote origin
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists on remote origin. Skipping release."
+            echo "create_tag=false" >> "$GITHUB_OUTPUT"
+            echo "execute_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Check if the version actually changed compared to the previous commit
+          PREV_VERSION=""
+          BASE_COMMIT="${{ github.event.before }}"
+          if [[ -n "$BASE_COMMIT" && "$BASE_COMMIT" != "0000000000000000000000000000000000000000" ]]; then
+            PREV_VERSION=$(git show "$BASE_COMMIT:package.json" 2>/dev/null | node -e 'const fs = require("fs"); try { console.log(JSON.parse(fs.readFileSync(0, "utf8")).version); } catch(e) {}' || true)
+          fi
+          if [[ -z "$PREV_VERSION" ]]; then
+            PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -e 'const fs = require("fs"); try { console.log(JSON.parse(fs.readFileSync(0, "utf8")).version); } catch(e) {}' || true)
+          fi
+
+          echo "Previous version: '$PREV_VERSION'"
+          echo "Current version:  '$CURRENT_VERSION'"
+
+          if [[ "$PREV_VERSION" != "$CURRENT_VERSION" ]]; then
+            echo "Version changed from '$PREV_VERSION' to '$CURRENT_VERSION'. Triggering release."
+            echo "create_tag=true" >> "$GITHUB_OUTPUT"
+            echo "execute_release=true" >> "$GITHUB_OUTPUT"
           else
+            echo "Version in package.json has not changed. Skipping release."
+            echo "create_tag=false" >> "$GITHUB_OUTPUT"
+            echo "execute_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        if: steps.check_release.outputs.execute_release == 'true'
+        run: npm ci
+
+      - name: Build package
+        if: steps.check_release.outputs.execute_release == 'true'
+        run: npm run build --if-present
+
+      - name: Run tests
+        if: steps.check_release.outputs.execute_release == 'true'
+        run: npm test --if-present
+
+      - name: Create and push Git tag
+        if: steps.check_release.outputs.create_tag == 'true'
+        run: |
+          TAG_NAME="${{ steps.check_release.outputs.tag_name }}"
+          echo "Creating and pushing tag: $TAG_NAME"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+
+      - name: Create GitHub Release
+        if: steps.check_release.outputs.execute_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ steps.check_release.outputs.tag_name }}"
+          VERSION="${{ steps.check_release.outputs.current_version }}"
+          PRERELEASE_FLAG=""
+          if [[ "$VERSION" == *"-"* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          if ! gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Creating GitHub Release for $TAG_NAME"
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --generate-notes $PRERELEASE_FLAG
+          else
+            echo "GitHub Release for $TAG_NAME already exists."
+          fi
+
+      - name: Publish to npm
+        if: steps.check_release.outputs.execute_release == 'true'
+        run: |
+          VERSION="${{ steps.check_release.outputs.current_version }}"
+          PKG_NAME=$(node -p "require('./package.json').name")
+          
+          if npm view "$PKG_NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$PKG_NAME@$VERSION is already published to npm. Skipping."
+            exit 0
+          fi
+
+          if [[ "$VERSION" == *"-"* ]]; then
+            NPM_TAG=$(node -e "console.log(process.argv[1].split('-')[1].replace(/[\.\d]+$/, '').toLowerCase() || 'next')" "$VERSION")
+            echo "Publishing $PKG_NAME@$VERSION with dist-tag '$NPM_TAG'..."
+            npm publish --tag "$NPM_TAG"
+          else
+            echo "Publishing $PKG_NAME@$VERSION with default tag..."
             npm publish
           fi
