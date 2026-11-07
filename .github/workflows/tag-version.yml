@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   tag:
@@ -20,7 +19,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.TAG_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.TAG_PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -54,11 +53,3 @@ jobs:
           git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
           git push origin "$TAG_NAME"
           echo "Tag $TAG_NAME successfully created and pushed."
-
-          if [ -z "${{ secrets.TAG_PAT }}" ]; then
-            echo "TAG_PAT secret not detected. Triggering publishers directly via GitHub CLI..."
-            gh workflow run github-publish.yml --ref "$TAG_NAME"
-            gh workflow run npm-publish.yml --ref "$TAG_NAME"
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
