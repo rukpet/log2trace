@@ -66,6 +66,7 @@ import { Tooltip } from '../shell/tooltip.ts';
 import { createViewTabs, type ViewTabs } from '../shell/view-tabs.ts';
 import { flameDefinition } from '../views/flame/view.ts';
 import { inspectorDefinition } from '../views/inspector/view.ts';
+import { serviceDefinition } from '../views/service/view.ts';
 import type { WaterfallController } from '../views/waterfall/controller.ts';
 import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
 import { readWaterfallSettings } from '../views/waterfall/settings.ts';
@@ -78,6 +79,7 @@ import * as styles from './element.css.ts';
 registerView(waterfallDefinition);
 registerView(inspectorDefinition);
 registerView(flameDefinition);
+registerView(serviceDefinition);
 
 const styleSheet = new CSSStyleSheet();
 styleSheet.replaceSync(componentCss);
