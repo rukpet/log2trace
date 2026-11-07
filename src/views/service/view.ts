@@ -399,26 +399,16 @@ export class ServiceView implements TraceView {
         role: 'button',
         tabindex: 0,
         'data-node-id': String(nodeIdx),
-        'data-service-name': m.graph.topology.names[nodeIdx] ?? '',
       },
       header,
       metricsEl,
       bar,
     );
-    if (m.graph.topology.nodeKind[nodeIdx] === NodeKind.Inferred) {
-      el.classList.add(styles.nodeInferred);
-    }
-
-    let entryBadgeEl: HTMLElement | null = null;
-    if (m.graph.topology.isEntryNode[nodeIdx] === 1) {
-      entryBadgeEl = h('div', { class: styles.nodeEntryBadge, title: 'Entrypoint' }, '▶');
-      el.append(entryBadgeEl);
-    }
 
     m.elementToNode.set(el, nodeIdx);
     m.nodesContainer.append(el);
 
-    const slot: NodeSlot = { el, nodeIdx, titleEl, badgeEl, metricsEl, fillEl, entryBadgeEl, flags: 0 };
+    const slot: NodeSlot = { el, nodeIdx, titleEl, badgeEl, metricsEl, fillEl, entryBadgeEl: null, flags: 0 };
     m.nodeSlots.set(nodeIdx, slot);
     return slot;
   }
@@ -431,6 +421,22 @@ export class ServiceView implements TraceView {
 
     slot.el.style.left = `${topology.nodeX[nodeIdx]}px`;
     slot.el.style.top = `${topology.nodeY[nodeIdx]}px`;
+    slot.el.setAttribute('data-service-name', topology.names[nodeIdx] ?? '');
+    slot.el.classList.toggle(styles.nodeInferred, topology.nodeKind[nodeIdx] === NodeKind.Inferred);
+
+    if (topology.isEntryNode[nodeIdx] === 1) {
+      if (slot.entryBadgeEl === null) {
+        slot.entryBadgeEl = h('div', { class: styles.nodeEntryBadge, title: 'Entrypoint' }, '▶');
+        slot.el.append(slot.entryBadgeEl);
+      } else {
+        slot.entryBadgeEl.hidden = false;
+        slot.entryBadgeEl.style.display = '';
+      }
+    } else if (slot.entryBadgeEl !== null) {
+      slot.entryBadgeEl.hidden = true;
+      slot.entryBadgeEl.style.display = 'none';
+    }
+
     slot.titleEl.textContent = topology.names[nodeIdx];
 
     const errors = graph.errorCount[nodeIdx];
