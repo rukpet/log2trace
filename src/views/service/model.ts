@@ -10,7 +10,6 @@ import {
   SpanKind,
   defineSelector,
   formatDuration,
-  inferredPeerOf,
   type InfoModel,
   type InfoRow,
   type InfoSection,
@@ -21,6 +20,7 @@ import {
   type SpanSet,
   type TimeWindow,
 } from '../../core.ts';
+import { inferredPeerOf } from '../../core/peers.ts';
 
 /** Kind of node in the service graph. */
 export const enum NodeKind {

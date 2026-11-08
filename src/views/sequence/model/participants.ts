@@ -6,7 +6,8 @@
  * Headless: no DOM, no browser globals.
  */
 
-import { SpanKind, inferredPeerOf, type SpanIndex } from '../../../core.ts';
+import { SpanKind, type SpanIndex } from '../../../core.ts';
+import { inferredPeerOf } from '../../../core/peers.ts';
 
 /** Kind of participant lifeline column in the sequence diagram. */
 export const enum ParticipantKind {

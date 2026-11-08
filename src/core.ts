@@ -44,8 +44,6 @@ export type { Selector, MatchSummary } from './core/selectors.ts';
 // What to show about a span
 export { describeSpan } from './core/describe.ts';
 export type { InfoModel, InfoSection, InfoGroup, InfoRow, InfoStatus, InfoLevel } from './core/describe.ts';
-export { inferredPeerOf } from './core/peers.ts';
-export type { InferredPeer } from './core/peers.ts';
 export { formatDuration, formatOffset, formatAbsoluteTime, extractAnyValue } from './core/format.ts';
 
 // OpenTelemetry trace types

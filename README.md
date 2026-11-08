@@ -60,14 +60,14 @@ This release is built for large traces: about 50,000 spans in one diagram, with 
 
 The wheel scrolls the rows, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + wheel (or a pinch) zooms the time axis; add `wheel-zoom` to make the plain wheel zoom. `theme` (`light`, `dark`; by default it follows the page) and the `--l2t-color-*` custom properties restyle the element. Open `demo/large.html#n=50000` for a generated 50,000-span trace, and `demo/perf.html` for the measurement harness.
 
-The data side works without a DOM. `log2trace-ui/core` (transform, span index, filtering, the shared store, `describeSpan`, `inferredPeerOf`) loads in Node and in a Worker, and it is what the views (`waterfall`, `sequence`, `flame`, `service`) build on.
+The data side works without a DOM. `log2trace-ui/core` (transform, span index, filtering, the shared store, `describeSpan`) loads in Node and in a Worker, and it is what the views (`waterfall`, `sequence`, `flame`, `service`) build on.
 
 ## Views
 
 The element draws the trace with one view at a time. List several in the `views` attribute and tabs appear; `view` says which one is shown first. They share one store, so a span selected, hovered or filtered in one view is the same in the others, and each view keeps its own camera or focus when you switch away.
 
 ```html
-<trace-visualizer views="waterfall,sequence,flame,service,inspector" view="waterfall" data-url="./logs.json"></trace-visualizer>
+<trace-visualizer views="waterfall,flame,service,sequence,inspector" view="waterfall" data-url="./logs.json"></trace-visualizer>
 ```
 
 - `waterfall` (the default): one row per span on a time axis. It answers "when did it happen".
