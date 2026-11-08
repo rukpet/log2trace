@@ -1,10 +1,22 @@
 <!--
-Note: Omit any section that does not apply to your change (e.g. for small fixes or documentation updates).
+Note: ALL sections are optional. Delete every section that does not apply or add distinct reviewer signal.
+
+Core Principles:
+1. Proportionality: If the PR description is longer than the diff itself, it is over-engineered. For small or straightforward changes, a 1-2 sentence summary is preferred over filling out template sections.
+2. Code Fact-Checking: Fact-check all technical claims, contracts, configuration options, and behaviors directly against the implementation before drafting.
+3. No Anti-Patterns:
+   - NEVER paste end-user documentation, usage manuals, or interaction guides into ## Reproduction.
+   - NEVER dump lists or manifests of test file paths (e.g. `test/foo.test.ts: ...`) under ## Testing.
+   - NEVER write filler claims like "Zero impact", "Zero impact on existing views", or "Zero overhead" under ## Performance Impact.
+   - NEVER mirror ## What bullet-for-bullet with file paths under ## How.
+   - NEVER include manual logs of automated checks (npm test, npm run check, npm run lint, etc.).
 -->
 
 ## What
 <!--
-Concise, specific summary of what changed in the codebase (components, behaviors, or APIs modified).
+Concise summary of what changed.
+- Open with an imperative statement (e.g. "Add sequence diagram view", not "Adds" or "Added").
+- Keep high-level: summarize architectural, behavioral, and API changes, not granular usage guides.
 -->
 
 
@@ -19,33 +31,41 @@ The problem solved, motivation, and context:
 
 ## Reproduction
 <!--
-- For bug fixes: steps to reproduce the original issue.
-- For new features: steps to view or interact with the new functionality (e.g. via `npm run demo`).
+Delete if not applicable or if Why makes the trigger clear.
+- 1-3 concise human-facing steps to launch the demo or trigger the bug.
+- DO NOT dump end-user documentation, usage manuals, or interaction guides here.
 -->
 
 
 ## How
 <!--
-Implementation details not immediately obvious from the diff alone:
-- Key architectural, algorithmic, or data structure decisions.
-- Departures from existing patterns in the codebase and why.
+Delete if implementation is self-evident from the code diff.
+- Non-obvious architectural, algorithmic, or data structure decisions only.
+- Departures from existing patterns and why.
+- DO NOT repeat What bullet-for-bullet with file paths.
 -->
 
 
 ## Alternatives Considered
 <!--
-Other approaches evaluated and why they were not chosen.
+Delete unless genuine architectural tradeoffs were evaluated.
+- Concrete alternative approaches considered and why they were rejected.
+- NEVER invent hypothetical or strawman alternatives to fill the section.
 -->
 
 
 ## Performance Impact
 <!--
-Any impact on rendering performance (FPS), memory footprint, or handling of large traces (e.g. 50k+ spans).
+Delete if rendering FPS, memory footprint, or trace scale are unaffected.
+- Concrete measurements, benchmarks, or memory figures (e.g. 50k+ spans).
+- NEVER write filler claims like "Zero impact" or "Zero overhead". If unaffected, delete this section completely.
 -->
 
 
 ## Testing
 <!--
-What new test cases or coverage were added for this change?
-For example: added performance benchmarks to verify a latency fix, edge-case coverage, or a new test type for a complex feature.
+Delete if standard unit tests were added or if no tests were added.
+- Describe new testing strategies, scale benchmarks, or edge-case coverage in 1-3 sentences.
+- DO NOT dump lists or manifests of test file paths (e.g. `test/foo.test.ts: ...`).
 -->
+
