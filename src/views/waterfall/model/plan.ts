@@ -101,7 +101,7 @@ export class FramePlan {
   kind = new Uint8Array(0);
   /** OR of {@link RowFlag} bits. */
   flags = new Uint8Array(0);
-  /** A {@link Chevron} value. */
+  /** A {@link views/waterfall/model/rows.Chevron | Chevron} value. */
   chevron = new Uint8Array(0);
   /** A {@link LabelMode} value. */
   labelMode = new Uint8Array(0);
