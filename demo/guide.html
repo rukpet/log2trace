@@ -1459,13 +1459,13 @@ el23.addEventListener('span-selected', (e) => {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer views="waterfall,inspector" view="waterfall" show-legend&gt;
+      <pre><code class="language-html">&lt;trace-visualizer views="waterfall,flame,service,sequence,inspector" view="waterfall" show-legend&gt;
 &lt;/trace-visualizer&gt;</code></pre>
     </div>
 
-    <div class="result-label">&#9654; Live result — click a span, then open the Inspector tab</div>
+    <div class="result-label">&#9654; Live result — click a span, then switch between Waterfall, Flame, Service, Sequence, and Inspector tabs</div>
     <div class="result-box">
-      <trace-visualizer id="ex24" views="waterfall,inspector" show-legend></trace-visualizer>
+      <trace-visualizer id="ex24" views="waterfall,flame,service,sequence,inspector" show-legend></trace-visualizer>
     </div>
     <pre id="ex24-output" class="output-pre">// switch tabs to see view-changed here</pre>
   </section>

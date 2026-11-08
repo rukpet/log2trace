@@ -60,17 +60,18 @@ This release is built for large traces: about 50,000 spans in one diagram, with 
 
 The wheel scrolls the rows, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + wheel (or a pinch) zooms the time axis; add `wheel-zoom` to make the plain wheel zoom. `theme` (`light`, `dark`; by default it follows the page) and the `--l2t-color-*` custom properties restyle the element. Open `demo/large.html#n=50000` for a generated 50,000-span trace, and `demo/perf.html` for the measurement harness.
 
-The data side works without a DOM. `log2trace-ui/core` (transform, span index, filtering, the shared store, `describeSpan`) loads in Node and in a Worker, and it is what future views (flame graph, service graph, sequence diagram) will build on.
+The data side works without a DOM. `log2trace-ui/core` (transform, span index, filtering, the shared store, `describeSpan`, `inferredPeerOf`) loads in Node and in a Worker, and it is what the views (`waterfall`, `sequence`, `flame`, `service`) build on.
 
 ## Views
 
 The element draws the trace with one view at a time. List several in the `views` attribute and tabs appear; `view` says which one is shown first. They share one store, so a span selected, hovered or filtered in one view is the same in the others, and each view keeps its own camera or focus when you switch away.
 
 ```html
-<trace-visualizer views="waterfall,flame,inspector" view="waterfall" data-url="./logs.json"></trace-visualizer>
+<trace-visualizer views="waterfall,sequence,flame,service,inspector" view="waterfall" data-url="./logs.json"></trace-visualizer>
 ```
 
 - `waterfall` (the default): one row per span on a time axis. It answers "when did it happen".
+- `sequence`: a sequence diagram. It arranges an entry gate, services, and inferred external dependencies (databases, caches, queues, HTTP hosts) as vertical participant lifelines and projects calls in causal order. Cross-service `CLIENT` → `SERVER` spans merge into a single synchronous request arrow with a paired dashed return arrow; `PRODUCER` / `CONSUMER` spans draw open-headed asynchronous arrows; active spans draw nested lifeline activation bars (click `−`/`+` or double-click to collapse/expand a call subtree); consecutive identical sibling calls fold into a `loop ×N` row (click or press `Enter` to expand/collapse); and `I` cycles same-service internal spans (`auto` / `show` / `hide`). Navigate with `↑`/`↓` (previous/next step), `←`/`→` (caller/callee lifeline), `R` (jump between request and return arrow), `E`/`Shift+E` (next/previous error step), `F` (fit columns), and `Escape` (clear selection).
 - `flame`: a flame graph. Spans with the same call path (service, name and kind of the span and of each ancestor) fold into one box, as wide as the time those spans take together, so it answers "where did the time go". Click or hover a box to select all its spans, double-click or press `F` to make it fill the width, `Escape` to leave. It draws with the DOM.
 - `service`: a service dependency map (service graph). Services and inferred peer dependencies appear as nodes, and cross-service calls as directed edges with call volume, latency, and error indicators. Click a node or edge to inspect spans, drag to pan, wheel/pinch to zoom, double-click to focus on a node, `0` or `Escape` to fit.
 - `inspector`: the shared state as text, mostly there to prove the view contract.
