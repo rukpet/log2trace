@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SpanKind, buildSpanIndex, inferredPeerOf } from '../../src/core.ts';
+import { SpanKind, buildSpanIndex } from '../../src/core.ts';
+import { inferredPeerOf } from '../../src/core/peers.ts';
 import { kv, span, trace } from '../support/trace-builder.ts';
 
 test('peer.service takes precedence over db.system, messaging.system, rpc.service, and server.address', () => {
