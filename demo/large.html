@@ -49,7 +49,7 @@
     document.getElementById('wheel-zoom').addEventListener('change', (e) => el.toggleAttribute('wheel-zoom', e.target.checked));
     const tabs = document.getElementById('tabs');
     if (params.get('views')) { el.setAttribute('views', params.get('views')); tabs.checked = true; }
-    tabs.addEventListener('change', (e) => { if (e.target.checked) el.setAttribute('views', 'waterfall,flame,inspector'); else el.removeAttribute('views'); });
+    tabs.addEventListener('change', (e) => { if (e.target.checked) el.setAttribute('views', 'waterfall,flame,service,sequence,inspector'); else el.removeAttribute('views'); });
 
     if (params.get('n')) {
       const t0 = performance.now();

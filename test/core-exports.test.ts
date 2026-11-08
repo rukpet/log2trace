@@ -28,6 +28,7 @@ const EXPECTED_EXPORTS = [
   'formatOffset',
   'getField',
   'hoveredSpan',
+  'inferredPeerOf',
   'matchSpans',
   'matchSummary',
   'normalizeOptions',
