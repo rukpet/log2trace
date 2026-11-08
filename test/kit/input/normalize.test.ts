@@ -158,6 +158,14 @@ test('the keys a view handles map to names, several physical keys to one', () =>
     ['-', Key.Minus],
     ['_', Key.Minus],
     ['0', Key.Zero],
+    ['i', Key.I],
+    ['I', Key.I],
+    ['f', Key.F],
+    ['F', Key.F],
+    ['r', Key.R],
+    ['R', Key.R],
+    ['e', Key.E],
+    ['E', Key.E],
   ];
   for (const [name, expectedKey] of expected) {
     assert.deepEqual(normalizeKey(key(name)), { key: expectedKey, shiftKey: false, repeat: false }, JSON.stringify(name));
@@ -171,7 +179,7 @@ test('Shift and auto-repeat are reported', () => {
 });
 
 test('chords with Ctrl, Alt or Meta belong to the browser and are not translated', () => {
-  for (const name of ['0', '+', '-', '=', 'ArrowLeft', 'Home', 'Enter', ' ', 'f']) {
+  for (const name of ['0', '+', '-', '=', 'ArrowLeft', 'Home', 'Enter', ' ', 'f', 'i', 'r', 'e']) {
     for (const held of ['ctrlKey', 'altKey', 'metaKey'] as const) {
       assert.equal(normalizeKey(key(name, { [held]: true })), null, `${held}+${JSON.stringify(name)}`);
     }
@@ -179,7 +187,7 @@ test('chords with Ctrl, Alt or Meta belong to the browser and are not translated
 });
 
 test('other keys are not translated, so the browser keeps them', () => {
-  for (const name of ['a', 'F', 'Tab', 'Shift', 'Control', 'Backspace', 'Delete', 'F5', '1', ')', 'Dead', 'Unidentified', '']) {
+  for (const name of ['a', 'b', 'Tab', 'Shift', 'Control', 'Backspace', 'Delete', 'F5', '1', ')', 'Dead', 'Unidentified', '']) {
     assert.equal(normalizeKey(key(name)), null, JSON.stringify(name));
   }
 });

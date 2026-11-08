@@ -43,6 +43,14 @@ export enum Key {
   Minus,
   /** `0`: reset the view. */
   Zero,
+  /** i or I: toggle/cycle internal spans. */
+  I,
+  /** f or F: toggle column fitting. */
+  F,
+  /** r or R: jump between request and return arrow. */
+  R,
+  /** e or E: jump to next/previous error step. */
+  E,
 }
 
 /** A key press a view may handle, as returned by `normalizeKey`. */

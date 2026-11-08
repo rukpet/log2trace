@@ -15,6 +15,8 @@ import {
 } from '../../../src/core.ts';
 import type { ViewCommand } from '../../../src/kit/commands.ts';
 import { createFrameScheduler } from '../../../src/kit/scheduler.ts';
+import { InputActionKind, Key } from '../../../src/kit/input/types.ts';
+import { StepFlag } from '../../../src/views/sequence/model/steps.ts';
 import {
   getView,
   registerView,
@@ -384,3 +386,85 @@ test('SequenceView lifecycle: mount, optionsChanged, reveal, aria-activedescenda
   assert.equal(h.surface.children.length, 0);
   assert.deepEqual(h.view.commands(), []);
 });
+
+test('SequenceView keyboard shortcuts via onAction trigger cycleInternal, toggleFitColumns, and step navigation', () => {
+  const h = createViewHarness();
+  const internals = h.view.internals;
+  assert.ok(internals !== null);
+  const { controller, onAction } = internals;
+
+  // Key.I cycles internal spans and refreshes commands
+  assert.equal(controller.viewState.internal, 'auto');
+  const refreshBeforeI = h.refreshCount;
+  assert.equal(
+    onAction({ kind: InputActionKind.KeyDown, key: Key.I, shiftKey: false, repeat: false }),
+    true,
+  );
+  assert.equal(controller.viewState.internal, 'show');
+  assert.equal(h.refreshCount, refreshBeforeI + 1);
+
+  onAction({ kind: InputActionKind.KeyDown, key: Key.I, shiftKey: false, repeat: false });
+  assert.equal(controller.viewState.internal, 'hide');
+  assert.equal(h.refreshCount, refreshBeforeI + 2);
+
+  onAction({ kind: InputActionKind.KeyDown, key: Key.I, shiftKey: false, repeat: false });
+  assert.equal(controller.viewState.internal, 'auto');
+  assert.equal(h.refreshCount, refreshBeforeI + 3);
+
+  // Key.F toggles fitColumns and refreshes commands
+  assert.equal(controller.viewState.fitColumns, false);
+  const refreshBeforeF = h.refreshCount;
+  assert.equal(
+    onAction({ kind: InputActionKind.KeyDown, key: Key.F, shiftKey: false, repeat: false }),
+    true,
+  );
+  assert.equal(controller.viewState.fitColumns, true);
+  assert.equal(h.refreshCount, refreshBeforeF + 1);
+
+  onAction({ kind: InputActionKind.KeyDown, key: Key.F, shiftKey: false, repeat: false });
+  assert.equal(controller.viewState.fitColumns, false);
+  assert.equal(h.refreshCount, refreshBeforeF + 2);
+
+  // Key.E jumps to error step
+  assert.equal(
+    onAction({ kind: InputActionKind.KeyDown, key: Key.E, shiftKey: false, repeat: false }),
+    true,
+  );
+  const errorFocus = controller.viewState.focusStep;
+  assert.ok(errorFocus >= 0);
+  const steps = controller.steps;
+  assert.ok(steps !== null);
+  assert.ok((steps.flags[errorFocus] & StepFlag.Error) !== 0);
+  assert.equal(steps.model.index.table.ids[steps.row[errorFocus]], 'order-srv');
+
+  // Key.R jumps between request and return arrow
+  let sourceStep = -1;
+  let pairStep = -1;
+  for (let s = 0; s < steps.count; s++) {
+    if (steps.pair[s] >= 0) {
+      sourceStep = s;
+      pairStep = steps.pair[s];
+      break;
+    }
+  }
+  assert.ok(sourceStep >= 0 && pairStep >= 0, 'sample trace must have paired steps');
+
+  h.view.reveal(steps.model.index.table.ids[steps.row[sourceStep]]);
+  h.clock.frame();
+  assert.equal(controller.viewState.focusStep, sourceStep);
+
+  assert.equal(
+    onAction({ kind: InputActionKind.KeyDown, key: Key.R, shiftKey: false, repeat: false }),
+    true,
+  );
+  assert.equal(controller.viewState.focusStep, pairStep);
+
+  assert.equal(
+    onAction({ kind: InputActionKind.KeyDown, key: Key.R, shiftKey: false, repeat: false }),
+    true,
+  );
+  assert.equal(controller.viewState.focusStep, sourceStep);
+
+  h.view.unmount();
+});
+
