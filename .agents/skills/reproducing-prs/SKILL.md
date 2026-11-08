@@ -111,21 +111,25 @@ Do not stop at fixing the code in your local working directory. Complete the ent
    npm run lint
    ```
 2. **Push updates to remote branch (if changes were made):**
+   - Follow `CONTRIBUTING.md` (Chris Beams' 7 rules: imperative mood, <= 50-char subject, no Conventional Commits prefixes like `fix:` or `feat:`, body wrapped at 72 chars).
+   - Never stage or commit temporary comparison artifacts (`demo/reproduce-pr-*.html`).
    ```bash
    git add <modified-files>
-   git commit -m "fix: <concise summary>"
+   git commit -m "<Imperative summary under 50 chars>"
    git push origin <pr-branch>
    ```
 3. **Update PR Description on GitHub:**
-   - Include high-value, permanent engineering evidence:
-     - Summary of root cause.
-     - Concrete code/styling changes made.
-     - Test suite results (`npm test`, `npm run check`, `npm run lint`).
-     - Verified interactive behavior.
-   - **Anti-Pollution Rule:** NEVER include:
-     - Ephemeral local URLs (`localhost:3000`, `127.0.0.1`).
+   - Follow `.github/PULL_REQUEST_TEMPLATE.md` and **omit any section that does not apply**:
+     - **`## What` & `## Why`:** Always include. Keep `What` as a concise summary of the change and `Why` focused on the problem solved, root cause, and motivation.
+     - **`## How`:** Include only for implementation details or architectural decisions not immediately obvious from `What` and the diff. Do not repeat `What` line-by-line.
+     - **`## Reproduction`:** Include only concise, human-facing steps when useful to reproduce a bug or interact with a feature. Omit if `Why` already makes the trigger clear; never paste internal console/DOM queries (`querySelectorAll`, `defaultPrevented`).
+     - **`## Alternatives Considered`:** Omit unless genuine architectural tradeoffs were evaluated. Never invent strawman alternatives just to fill the section.
+     - **`## Performance Impact`:** Omit unless the change affects rendering FPS, memory footprint, or large-trace (50k+ spans) handling. Never write filler like `"Zero overhead"`.
+     - **`## Testing`:** Include **only** when the PR adds new test cases, edge-case coverage, or benchmarks to the codebase. Omit completely if no tests were added.
+   - **Anti-Pollution Rule — NEVER include in the PR description:**
+     - Manual runs of checks that already execute automatically in CI or Git hooks (`npm test`, `npm run check`, `npm run lint`, `check-commit-msg.js`, `"542 of 542 tests passing"`, `"Pre-commit hook ran"`).
+     - Ephemeral local URLs (`localhost:3000`, `127.0.0.1`) or temporary demo files (`demo/reproduce-pr-*.html`).
      - Internal agent scratch scripts (`scratch/test-temp.ts`).
-     - Trivial claims like "Pre-commit hook ran" or "Branch is clean".
 
 ---
 
@@ -138,7 +142,9 @@ Do not stop at fixing the code in your local working directory. Complete the ent
 | *"The synthetic trace is created, let's test the fix."* | If you didn't see the fixture fail on `main`, you don't know if your fixture even tests the bug. Verify Case A first. |
 | *"I opened the browser with headless Chrome."* | Headless dumps are invisible to the user. Use `Start-Process` to open their desktop browser. |
 | *"I fixed the code locally, my work is done."* | The PR lives on GitHub. If you don't push commits and update the PR description, the job is incomplete. |
-| *"I'll put the reproduction URL (`localhost:3000`) into the PR body."* | Local URLs are useless and noisy for external collaborators. Include only permanent verification facts. |
+| *"The PR template has 7 sections, so I'll fill out all 7."* | Template sections are optional. Omit any section (`Reproduction`, `How`, `Alternatives Considered`, `Performance Impact`, `Testing`) that does not add real reviewer signal. |
+| *"I'll list `npm test` and `npm run check` passing under `## Testing`."* | CI and Husky hooks run those automatically on every push. `## Testing` is strictly for new test cases or benchmarks added in the PR; if none were added, omit the section. |
+| *"I'll put the reproduction URL (`localhost:3000`) into the PR body."* | Local URLs are useless and noisy for external collaborators. Include only permanent reviewer-relevant context. |
 
 ---
 
@@ -152,4 +158,4 @@ When verifying a PR:
 - [ ] Created side-by-side comparison page in `demo/` and launched in user's browser.
 - [ ] All automated checks pass (`npm test`, `npm run check`, `npm run lint`).
 - [ ] Pushed commits to PR branch (if applicable).
-- [ ] Updated GitHub PR description with clean, high-signal verification notes.
+- [ ] Updated GitHub PR description following `.github/PULL_REQUEST_TEMPLATE.md` (omitting non-applicable optional sections and excluding manual CI/hook run logs).
