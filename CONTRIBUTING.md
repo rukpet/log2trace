@@ -34,3 +34,12 @@ traces by introducing an interactive Service Graph view.
 ### Automated Enforcement
 
 The repository includes an automated Husky `commit-msg` hook backed by `build/check-commit-msg.js` that verifies all seven rules on every commit.
+
+## Pull Request Guidelines
+
+Pull request descriptions in this repository must follow [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md).
+
+- **Titles**: Follow Chris Beams' imperative style (Rules 2–5 above). Use plain, capitalized imperative statements without prefixes (e.g. `Add sequence diagram view`, not `Adds...` or `feat:...`).
+- **Descriptions**: Follow the template's guidelines. Remember that **all sections are optional**; delete any section that does not provide distinct reviewer value.
+- **Proportionality**: If the description is longer than the diff itself, it is over-engineered. Small or straightforward changes require only a 1–2 sentence summary.
+
