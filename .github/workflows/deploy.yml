@@ -41,12 +41,17 @@ jobs:
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/logs-transform.html > _site/logs-transform.html
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/benchmark.html > _site/benchmark.html
           sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/filter-demo.html > _site/filter-demo.html
+          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/large.html > _site/large.html
+          sed "s/__BUILD_DATE__/$BUILD_DATE/g" demo/perf.html > _site/perf.html
+          cp demo/perf-gen.js _site/perf-gen.js
           cp demo/guide.html _site/index.html
           cp demo/guide.html _site/guide.html
           cp demo/logs.json _site/logs.json
           cp demo/favicon.svg _site/favicon.svg
           cp dist/log2trace.min.js _site/dist/log2trace.min.js
           cp dist/log2trace.min.js.map _site/dist/log2trace.min.js.map
+          cp dist/log2trace.js _site/dist/log2trace.js
+          cp dist/log2trace.js.map _site/dist/log2trace.js.map
           cp -r docs _site/api
 
       - uses: actions/upload-pages-artifact@v3

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>trace-visualizer</title>
+  <title>50 000 Spans Demo</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <style>
     * { box-sizing: border-box; }
@@ -32,7 +32,7 @@
 
   <script type="module">
     import { generateTrace, optionsFromParams } from './perf-gen.js';
-    await import('/dist/log2trace.js');
+    import './dist/log2trace.min.js';
 
     const el = document.querySelector('trace-visualizer');
     const info = document.getElementById('info');
