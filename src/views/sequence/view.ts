@@ -8,7 +8,6 @@ import type { ChangeSet, SpanId } from '../../core.ts';
 import type { ViewCommand } from '../../kit/commands.ts';
 import { h } from '../../kit/dom.ts';
 import { bindInput } from '../../kit/input/bind.ts';
-import { isFormField } from '../../kit/input/normalize.ts';
 import { InputActionKind, Key, type InputAction } from '../../kit/input/types.ts';
 import { getFrameScheduler, type FrameHandle, type FrameScheduler } from '../../kit/scheduler.ts';
 import type {
@@ -45,6 +44,10 @@ const KEY_NAMES: Readonly<Record<Key, string>> = {
   [Key.Plus]: '+',
   [Key.Minus]: '-',
   [Key.Zero]: '0',
+  [Key.I]: 'i',
+  [Key.F]: 'f',
+  [Key.R]: 'r',
+  [Key.E]: 'e',
 };
 
 interface MountedSequenceView {
@@ -71,11 +74,17 @@ export class SequenceView implements TraceView {
     readonly controller: SequenceController;
     readonly painter: SequenceDomPainter;
     readonly scroller: HTMLElement;
+    readonly onAction: (action: InputAction) => boolean;
   } | null {
     const m = this.mounted;
     return m === null
       ? null
-      : { controller: m.controller, painter: m.painter, scroller: m.scroller };
+      : {
+          controller: m.controller,
+          painter: m.painter,
+          scroller: m.scroller,
+          onAction: (action: InputAction) => this.onAction(action),
+        };
   }
 
   mount(surface: HTMLElement, ctx: ViewContext): void {
@@ -143,36 +152,6 @@ export class SequenceView implements TraceView {
         wheelZoom: () => controller.wheelZoom,
       }),
     );
-
-    const onKeyDown = (event: Event): void => {
-      const ke = event as KeyboardEvent;
-      if (ke.defaultPrevented || ke.isComposing || ke.ctrlKey || ke.altKey || ke.metaKey) {
-        return;
-      }
-      if (isFormField(ke.composedPath?.()[0] ?? ke.target)) return;
-      switch (ke.key) {
-        case 'i':
-        case 'I':
-          this.cycleInternal();
-          ke.preventDefault();
-          break;
-        case 'f':
-        case 'F':
-          this.toggleFitColumns();
-          ke.preventDefault();
-          break;
-        case 'r':
-        case 'R':
-        case 'e':
-        case 'E':
-          if (this.dispatchInput({ type: 'key', key: ke.key, shiftKey: ke.shiftKey })) {
-            ke.preventDefault();
-          }
-          break;
-      }
-    };
-    scroller.addEventListener('keydown', onKeyDown);
-    cleanups.push(() => scroller.removeEventListener('keydown', onKeyDown));
 
     if (scroller.clientWidth > 0 || scroller.clientHeight > 0) {
       controller.handleInput({
@@ -396,6 +375,14 @@ export class SequenceView implements TraceView {
           anchorY: action.y,
         });
       case InputActionKind.KeyDown: {
+        if (action.key === Key.I) {
+          this.cycleInternal();
+          return true;
+        }
+        if (action.key === Key.F) {
+          this.toggleFitColumns();
+          return true;
+        }
         const keyName = KEY_NAMES[action.key];
         if (keyName === '+') {
           this.zoomDensity(1.15);

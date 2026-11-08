@@ -47,6 +47,14 @@ const KEYS: ReadonlyMap<string, Key> = new Map([
   ['-', Key.Minus],
   ['_', Key.Minus],
   ['0', Key.Zero],
+  ['i', Key.I],
+  ['I', Key.I],
+  ['f', Key.F],
+  ['F', Key.F],
+  ['r', Key.R],
+  ['R', Key.R],
+  ['e', Key.E],
+  ['E', Key.E],
 ]);
 
 /** The element tags whose own key handling a view must not take over. */
