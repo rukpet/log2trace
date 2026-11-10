@@ -374,7 +374,7 @@ describe('Tier 3: Documentation Validation', () => {
   const guideHtml = readFileSync(join(ROOT, 'demo', 'guide.html'), 'utf-8');
   const readmeMd = readFileSync(join(ROOT, 'README.md'), 'utf-8');
 
-  it('demo/guide.html contains dedicated example sections for sequence, service, and inspector', () => {
+  it('demo/guide.html contains dedicated example sections for sequence and service', () => {
     assert.ok(
       guideHtml.includes('id="ex-26"'),
       'guide.html must contain section id="ex-26" for Sequence Diagram'
@@ -395,18 +395,14 @@ describe('Tier 3: Documentation Validation', () => {
       'guide.html must have heading for EXAMPLE 27 Service graph'
     );
 
-    assert.ok(
+    assert.equal(
       guideHtml.includes('id="ex-28"'),
-      'guide.html must contain section id="ex-28" for Store Inspector'
-    );
-    assert.match(
-      guideHtml,
-      /EXAMPLE 28\s*—\s*Store\s+inspector/i,
-      'guide.html must have heading for EXAMPLE 28 Store inspector'
+      false,
+      'guide.html should not contain Store Inspector section'
     );
   });
 
-  it('demo/guide.html table of contents links to Examples 26, 27, and 28', () => {
+  it('demo/guide.html table of contents links to Examples 26 and 27', () => {
     assert.ok(
       guideHtml.includes('href="#ex-26"'),
       'guide.html TOC must contain link href="#ex-26"'
@@ -415,9 +411,10 @@ describe('Tier 3: Documentation Validation', () => {
       guideHtml.includes('href="#ex-27"'),
       'guide.html TOC must contain link href="#ex-27"'
     );
-    assert.ok(
+    assert.equal(
       guideHtml.includes('href="#ex-28"'),
-      'guide.html TOC must contain link href="#ex-28"'
+      false,
+      'guide.html TOC must not contain link href="#ex-28"'
     );
   });
 
