@@ -34,6 +34,24 @@
       border-color: #0066cc;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
+    .demo-card.featured {
+      border: 2px solid #0066cc;
+      background: #f4f8fd;
+    }
+    .demo-card.featured h2 {
+      color: #0052a3;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: #0066cc;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
     .demo-card h2 {
       margin-top: 0;
       color: #0066cc;
@@ -52,14 +70,30 @@
     </header>
 
     <div class="demo-links">
+      <a href="./guide.html" class="demo-card featured">
+        <span class="badge">Comprehensive Guide</span>
+        <h2>Interactive User Guide</h2>
+        <p>Interactive User Guide — 28 comprehensive examples covering all views, options, filtering, and events</p>
+      </a>
+
       <a href="./otel-trace.html" class="demo-card">
         <h2>OTel Trace Data Demo</h2>
-        <p>View OpenTelemetry trace data from otel-trace.json</p>
+        <p>View OpenTelemetry trace data from otel-trace.json with all view tabs (Waterfall, Flame, Service, Sequence, Inspector)</p>
+      </a>
+
+      <a href="./guide.html#ex-26" class="demo-card">
+        <h2>Sequence Diagram View</h2>
+        <p>UML temporal sequence diagram with lifelines, call and return arrows, loop folding, and keyboard navigation</p>
+      </a>
+
+      <a href="./guide.html#ex-27" class="demo-card">
+        <h2>Service Graph View</h2>
+        <p>Microservice topological DAG with 2D camera viewport, SVG dependency edges, metrics, and spatial navigation</p>
       </a>
 
       <a href="./logs-transform.html" class="demo-card">
         <h2>Log Transform Demo</h2>
-        <p>Transform and visualize logs from logs.json</p>
+        <p>Transform and visualize logs from logs.json across views</p>
       </a>
 
       <a href="./filter-demo.html" class="demo-card">
@@ -70,6 +104,11 @@
       <a href="./large.html#n=50000" class="demo-card">
         <h2>50 000 Spans</h2>
         <p>One generated trace of 50 000 spans: scroll, zoom, hover and select, with the canvas or the DOM painter</p>
+      </a>
+
+      <a href="./perf.html" class="demo-card">
+        <h2>Performance Harness</h2>
+        <p>Interactive performance harness with real-time FPS/HUD, DOM vs Canvas renderers, and custom trace generator parameters</p>
       </a>
 
       <a href="./benchmark.html" class="demo-card">
