@@ -86,6 +86,7 @@ Each original log line is preserved as an OpenTelemetry event on its correspondi
 * **`flame`**: Flame graph aggregating cumulative execution time across identical call paths. Identifies bottlenecks answering *"where did the time go"*.
 * **`service`**: Directed topology graph displaying services, external peers (databases, queues, HTTP endpoints), request counts, latencies, and error rates.
 * **`sequence`**: Causal sequence diagram with participant lifelines, synchronous request/response pairs, asynchronous message flows, and loop folding.
+* **`inspector`**: Shared store state inspector table, exposing raw reactive store events and spans.
 
 Custom views can also be registered at runtime with `registerView()`.
 
@@ -107,6 +108,109 @@ Customize filtering and span metadata directly in HTML using child elements:
   <trace-filter field="service" label="Service" type="select" source="local" options-source="auto"></trace-filter>
   <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local"></trace-filter>
 </trace-visualizer>
+```
+
+---
+
+## Configuration
+
+The component is configured via HTML attributes or programmatically via the JavaScript `config` property. Attribute names use `kebab-case` and map to `camelCase` configuration object properties.
+
+### Display and View Options
+
+| Attribute | Property | Type | Default | Description |
+|-----------|----------|------|---------|-------------|
+| `views` | `views` | `string` | `'waterfall'` | Comma-separated list of view IDs to enable in tabs (`waterfall`, `flame`, `service`, `sequence`, `inspector`). |
+| `view` | `view` | `string` | `'waterfall'` | Active view ID shown on mount. |
+| `renderer` | `renderer` | `'dom' \| 'canvas'` | `'dom'` | Waterfall rendering engine (`'dom'` for selectable DOM rows, `'canvas'` for Canvas 2D). |
+| `theme` | `theme` | `'auto' \| 'light' \| 'dark'` | `'auto'` | Visual theme. By default follows system/page theme. |
+| `height` | `height` | `number` | `480` | Element height in pixels. |
+| `span-height` | `spanHeight` | `number` | `20` | Waterfall span bar height in CSS pixels. |
+| `span-padding` | `spanPadding` | `number` | `4` | Vertical spacing between waterfall rows in CSS pixels. |
+| `gutter-width` | `gutterWidth` | `number` | `250` | Width of the waterfall label column/gutter in CSS pixels. |
+| `row-height` | `rowHeight` | `number` | `28` | Row height for sequence diagram in CSS pixels (clamped between 18 and 48). |
+| `wheel-zoom` | `wheelZoom` | `boolean` | `false` | When true, mouse wheel zooms the time/density axis instead of scrolling. |
+| `show-legend` | `showLegend` | `boolean` | `false` | Show span kind color legend in views that support it. |
+| `full-width` | `fullWidth` | `boolean` | `true` | Stretch to container width (the element fills container width by default). |
+| `detail-panel-width` | `detailPanelWidth` | `string` | `undefined` | CSS width of the side span detail panel (e.g., `'360px'`). |
+| `kind-colors` | `kindColors` | `Record<string, string>` | `undefined` | Map of span kinds to CSS colors (e.g., `{"Server": "#2563eb"}`). |
+| `auto-fetch` | `autoFetch` | `boolean` | `true` | Whether external filter changes trigger data fetch immediately. |
+| `sequence-internal` | `sequenceInternal` | `'auto' \| 'hide' \| 'show'` | `'auto'` | How internal spans within the same service are shown in the sequence diagram. |
+| `sequence-returns` | `sequenceReturns` | `'all' \| 'errors' \| 'none'` | `'all'` | Which synchronous return arrows are drawn in the sequence diagram. |
+| `sequence-fold` | `sequenceFold` | `number` | `3` | Minimum consecutive identical sibling calls to fold into a `loop ×N` row; `0` disables folding. |
+
+### Log Transform Options
+
+Configure how raw log records are mapped and transformed into OpenTelemetry spans:
+
+| Attribute | Property | Type | Description |
+|-----------|----------|------|-------------|
+| `data-url` | `dataUrl` | `string` | URL to fetch trace or log JSON data from. |
+| `trace-id-field` | `traceIdField` | `string` | Dot-path to trace identifier in log records (required). |
+| `span-group-fields` | `spanGroupFields` | `string \| string[]` | Comma-separated dot-paths to cluster log records into distinct spans (e.g., `'service,operation'`). |
+| `span-name-field` | `spanNameField` | `string` | Dot-path to span operation or method name (required). |
+| `service-name-field` | `serviceNameField` | `string` | Dot-path to service name (required). |
+| `timestamp-field` | `timestampField` | `string` | Dot-path to start timestamp (ISO 8601 string or numeric ms/ns, required). |
+| `end-time-field` | `endTimeField` | `string` | Dot-path to end timestamp (optional; computed from subsequent logs if omitted). |
+| `parent-span-id-field` | `parentSpanIdField` | `string` | Dot-path to direct parent span ID if log records already contain explicit span identifiers. |
+| `parent-span-lookup-fields` | `parentSpanLookupFields` | `string \| string[]` | Comma-separated dot-paths matched against other span groups to establish parent-child hierarchy (e.g., `'calledBy'`). |
+| `span-id-field` | `spanIdField` | `string` | Dot-path to unique span identifier in log records. |
+| `status-code-field` | `statusCodeField` | `string` | Dot-path to HTTP or status code (status >= 400 or `"ERROR"` marks span as error). |
+| `default-span-kind` | `defaultSpanKind` | `string` | Default fallback span kind (`'INTERNAL'`, `'SERVER'`, `'CLIENT'`, `'PRODUCER'`, `'CONSUMER'`). |
+
+---
+
+## Events
+
+`<trace-visualizer>` dispatches standard DOM CustomEvents that bubble and are composed across shadow DOM boundaries.
+
+### `trace-loaded`
+
+Fired when trace data is loaded, transformed, and indexed into the store.
+
+- **Detail payload**: `{ spans: number, roots: number, traceId: string }`
+  - `spans`: Total number of spans in the trace index.
+  - `roots`: Number of root spans (spans without parents).
+  - `traceId`: The trace identifier string.
+
+```js
+const visualizer = document.querySelector('trace-visualizer');
+visualizer.addEventListener('trace-loaded', (e) => {
+  const { spans, roots, traceId } = e.detail;
+  console.log(`Loaded trace ${traceId} with ${spans} spans (${roots} root spans)`);
+});
+```
+
+### `span-selected`
+
+Fired when a user selects a span via mouse click or keyboard navigation (does not fire on programmatic `selectSpan()`).
+
+- **Detail payload**: `{ span: Span, spanId: string, spanIds: string[], view: string }`
+  - `span`: The primary selected OpenTelemetry span object.
+  - `spanId`: ID of the primary selected span.
+  - `spanIds`: Array of all currently selected span IDs.
+  - `view`: ID of the view where selection occurred (`waterfall`, `flame`, `service`, `sequence`, `inspector`).
+
+```js
+visualizer.addEventListener('span-selected', (e) => {
+  const { span, spanId, spanIds, view } = e.detail;
+  console.log(`Selected span ${span.name} (${spanId}) in view "${view}"`);
+});
+```
+
+### `view-changed`
+
+Fired when switching between active views.
+
+- **Detail payload**: `{ view: string, previous: string }`
+  - `view`: The newly active view ID.
+  - `previous`: The previously active view ID.
+
+```js
+visualizer.addEventListener('view-changed', (e) => {
+  const { view, previous } = e.detail;
+  console.log(`Switched view from ${previous} to ${view}`);
+});
 ```
 
 ---
@@ -145,6 +249,21 @@ visualizer.addEventListener('span-selected', (event) => {
   console.log('Selected span:', event.detail.span);
 });
 ```
+
+---
+
+## Upgrading from 1.0.0-RC2
+
+1.0.0-RC3 rebuilds the drawing layer; the data side is unchanged. Markup, the data attributes, `<trace-filter>`, `<span-kind-rule>`, `traceData`, `logData`, `config`, `fetchCallback`, `loadTraceData()` and `loadAndTransform()` work as before. What changed:
+
+- The wheel scrolls instead of zooming; use `wheel-zoom` for the old behaviour.
+- The `width` and `background-color` attributes are gone: size and colour the element with CSS (`style="width: 700px; --l2t-color-background: #f8f9ff"`). `full-width` is accepted and does nothing, because the element always fills its container. The element is 480 px tall unless you set `height`.
+- `color-scheme` still works; `kind-colors` is its new name. Span-kind colours can also be set with the `--l2t-color-kindServer`-style custom properties (`kindInternal`, `kindClient`, …).
+- The `virtual-scroll-activated` event is gone: rows are always virtualized.
+- `span-selected` fires only for the user's own clicks and keys, not for `selectSpan()`.
+- New: `views` and `view` attributes (tabs), the `flame` (Flame graph), `service` (Service graph), `sequence` (Sequence diagram), and `inspector` views (see Views above), the `view-changed` event, and `registerView()` for views of your own.
+- The exports `TraceViewModel`, `Template`, `resolveDisplayDefaults`, `DisplayConfig` and `ViewSpan` are removed. `TraceVisualizerConfig` remains (without the removed display fields). The headless functions (`transformLogs`, `buildSpanIndex`, `matchSpans`, …) are unchanged.
+- The inner DOM changed (`[data-role]` hooks and the old class names are gone); style through the custom properties and the exposed `part` names (`root`, `plot`, `filter-bar`, `legend`).
 
 ---
 
