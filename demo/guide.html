@@ -335,10 +335,13 @@
   </div>
 
   <div class="toc-group">
-    <span class="toc-group-label">Advanced</span>
+    <span class="toc-group-label">Advanced &amp; Views</span>
     <a href="#ex-23">23. Full advanced setup</a>
     <a href="#ex-24">24. View tabs</a>
     <a href="#ex-25">25. Flame graph</a>
+    <a href="#ex-26">26. Sequence diagram</a>
+    <a href="#ex-27">27. Service graph</a>
+    <a href="#ex-28">28. Store inspector</a>
   </div>
 </nav>
 
@@ -393,14 +396,15 @@
       The simplest possible usage: point <code>data-url</code> at a pre-built
       <a href="https://opentelemetry.io/docs/specs/otlp/" target="_blank">OTLP JSON</a> file.
       The component fetches it, parses the OTel structure, and renders the waterfall.
-      <code>full-width</code> stretches it to fill the container.
+      By default, <code>&lt;trace-visualizer&gt;</code> is a block element that fills 100% of its
+      container width. (The legacy <code>full-width</code> attribute is a no-op retained for backwards
+      compatibility).
     </p>
 
     <div class="code-block">
       <div class="code-label">HTML</div>
       <pre><code class="language-html">&lt;trace-visualizer
-  data-url="./otel-trace.json"
-  full-width&gt;
+  data-url="./otel-trace.json"&gt;
 &lt;/trace-visualizer&gt;
 
 &lt;script type="module" src="./dist/log2trace.min.js"&gt;&lt;/script&gt;</code></pre>
@@ -408,7 +412,7 @@
 
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex1" data-url="./otel-trace.json" full-width></trace-visualizer>
+      <trace-visualizer id="ex1" data-url="./otel-trace.json"></trace-visualizer>
     </div>
   </section>
 
@@ -473,7 +477,7 @@ el.traceData = {
 
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex2" full-width show-legend></trace-visualizer>
+      <trace-visualizer id="ex2" show-legend></trace-visualizer>
     </div>
   </section>
 
@@ -492,17 +496,22 @@ el.traceData = {
     <div class="callout">
       <strong>Required transform attributes:</strong>
       <code>trace-id-field</code>, <code>span-name-field</code>,
-      <code>service-name-field</code>, <code>timestamp-field</code>.
-      All others are optional enhancements.
+      <code>service-name-field</code>, <code>timestamp-field</code>.<br>
+      <strong>Hierarchy mapping attributes:</strong>
+      <code>span-id-field</code> (specifies the log field containing the unique span ID, e.g. <code>spanId</code>) and
+      <code>parent-span-id-field</code> (specifies the field pointing to the parent span ID, e.g. <code>parentSpanId</code>)
+      to reconstruct explicit parent-child causal hierarchies directly from logs.
     </div>
 
     <div class="code-block">
       <div class="code-label">HTML + JavaScript</div>
-      <pre><code class="language-html">&lt;trace-visualizer id="ex3" full-width
+      <pre><code class="language-html">&lt;trace-visualizer id="ex3"
   trace-id-field="requestId"
   span-name-field="action"
   service-name-field="service"
-  timestamp-field="timestamp"&gt;
+  timestamp-field="timestamp"
+  span-id-field="spanId"
+  parent-span-id-field="parentSpanId"&gt;
 &lt;/trace-visualizer&gt;</code></pre>
     </div>
 
@@ -516,13 +525,15 @@ document.querySelector('#ex3').logData = {
     spanNameField:   'action',
     serviceNameField:'service',
     timestampField:  'timestamp',
+    spanIdField:     'spanId',
+    parentSpanIdField: 'parentSpanId',
   }
 };</code></pre>
     </div>
 
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex3" full-width></trace-visualizer>
+      <trace-visualizer id="ex3"></trace-visualizer>
     </div>
   </section>
 
@@ -561,7 +572,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex4" full-width show-legend></trace-visualizer>
+      <trace-visualizer id="ex4" show-legend></trace-visualizer>
     </div>
   </section>
 
@@ -572,9 +583,13 @@ document.querySelector('#ex3').logData = {
   <section id="ex-5">
     <h2><span class="ex-num">5</span>Display options</h2>
     <p class="desc">
-      Control visual appearance: row height, padding, legend visibility and the detail panel
-      width. All can be set as HTML attributes or via the <code>.config</code> setter. Colours
-      are CSS custom properties on the element (<code>--l2t-color-background</code>,
+      Control visual appearance: row height, padding, legend visibility, label gutter column width,
+      and timeline rendering engine. All can be configured as HTML attributes or via the <code>.config</code> setter.
+      Use <code>renderer="dom|canvas"</code> (default <code>"dom"</code>) to choose the timeline painter:
+      <code>renderer="canvas"</code> switches to hardware-accelerated Canvas 2D rendering for extreme span counts
+      (e.g., 50,000+ spans). The <code>gutter-width</code> attribute (e.g. <code>gutter-width="320"</code>, default 280)
+      controls the left label column width in pixels.
+      Colours are CSS custom properties on the element (<code>--l2t-color-background</code>,
       <code>--l2t-color-accent</code>, and so on), so a page restyles the component with
       ordinary CSS; the <code>theme</code> attribute forces <code>light</code> or <code>dark</code>
       (by default it follows the page).
@@ -583,6 +598,8 @@ document.querySelector('#ex3').logData = {
     <div class="code-block">
       <div class="code-label">HTML</div>
       <pre><code class="language-html">&lt;trace-visualizer
+  renderer="dom"
+  gutter-width="300"
   show-legend
   span-height="40"
   span-padding="8"
@@ -593,7 +610,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex5" show-legend
+      <trace-visualizer id="ex5" renderer="dom" gutter-width="300" show-legend
         span-height="40"
         span-padding="8"
         detail-panel-width="35%"
@@ -607,33 +624,49 @@ document.querySelector('#ex3').logData = {
        EXAMPLE 6 — Color scheme
   ══════════════════════════════════════════════════════════ -->
   <section id="ex-6">
-    <h2><span class="ex-num">6</span>Custom color scheme</h2>
+    <h2><span class="ex-num">6</span>Span kind colors &amp; CSS custom properties</h2>
     <p class="desc">
-      Map each <code>SpanKind</code> numeric value to a CSS hex color via the
-      <code>color-scheme</code> attribute (JSON string) or the <code>colorScheme</code>
-      config property. Keys correspond to: <code>0</code> Unspecified, <code>1</code> Internal,
-      <code>2</code> Server, <code>3</code> Client, <code>4</code> Producer, <code>5</code> Consumer.
+      Customize colors for each <code>SpanKind</code> using the canonical <code>kind-colors</code> attribute
+      (or <code>kindColors</code> config property). Keys can be numeric codes (<code>0</code> Unspecified,
+      <code>1</code> Internal, <code>2</code> Server, <code>3</code> Client, <code>4</code> Producer,
+      <code>5</code> Consumer) or case-insensitive kind names (<code>"Internal"</code>, <code>"Server"</code>,
+      <code>"Client"</code>, <code>"Producer"</code>, <code>"Consumer"</code>).
+      Alternatively, style the element directly using CSS custom properties:
+      <code>--l2t-color-kindInternal</code>, <code>--l2t-color-kindServer</code>,
+      <code>--l2t-color-kindClient</code>, <code>--l2t-color-kindProducer</code>, and
+      <code>--l2t-color-kindConsumer</code>.
+      (The legacy <code>color-scheme</code> attribute is supported as a backwards-compatible alias for <code>kind-colors</code>).
     </p>
 
     <div class="code-block">
-      <div class="code-label">HTML</div>
+      <div class="code-label">HTML — canonical kind-colors attribute</div>
       <pre><code class="language-html">&lt;trace-visualizer
-  full-width show-legend
-  color-scheme='{
-    "0": "#b0bec5",
-    "1": "#7e57c2",
-    "2": "#26a69a",
-    "3": "#ef5350",
-    "4": "#ff7043",
-    "5": "#ab47bc"
+  show-legend
+  kind-colors='{
+    "Internal": "#7e57c2",
+    "Server":   "#26a69a",
+    "Client":   "#ef5350",
+    "Producer": "#ff7043",
+    "Consumer": "#ab47bc"
   }'&gt;
 &lt;/trace-visualizer&gt;</code></pre>
     </div>
 
+    <div class="code-block">
+      <div class="code-label">CSS — styling via design token custom properties</div>
+      <pre><code class="language-css">trace-visualizer.custom-theme {
+  --l2t-color-kindInternal: #7e57c2;
+  --l2t-color-kindServer:   #26a69a;
+  --l2t-color-kindClient:   #ef5350;
+  --l2t-color-kindProducer: #ff7043;
+  --l2t-color-kindConsumer: #ab47bc;
+}</code></pre>
+    </div>
+
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex6" full-width show-legend
-        color-scheme='{"0":"#b0bec5","1":"#7e57c2","2":"#26a69a","3":"#ef5350","4":"#ff7043","5":"#ab47bc"}'>
+      <trace-visualizer id="ex6" show-legend
+        kind-colors='{"Internal":"#7e57c2","Server":"#26a69a","Client":"#ef5350","Producer":"#ff7043","Consumer":"#ab47bc"}'>
       </trace-visualizer>
     </div>
   </section>
@@ -689,7 +722,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+      <pre><code class="language-html">&lt;trace-visualizer&gt;
   &lt;trace-filter
     field="spanName"
     label="Operation"
@@ -704,7 +737,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — try filtering</div>
     <div class="result-box">
-      <trace-visualizer id="ex8" full-width>
+      <trace-visualizer id="ex8">
         <trace-filter field="spanName" label="Operation" type="text" source="local"
           placeholder="Filter by operation name..." width="280" debounce="300">
         </trace-filter>
@@ -726,7 +759,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+      <pre><code class="language-html">&lt;trace-visualizer&gt;
   &lt;!-- Auto-populated from data --&gt;
   &lt;trace-filter
     field="serviceName"
@@ -755,7 +788,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex9" full-width>
+      <trace-visualizer id="ex9">
         <trace-filter field="serviceName" label="Service" type="dropdown" source="local"
           options-source="auto" placeholder="All services">
         </trace-filter>
@@ -780,7 +813,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+      <pre><code class="language-html">&lt;trace-visualizer&gt;
   &lt;trace-filter
     field="hasError"
     label="Errors Only"
@@ -792,7 +825,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — check the box to filter to errors</div>
     <div class="result-box">
-      <trace-visualizer id="ex10" full-width>
+      <trace-visualizer id="ex10">
         <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local">
         </trace-filter>
       </trace-visualizer>
@@ -813,7 +846,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+      <pre><code class="language-html">&lt;trace-visualizer&gt;
   &lt;trace-filter
     field="startTime"
     label="Time Range"
@@ -826,7 +859,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — adjust date range to filter spans</div>
     <div class="result-box">
-      <trace-visualizer id="ex11" full-width>
+      <trace-visualizer id="ex11">
         <trace-filter field="startTime" label="Time Range" type="datetime-range"
           source="local" auto-range>
         </trace-filter>
@@ -848,7 +881,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+      <pre><code class="language-html">&lt;trace-visualizer&gt;
   &lt;trace-filter
     field="serviceName"
     label="Services"
@@ -862,7 +895,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — select one or more services</div>
     <div class="result-box">
-      <trace-visualizer id="ex12" full-width>
+      <trace-visualizer id="ex12">
         <trace-filter field="serviceName" label="Services" type="multiselect"
           source="local" options-source="auto" width="220">
         </trace-filter>
@@ -883,7 +916,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width&gt;
+      <pre><code class="language-html">&lt;trace-visualizer&gt;
   &lt;trace-filter
     field="*"
     label="Search"
@@ -897,7 +930,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — type anything to search all fields</div>
     <div class="result-box">
-      <trace-visualizer id="ex13" full-width>
+      <trace-visualizer id="ex13">
         <trace-filter field="*" label="Search" type="text" source="local"
           placeholder="Search all fields..." width="320">
         </trace-filter>
@@ -920,7 +953,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width show-legend&gt;
+      <pre><code class="language-html">&lt;trace-visualizer show-legend&gt;
 
   &lt;!-- Wildcard global search --&gt;
   &lt;trace-filter field="*" label="Search" type="text" source="local"
@@ -951,7 +984,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — all filter types active</div>
     <div class="result-box">
-      <trace-visualizer id="ex14" full-width show-legend>
+      <trace-visualizer id="ex14" show-legend>
         <trace-filter field="*" label="Search" type="text" source="local"
           placeholder="Search all..." width="220"></trace-filter>
         <trace-filter field="spanName" label="Operation" type="text" source="local"
@@ -987,7 +1020,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer id="ex15" full-width auto-fetch="false"&gt;
+      <pre><code class="language-html">&lt;trace-visualizer id="ex15" auto-fetch="false"&gt;
 
   &lt;trace-filter
     field="requestId"
@@ -1026,7 +1059,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — select a Request ID, then click Search</div>
     <div class="result-box">
-      <trace-visualizer id="ex15" full-width auto-fetch="false"
+      <trace-visualizer id="ex15" auto-fetch="false"
         trace-id-field="requestId"
         span-name-field="action"
         service-name-field="service"
@@ -1060,7 +1093,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer full-width show-legend default-span-kind="Internal"&gt;
+      <pre><code class="language-html">&lt;trace-visualizer show-legend default-span-kind="Internal"&gt;
 
   &lt;!-- Single-field shorthand --&gt;
   &lt;span-kind-rule kind="Server"   match-field="service" match-value="api"&gt;&lt;/span-kind-rule&gt;
@@ -1076,7 +1109,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — notice the different colors per span kind</div>
     <div class="result-box">
-      <trace-visualizer id="ex16" full-width show-legend default-span-kind="Internal">
+      <trace-visualizer id="ex16" show-legend default-span-kind="Internal">
         <span-kind-rule kind="Server"   match-field="service" match-value="api"></span-kind-rule>
         <span-kind-rule kind="Consumer" match-field="service" match-value="auth"></span-kind-rule>
         <span-kind-rule kind="Client"   match='{"service":"db","action":"db.query"}'></span-kind-rule>
@@ -1086,39 +1119,63 @@ document.querySelector('#ex3').logData = {
 
 
   <!-- ══════════════════════════════════════════════════════════
-       EXAMPLE 17 — span-selected event
+       EXAMPLE 17 — span-selected & lifecycle events
   ══════════════════════════════════════════════════════════ -->
   <section id="ex-17">
-    <h2><span class="ex-num">17</span><code>span-selected</code> event</h2>
+    <h2><span class="ex-num">17</span><code>span-selected</code> &amp; lifecycle events</h2>
     <p class="desc">
-      Fired when the user clicks a span bar. <code>event.detail.span</code> is the full
-      <code>Span</code> OTel object. Use this to drive custom side panels, analytics, or
-      cross-component navigation.
+      The component dispatches DOM CustomEvents during lifecycle transitions and user interaction.
+      When a span is selected in any view, <code>span-selected</code> fires. Its detail payload carries
+      <code>event.detail.span</code> (the full OTel <code>Span</code> object),
+      <code>event.detail.spanId</code> (primary selected span ID string),
+      <code>event.detail.spanIds</code> (array of all currently selected span IDs), and
+      <code>event.detail.view</code> (active view identifier where the selection occurred, e.g. <code>"waterfall"</code>, <code>"sequence"</code>, <code>"service"</code>, <code>"flame"</code>, or <code>"inspector"</code>).
     </p>
+
+    <div class="callout">
+      <strong>Lifecycle event — <code>trace-loaded</code>:</strong>
+      Fires when a trace finishes loading and indexing. Payload <code>event.detail</code> provides
+      <code>{ spans, roots, traceId }</code>: the total number of indexed spans, the count of root spans,
+      and the traceId string.
+    </div>
 
     <div class="code-block">
       <div class="code-label">JavaScript</div>
-      <pre><code class="language-javascript">document.querySelector('#ex17').addEventListener('span-selected', (e) => {
-  const { span } = e.detail;
+      <pre><code class="language-javascript">const el = document.querySelector('#ex17');
+
+// Lifecycle: trace-loaded { spans, roots, traceId }
+el.addEventListener('trace-loaded', (e) => {
+  const { spans, roots, traceId } = e.detail;
+  console.log(`Loaded trace ${traceId}: ${spans} spans across ${roots} root(s)`);
+});
+
+// Selection: span-selected { span, spanId, spanIds, view }
+el.addEventListener('span-selected', (e) => {
+  const { span, spanId, spanIds, view } = e.detail;
   document.querySelector('#ex17-output').textContent =
     JSON.stringify({
-      name:      span.name,
-      kind:      span.kind,
-      spanId:    span.spanId,
-      parentId:  span.parentSpanId,
-      status:    span.status,
-      startNs:   span.startTimeUnixNano,
-      endNs:     span.endTimeUnixNano,
-      attributes: span.attributes,
+      view,
+      spanId,
+      spanIds,
+      span: {
+        name:       span.name,
+        kind:       span.kind,
+        spanId:     span.spanId,
+        parentId:   span.parentSpanId,
+        status:     span.status,
+        startNs:    span.startTimeUnixNano,
+        endNs:      span.endTimeUnixNano,
+        attributes: span.attributes,
+      }
     }, null, 2);
 });</code></pre>
     </div>
 
     <div class="result-label">&#9654; Live result — click any span bar</div>
     <div class="result-box">
-      <trace-visualizer id="ex17" full-width></trace-visualizer>
+      <trace-visualizer id="ex17"></trace-visualizer>
     </div>
-    <div class="result-label" style="margin-top:0.75rem">Selected span (JSON):</div>
+    <div class="result-label" style="margin-top:0.75rem">Selected span (JSON with spanId, spanIds, and view):</div>
     <pre id="ex17-output" class="output-pre">// click a span above to see its data here</pre>
   </section>
 
@@ -1146,7 +1203,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — change any filter</div>
     <div class="result-box">
-      <trace-visualizer id="ex18" full-width>
+      <trace-visualizer id="ex18">
         <trace-filter field="spanName" label="Operation" type="text" source="local"
           placeholder="Type to filter..." width="250"></trace-filter>
         <trace-filter field="serviceName" label="Service" type="dropdown" source="local"
@@ -1194,7 +1251,7 @@ document.querySelector('#ex3').logData = {
 
     <div class="result-label">&#9654; Live result — click the timeline, then use arrow keys</div>
     <div class="result-box">
-      <trace-visualizer id="ex19" full-width show-legend></trace-visualizer>
+      <trace-visualizer id="ex19" show-legend></trace-visualizer>
     </div>
   </section>
 
@@ -1237,7 +1294,7 @@ async function loadLogs() {
 
     <div class="result-label">&#9654; Live result</div>
     <div class="result-box">
-      <trace-visualizer id="ex20" full-width show-legend></trace-visualizer>
+      <trace-visualizer id="ex20" show-legend></trace-visualizer>
     </div>
   </section>
 
@@ -1255,24 +1312,24 @@ async function loadLogs() {
     <div class="code-block">
       <div class="code-label">HTML — no data (empty state)</div>
       <pre><code class="language-html">&lt;!-- No data-url and no programmatic data → empty state --&gt;
-&lt;trace-visualizer full-width&gt;&lt;/trace-visualizer&gt;</code></pre>
+&lt;trace-visualizer&gt;&lt;/trace-visualizer&gt;</code></pre>
     </div>
 
     <div class="result-label">&#9654; Empty state</div>
     <div class="result-box">
-      <trace-visualizer id="ex21a" full-width></trace-visualizer>
+      <trace-visualizer id="ex21a"></trace-visualizer>
     </div>
 
     <br>
 
     <div class="code-block">
       <div class="code-label">HTML — bad URL (error state)</div>
-      <pre><code class="language-html">&lt;trace-visualizer data-url="./does-not-exist.json" full-width&gt;&lt;/trace-visualizer&gt;</code></pre>
+      <pre><code class="language-html">&lt;trace-visualizer data-url="./does-not-exist.json"&gt;&lt;/trace-visualizer&gt;</code></pre>
     </div>
 
     <div class="result-label">&#9654; Error state (404)</div>
     <div class="result-box">
-      <trace-visualizer id="ex21b" data-url="./does-not-exist.json" full-width></trace-visualizer>
+      <trace-visualizer id="ex21b" data-url="./does-not-exist.json"></trace-visualizer>
     </div>
 
     <br>
@@ -1284,7 +1341,7 @@ async function loadLogs() {
 
     <div class="result-label">&#9654; Empty TraceData (zero spans)</div>
     <div class="result-box">
-      <trace-visualizer id="ex21c" full-width></trace-visualizer>
+      <trace-visualizer id="ex21c"></trace-visualizer>
     </div>
   </section>
 
@@ -1338,7 +1395,7 @@ console.log(JSON.stringify(traceData, null, 2));</code></pre>
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer id="ex23" full-width show-legend
+      <pre><code class="language-html">&lt;trace-visualizer id="ex23" show-legend
   auto-fetch="false"
   trace-id-field="requestId"
   span-group-fields="service,action"
@@ -1399,7 +1456,7 @@ el23.addEventListener('span-selected', (e) => {
 
     <div class="result-label">&#9654; Live result — select a Trace, then use filters &amp; click spans</div>
     <div class="result-box">
-      <trace-visualizer id="ex23" full-width show-legend
+      <trace-visualizer id="ex23" show-legend
         auto-fetch="false"
         trace-id-field="requestId"
         span-group-fields="service,action"
@@ -1447,14 +1504,16 @@ el23.addEventListener('span-selected', (e) => {
     <h2><span class="ex-num">24</span>View tabs</h2>
     <p class="desc">
       A trace can be drawn by more than one <em>view</em>. List them in the <code>views</code>
-      attribute and tabs appear; <code>view</code> says which one is shown first. The waterfall is
-      the default, <code>flame</code> is the flame graph of the next example, and <code>inspector</code>
-      is a small view that prints the shared state (selection, hover, collapsed spans, filter,
-      time window). The views share one store, so a
-      span selected in one is selected in the other, and the waterfall comes back to the camera and
-      scroll position you left. Other views register themselves with
-      <code>registerView()</code> from the <code>log2trace-ui</code> entry. Listen for
-      <code>view-changed</code>; <code>span-selected</code> carries the <code>view</code> it came from.
+      attribute and tab buttons appear, labeled <strong>Waterfall</strong>, <strong>Flame graph</strong>,
+      <strong>Service graph</strong>, <strong>Sequence</strong>, and <strong>Inspector</strong>;
+      <code>view</code> specifies which tab is displayed initially. The waterfall view is
+      the default, <code>flame</code> aggregates call-path trees, <code>service</code> renders the
+      microservice dependency topology DAG, <code>sequence</code> draws temporal interaction lifelines,
+      and <code>inspector</code> displays reactive store state (selection, hover, collapsed spans,
+      filter matches, time window). Views share a single reactive store, so selections and time windows
+      synchronize seamlessly across tabs, and the waterfall preserves camera and scroll positions.
+      Custom views register themselves with <code>registerView()</code> from the <code>log2trace-ui</code> entry.
+      Listen for <code>view-changed</code>; <code>span-selected</code> carries the <code>view</code> it originated from.
     </p>
 
     <div class="code-block">
@@ -1463,7 +1522,7 @@ el23.addEventListener('span-selected', (e) => {
 &lt;/trace-visualizer&gt;</code></pre>
     </div>
 
-    <div class="result-label">&#9654; Live result — click a span, then switch between Waterfall, Flame, Service, Sequence, and Inspector tabs</div>
+    <div class="result-label">&#9654; Live result — click a span, then switch between Waterfall, Flame graph, Service graph, Sequence, and Inspector tabs</div>
     <div class="result-box">
       <trace-visualizer id="ex24" views="waterfall,flame,service,sequence,inspector" show-legend></trace-visualizer>
     </div>
@@ -1513,10 +1572,202 @@ el23.addEventListener('span-selected', (e) => {
   </section>
 
 
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 26 — Sequence diagram
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-26">
+    <h2><span class="ex-num">26</span>Sequence diagram</h2>
+    <p class="desc">
+      <code>sequence</code> presents distributed execution as a UML-style temporal sequence diagram.
+      Participants are organized into vertical <em>lifelines</em>: the initial gate lifeline
+      (<code>*</code>, representing the client or external entrypoint), known services, and inferred peer
+      dependencies such as databases (<code>db</code>), message queues (<code>queue</code>), caches (<code>cache</code>),
+      and external HTTP endpoints (<code>http</code>).
+      Horizontal arrows represent synchronous request calls and paired return arrows, asynchronous producer messages,
+      and self-calls. Vertical activation bars denote active processing duration on each participant.
+      Consecutive repetitive sibling calls (e.g. repeated SQL queries in a loop) are automatically folded into a
+      compact <code>loop &times;N</code> block to eliminate visual clutter.
+    </p>
+
+    <h3 style="font-size:1.05rem;font-weight:700;margin:1.25rem 0 0.5rem;color:#1a1a2e">Configuration options</h3>
+    <table class="kbd-table" style="margin-bottom:1.25rem">
+      <thead>
+        <tr><th>Attribute</th><th>Config Option</th><th>Values / Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>sequence-internal</code></td>
+          <td><code>sequenceInternal</code></td>
+          <td><code>auto</code> | <code>hide</code> | <code>show</code></td>
+          <td>Controls internal non-network spans within the same service (default <code>auto</code>, which shows them if they have descendants or attributes).</td>
+        </tr>
+        <tr>
+          <td><code>sequence-returns</code></td>
+          <td><code>sequenceReturns</code></td>
+          <td><code>all</code> | <code>errors</code> | <code>none</code></td>
+          <td>Controls synchronous return arrows (default <code>all</code> draws all return arrows; <code>errors</code> draws returns only for failed calls; <code>none</code> hides return arrows).</td>
+        </tr>
+        <tr>
+          <td><code>sequence-fold</code></td>
+          <td><code>sequenceFold</code></td>
+          <td><code>number</code></td>
+          <td>Minimum consecutive identical sibling calls before collapsing into a <code>loop &times;N</code> block (default <code>3</code>; <code>0</code> disables folding).</td>
+        </tr>
+        <tr>
+          <td><code>row-height</code></td>
+          <td><code>rowHeight</code></td>
+          <td><code>number</code> (18&ndash;48)</td>
+          <td>Row height in pixels for each step row (default <code>28</code>).</td>
+        </tr>
+        <tr>
+          <td><code>wheel-zoom</code></td>
+          <td><code>wheelZoom</code></td>
+          <td><code>boolean</code></td>
+          <td>Enables mouse wheel zooming to adjust step row density (default <code>false</code>).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:1.05rem;font-weight:700;margin:1.25rem 0 0.5rem;color:#1a1a2e">Keyboard navigation &amp; commands</h3>
+    <table class="kbd-table" style="margin-bottom:1.25rem">
+      <thead>
+        <tr><th>Key</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd> (<code>ArrowUp</code> / <code>ArrowDown</code>)</td><td>Step navigation: move selection to the previous or next row</td></tr>
+        <tr><td><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> (<code>ArrowLeft</code> / <code>ArrowRight</code>)</td><td>Lifeline navigation: jump to parent activation or child activation step</td></tr>
+        <tr><td><kbd>R</kbd> / <kbd>Shift+R</kbd></td><td>Jump between paired request call arrow and return arrow</td></tr>
+        <tr><td><kbd>E</kbd> / <kbd>Shift+E</kbd></td><td>Jump to next / previous error step in the trace</td></tr>
+        <tr><td><kbd>Enter</kbd> / <kbd>Space</kbd></td><td>Expand or collapse folded loop block (<code>loop &times;N</code>) or activation subtree</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Toggle column width fitting (fit columns to container width vs fixed spacing)</td></tr>
+        <tr><td><kbd>I</kbd></td><td>Cycle internal span visibility (<code>auto</code> &rarr; <code>show</code> &rarr; <code>hide</code>)</td></tr>
+        <tr><td><kbd>+</kbd> / <kbd>-</kbd></td><td>Density zoom: increase or decrease row height pitch</td></tr>
+        <tr><td><kbd>Escape</kbd></td><td>Clear selection</td></tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer
+  views="sequence,waterfall"
+  view="sequence"
+  sequence-internal="auto"
+  sequence-returns="all"
+  sequence-fold="3"
+  row-height="28"
+  show-legend
+  data-url="./otel-trace.json"&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — explore the sequence diagram</div>
+    <div class="result-box">
+      <trace-visualizer id="ex26" views="sequence,waterfall" view="sequence" show-legend sequence-internal="auto" sequence-returns="all" sequence-fold="3" row-height="28" data-url="./otel-trace.json"></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 27 — Service graph
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-27">
+    <h2><span class="ex-num">27</span>Service graph</h2>
+    <p class="desc">
+      <code>service</code> renders the end-to-end distributed trace topology as a directed acyclic graph (DAG)
+      using layered Sugiyama layout. Each microservice is represented as a rich node card, while cross-service
+      RPCs and HTTP requests are drawn as directed Bézier curves with call volume and latency badges.
+      External leaf dependencies such as databases (SQL, Redis, MongoDB), message queues (Kafka, RabbitMQ),
+      and external HTTP endpoints are automatically inferred from span attributes and rendered as leaf nodes.
+    </p>
+
+    <div class="callout">
+      <strong>Topology &amp; Metrics:</strong>
+      <ul style="margin: 0.5rem 0 0 1.25rem; line-height: 1.6">
+        <li><strong>Node metrics:</strong> Total span count, total execution duration, self-time breakdown bars, and error badges.</li>
+        <li><strong>Edge metrics:</strong> Directed arrows showing call volume (&times; count), p95 / average latency, and red error styling for failed requests.</li>
+        <li><strong>Dependency inference:</strong> Database queries, cache lookups, and message publishing become inferred peer nodes even without child spans.</li>
+      </ul>
+    </div>
+
+    <h3 style="font-size:1.05rem;font-weight:700;margin:1.25rem 0 0.5rem;color:#1a1a2e">2D Camera navigation &amp; spatial keyboard controls</h3>
+    <table class="kbd-table" style="margin-bottom:1.25rem">
+      <thead>
+        <tr><th>Control / Key</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Click &amp; Drag</strong></td><td>Smooth 2D camera pan across the topology canvas</td></tr>
+        <tr><td><strong>Mouse Wheel / Pinch</strong></td><td>Zoom in and out centered at cursor position</td></tr>
+        <tr><td><strong>Double-Click Node</strong></td><td>Center and zoom the camera directly onto the selected service node</td></tr>
+        <tr><td><strong>Double-Click Canvas</strong> / <kbd>0</kbd></td><td>Fit entire graph into the view container</td></tr>
+        <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd> / <kbd>&larr;</kbd> / <kbd>&rarr;</kbd> (<code>ArrowUp</code>, <code>ArrowDown</code>, <code>ArrowLeft</code>, <code>ArrowRight</code>)</td><td>4-way spatial navigation to nearest neighbor service node</td></tr>
+        <tr><td><kbd>Enter</kbd> / <kbd>Space</kbd></td><td>Center and focus camera on the currently selected node</td></tr>
+        <tr><td><kbd>+</kbd> / <kbd>-</kbd></td><td>Step camera zoom in / out by 20%</td></tr>
+        <tr><td><kbd>Escape</kbd></td><td>Clear selected node/edge; if none selected, fit graph to view</td></tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer
+  views="service,waterfall"
+  view="service"
+  show-legend
+  data-url="./otel-trace.json"&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — pan, zoom, and navigate the service graph</div>
+    <div class="result-box">
+      <trace-visualizer id="ex27" views="service,waterfall" view="service" show-legend data-url="./otel-trace.json"></trace-visualizer>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       EXAMPLE 28 — Store inspector
+  ══════════════════════════════════════════════════════════ -->
+  <section id="ex-28">
+    <h2><span class="ex-num">28</span>Store inspector</h2>
+    <p class="desc">
+      <code>inspector</code> is a lightweight diagnostic view that exposes the underlying reactive store state
+      shared across all views. Because all views (Waterfall, Flame graph, Service graph, Sequence, and Inspector)
+      subscribe to the same centralized reactive store, inspecting this state demonstrates how selection, hover,
+      collapsed subtrees, filter matches, and time windows are unified.
+    </p>
+
+    <div class="callout">
+      <strong>Reactive store metrics displayed:</strong>
+      <ul style="margin: 0.5rem 0 0 1.25rem; line-height: 1.6">
+        <li><strong>Data phase &amp; total spans:</strong> Current loading/ready phase, total indexed spans, and root span trees.</li>
+        <li><strong>Trace identifier:</strong> The active trace ID.</li>
+        <li><strong>Selected &amp; Hovered targets:</strong> Selected span count, primary span name, and originating view component.</li>
+        <li><strong>Collapsed &amp; Filter matches:</strong> Number of collapsed subtrees and filter match counts out of total spans.</li>
+        <li><strong>Time window:</strong> Active zoom window interval in milliseconds or "whole trace".</li>
+        <li><strong>Selected spans list:</strong> Interactive synchronized list of currently selected spans. Hovering or clicking items updates selection in all other tabs.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">HTML</div>
+      <pre><code class="language-html">&lt;trace-visualizer
+  views="inspector,waterfall,sequence"
+  view="inspector"
+  show-legend
+  data-url="./otel-trace.json"&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+    </div>
+
+    <div class="result-label">&#9654; Live result — inspect live reactive state</div>
+    <div class="result-box">
+      <trace-visualizer id="ex28" views="inspector,waterfall,sequence" view="inspector" show-legend data-url="./otel-trace.json"></trace-visualizer>
+    </div>
+  </section>
+
+
   <footer>
     <a href="./demo.html">&larr; Back to demos</a> &middot;
     <a href="https://github.com/rukpet/log2trace" target="_blank">GitHub</a> &middot;
-    <a href="/api/index.html" target="_blank">API Docs</a>
+    <a href="./docs/index.html" target="_blank">API Docs</a>
   </footer>
 
 </main>
@@ -1678,19 +1929,28 @@ document.querySelector('#ex7b').traceData = SIMPLE_OTEL;
 // Ex 16 — Span-kind rules
 document.querySelector('#ex16').logData = { logs: SIMPLE_LOGS, config: LOG_CONFIG };
 
-// Ex 17 — span-selected event
+// Ex 17 — span-selected & trace-loaded events
 {
   const el = document.querySelector('#ex17');
   el.traceData = SIMPLE_OTEL;
+  el.addEventListener('trace-loaded', (e) => {
+    const { spans, roots, traceId } = e.detail;
+    console.log(`[trace-loaded] traceId=${traceId} spans=${spans} roots=${roots}`);
+  });
   el.addEventListener('span-selected', (e) => {
-    const s = e.detail.span;
+    const { span, spanId, spanIds, view } = e.detail;
     document.querySelector('#ex17-output').textContent = JSON.stringify({
-      name:       s.name,
-      kind:       s.kind,
-      spanId:     s.spanId,
-      parentId:   s.parentSpanId,
-      status:     s.status,
-      attributes: s.attributes,
+      view,
+      spanId,
+      spanIds,
+      span: {
+        name:       span.name,
+        kind:       span.kind,
+        spanId:     span.spanId,
+        parentId:   span.parentSpanId,
+        status:     span.status,
+        attributes: span.attributes,
+      }
     }, null, 2);
   });
 }
@@ -1758,6 +2018,16 @@ document.querySelector('#btn-transform').addEventListener('click', () => {
     document.querySelector('#ex24-output').textContent = `view-changed: ${e.detail.previous} -> ${e.detail.view}`;
   });
 }
+
+// Ex 26–28 — Sequence, Service graph, Store inspector fallback
+['#ex26', '#ex27', '#ex28'].forEach(sel => {
+  const el = document.querySelector(sel);
+  if (el) {
+    el.addEventListener('error', () => {
+      if (!el.traceData) el.traceData = SIMPLE_OTEL;
+    });
+  }
+});
 
 // ── Sticky TOC active-link tracking ────────────────────────────────────────
 const tocLinks = document.querySelectorAll('#toc a[href^="#"]');
