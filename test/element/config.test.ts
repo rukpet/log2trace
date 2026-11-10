@@ -5,6 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  checkViewsDeprecated,
   DEPRECATED_VIEWS_WARNING,
   isTransformReady,
   kindColorOverrides,
@@ -141,46 +142,84 @@ test('kind colour overrides take numbers and names and skip the rest', () => {
   assert.deepEqual(kindColorOverrides(undefined), []);
 });
 
-test('the views attribute is ignored and warned about', () => {
+test('the views attribute is ignored in readConfig', () => {
+  const host = new FakeSource('trace-visualizer', { views: 'flame,service' });
+  const config = readConfig(host);
+  assert.equal(config.viewConfigs, undefined);
+});
+
+test('checkViewsDeprecated warns once per element when views attribute is present', () => {
   const warnings: string[] = [];
   const originalWarn = console.warn;
   console.warn = (msg: string) => { warnings.push(msg); };
   try {
-    const host = new FakeSource('trace-visualizer', { views: 'flame,service' });
-    const config = readConfig(host);
-    assert.equal(config.viewConfigs, undefined);
+    const hostWithViews = new FakeSource('trace-visualizer', { views: 'flame,service' });
+    let warned = false;
+
+    // First check triggers warning and returns true
+    warned = checkViewsDeprecated(hostWithViews, warned);
+    assert.equal(warned, true);
     assert.equal(warnings.length, 1);
     assert.equal(warnings[0], DEPRECATED_VIEWS_WARNING);
+
+    // Subsequent checks (e.g. repeated read or lifecycle) do not warn again
+    warned = checkViewsDeprecated(hostWithViews, warned);
+    assert.equal(warned, true);
+    assert.equal(warnings.length, 1, 'warned only once');
+
+    // Host without views attribute does not warn
+    const hostWithoutViews = new FakeSource('trace-visualizer');
+    const unwarned = checkViewsDeprecated(hostWithoutViews, false);
+    assert.equal(unwarned, false);
+    assert.equal(warnings.length, 1);
   } finally {
     console.warn = originalWarn;
   }
 });
 
-test('resolveDeclaredViews drops unknown types and deduplicates type values', () => {
-  const isKnown = (type: string) => ['waterfall', 'flame', 'service'].includes(type);
+test('resolveDeclaredViews drops unknown types, warns about them, and deduplicates type values', () => {
+  const warnings: string[] = [];
+  const originalWarn = console.warn;
+  console.warn = (msg: string) => { warnings.push(msg); };
+  try {
+    const isKnown = (type: string) => ['waterfall', 'flame', 'service'].includes(type);
 
-  // Unknown types dropped, duplicates dropped (first occurrence kept)
-  const configs = [
-    { type: 'waterfall', label: 'First Waterfall' },
-    { type: 'unknown-view' },
-    { type: 'flame', label: 'Flame' },
-    { type: 'waterfall', label: 'Duplicate Waterfall' },
-    { type: 'another-bogus' },
-  ];
-  const resolved = resolveDeclaredViews(configs, isKnown);
-  assert.deepEqual(resolved, [
-    { type: 'waterfall', label: 'First Waterfall' },
-    { type: 'flame', label: 'Flame' },
-  ]);
+    // Unknown types dropped (with warning), duplicates dropped (first occurrence kept)
+    const configs = [
+      { type: 'waterfall', label: 'First Waterfall' },
+      { type: 'inspector' },
+      { type: 'flame', label: 'Flame' },
+      { type: 'waterfall', label: 'Duplicate Waterfall' },
+      { type: 'unknown-view' },
+    ];
+    const resolved = resolveDeclaredViews(configs, isKnown);
+    assert.deepEqual(resolved, [
+      { type: 'waterfall', label: 'First Waterfall' },
+      { type: 'flame', label: 'Flame' },
+    ]);
+    assert.equal(warnings.length, 2);
+    assert.ok(warnings[0].includes('inspector'), 'warns about removed inspector type');
+    assert.ok(warnings[1].includes('unknown-view'), 'warns about unknown type');
 
-  // When all declared are unknown, falls back to waterfall
-  assert.deepEqual(resolveDeclaredViews([{ type: 'bad1' }, { type: 'bad2' }], isKnown), [
-    { type: 'waterfall' },
-  ]);
+    // When all declared are unknown, warns and falls back to waterfall
+    assert.deepEqual(resolveDeclaredViews([{ type: 'bad1' }, { type: 'bad2' }], isKnown), [
+      { type: 'waterfall' },
+    ]);
 
-  // Empty or undefined fallback
-  assert.deepEqual(resolveDeclaredViews([], isKnown), [{ type: 'waterfall' }]);
-  assert.deepEqual(resolveDeclaredViews(undefined, isKnown), [{ type: 'waterfall' }]);
+    // Empty or undefined fallback
+    assert.deepEqual(resolveDeclaredViews([], isKnown), [{ type: 'waterfall' }]);
+    assert.deepEqual(resolveDeclaredViews(undefined, isKnown), [{ type: 'waterfall' }]);
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test('resolveDeclaredViews calls onUnknown callback if provided', () => {
+  const unknown: string[] = [];
+  const isKnown = (type: string) => type === 'waterfall';
+  const resolved = resolveDeclaredViews([{ type: 'flame' }, { type: 'inspector' }], isKnown, (type) => unknown.push(type));
+  assert.deepEqual(resolved, [{ type: 'waterfall' }]);
+  assert.deepEqual(unknown, ['flame', 'inspector']);
 });
 
 test('resolveActiveView preserves valid requested view, or falls back when view is removed', () => {

@@ -128,11 +128,17 @@ function parseTraceView(el: AttributeSource): TraceViewConfig | null {
 export const DEPRECATED_VIEWS_WARNING =
   '<trace-visualizer>: The "views" attribute is deprecated and ignored. Declare child <trace-view> elements instead.';
 
+/** Warn once if the deprecated `views` attribute is present on an element. */
+export function checkViewsDeprecated(source: AttributeSource, alreadyWarned: boolean): boolean {
+  if (!alreadyWarned && source.hasAttribute('views')) {
+    console.warn(DEPRECATED_VIEWS_WARNING);
+    return true;
+  }
+  return alreadyWarned;
+}
+
 /** Read the attributes and the `<trace-view>`, `<trace-filter>` and `<span-kind-rule>` children of an element. */
 export function readConfig(source: AttributeSource): TraceVisualizerConfig {
-  if (source.hasAttribute('views') || source.getAttribute('views') !== null) {
-    console.warn(DEPRECATED_VIEWS_WARNING);
-  }
   const config: TraceVisualizerConfig = {};
   const str = (name: string): string | undefined => source.getAttribute(name) ?? undefined;
   const csv = (name: string): string[] | undefined => {
@@ -239,11 +245,12 @@ export function kindColorOverrides(colors: Record<string, string> | undefined): 
 
 /**
  * Filter and deduplicate declared view configurations against registered/known views.
- * An empty or unusable list falls back to the default waterfall view.
+ * Warns about unknown view types. An empty or unusable list falls back to the default waterfall view.
  */
 export function resolveDeclaredViews(
   viewConfigs: readonly TraceViewConfig[] | undefined,
   isKnown: (type: string) => boolean = () => true,
+  onUnknown?: (type: string) => void,
 ): TraceViewConfig[] {
   if (!viewConfigs || viewConfigs.length === 0) {
     return [{ type: 'waterfall' }];
@@ -251,7 +258,15 @@ export function resolveDeclaredViews(
   const seen = new Set<string>();
   const valid: TraceViewConfig[] = [];
   for (const config of viewConfigs) {
-    if (!seen.has(config.type) && isKnown(config.type)) {
+    if (!isKnown(config.type)) {
+      if (onUnknown) {
+        onUnknown(config.type);
+      } else {
+        console.warn(`<trace-visualizer>: Unknown view type "${config.type}". Falling back to waterfall.`);
+      }
+      continue;
+    }
+    if (!seen.has(config.type)) {
       seen.add(config.type);
       valid.push(config);
     }
