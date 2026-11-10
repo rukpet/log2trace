@@ -341,7 +341,6 @@
     <a href="#ex-25">25. Flame graph</a>
     <a href="#ex-26">26. Sequence diagram</a>
     <a href="#ex-27">27. Service graph</a>
-    <a href="#ex-28">28. Store inspector</a>
   </div>
 </nav>
 
@@ -1129,7 +1128,7 @@ document.querySelector('#ex3').logData = {
       <code>event.detail.span</code> (the full OTel <code>Span</code> object),
       <code>event.detail.spanId</code> (primary selected span ID string),
       <code>event.detail.spanIds</code> (array of all currently selected span IDs), and
-      <code>event.detail.view</code> (active view identifier where the selection occurred, e.g. <code>"waterfall"</code>, <code>"sequence"</code>, <code>"service"</code>, <code>"flame"</code>, or <code>"inspector"</code>).
+      <code>event.detail.view</code> (active view identifier where the selection occurred, e.g. <code>"waterfall"</code>, <code>"sequence"</code>, <code>"service"</code>, or <code>"flame"</code>).
     </p>
 
     <div class="callout">
@@ -1505,26 +1504,25 @@ el23.addEventListener('span-selected', (e) => {
     <p class="desc">
       A trace can be drawn by more than one <em>view</em>. List them in the <code>views</code>
       attribute and tab buttons appear, labeled <strong>Waterfall</strong>, <strong>Flame graph</strong>,
-      <strong>Service graph</strong>, <strong>Sequence</strong>, and <strong>Inspector</strong>;
+      <strong>Service graph</strong>, and <strong>Sequence</strong>;
       <code>view</code> specifies which tab is displayed initially. The waterfall view is
       the default, <code>flame</code> aggregates call-path trees, <code>service</code> renders the
-      microservice dependency topology DAG, <code>sequence</code> draws temporal interaction lifelines,
-      and <code>inspector</code> displays reactive store state (selection, hover, collapsed spans,
-      filter matches, time window). Views share a single reactive store, so selections and time windows
-      synchronize seamlessly across tabs, and the waterfall preserves camera and scroll positions.
+      microservice dependency topology DAG, and <code>sequence</code> draws temporal interaction lifelines.
+      Views share a single reactive store, so selections and time windows synchronize seamlessly across tabs,
+      and the waterfall preserves camera and scroll positions.
       Custom views register themselves with <code>registerView()</code> from the <code>log2trace-ui</code> entry.
       Listen for <code>view-changed</code>; <code>span-selected</code> carries the <code>view</code> it originated from.
     </p>
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer views="waterfall,flame,service,sequence,inspector" view="waterfall" show-legend&gt;
+      <pre><code class="language-html">&lt;trace-visualizer views="waterfall,flame,service,sequence" view="waterfall" show-legend&gt;
 &lt;/trace-visualizer&gt;</code></pre>
     </div>
 
-    <div class="result-label">&#9654; Live result — click a span, then switch between Waterfall, Flame graph, Service graph, Sequence, and Inspector tabs</div>
+    <div class="result-label">&#9654; Live result — click a span, then switch between Waterfall, Flame graph, Service graph, and Sequence tabs</div>
     <div class="result-box">
-      <trace-visualizer id="ex24" views="waterfall,flame,service,sequence,inspector" show-legend></trace-visualizer>
+      <trace-visualizer id="ex24" views="waterfall,flame,service,sequence" show-legend></trace-visualizer>
     </div>
     <pre id="ex24-output" class="output-pre">// switch tabs to see view-changed here</pre>
   </section>
@@ -1722,46 +1720,6 @@ el23.addEventListener('span-selected', (e) => {
     </div>
   </section>
 
-
-  <!-- ══════════════════════════════════════════════════════════
-       EXAMPLE 28 — Store inspector
-  ══════════════════════════════════════════════════════════ -->
-  <section id="ex-28">
-    <h2><span class="ex-num">28</span>Store inspector</h2>
-    <p class="desc">
-      <code>inspector</code> is a lightweight diagnostic view that exposes the underlying reactive store state
-      shared across all views. Because all views (Waterfall, Flame graph, Service graph, Sequence, and Inspector)
-      subscribe to the same centralized reactive store, inspecting this state demonstrates how selection, hover,
-      collapsed subtrees, filter matches, and time windows are unified.
-    </p>
-
-    <div class="callout">
-      <strong>Reactive store metrics displayed:</strong>
-      <ul style="margin: 0.5rem 0 0 1.25rem; line-height: 1.6">
-        <li><strong>Data phase &amp; total spans:</strong> Current loading/ready phase, total indexed spans, and root span trees.</li>
-        <li><strong>Trace identifier:</strong> The active trace ID.</li>
-        <li><strong>Selected &amp; Hovered targets:</strong> Selected span count, primary span name, and originating view component.</li>
-        <li><strong>Collapsed &amp; Filter matches:</strong> Number of collapsed subtrees and filter match counts out of total spans.</li>
-        <li><strong>Time window:</strong> Active zoom window interval in milliseconds or "whole trace".</li>
-        <li><strong>Selected spans list:</strong> Interactive synchronized list of currently selected spans. Hovering or clicking items updates selection in all other tabs.</li>
-      </ul>
-    </div>
-
-    <div class="code-block">
-      <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer
-  views="inspector,waterfall,sequence"
-  view="inspector"
-  show-legend
-  data-url="./otel-trace.json"&gt;
-&lt;/trace-visualizer&gt;</code></pre>
-    </div>
-
-    <div class="result-label">&#9654; Live result — inspect live reactive state</div>
-    <div class="result-box">
-      <trace-visualizer id="ex28" views="inspector,waterfall,sequence" view="inspector" show-legend data-url="./otel-trace.json"></trace-visualizer>
-    </div>
-  </section>
 
 
   <footer>
@@ -2019,8 +1977,8 @@ document.querySelector('#btn-transform').addEventListener('click', () => {
   });
 }
 
-// Ex 26–28 — Sequence, Service graph, Store inspector fallback
-['#ex26', '#ex27', '#ex28'].forEach(sel => {
+// Ex 26–27 — Sequence, Service graph fallback
+['#ex26', '#ex27'].forEach(sel => {
   const el = document.querySelector(sel);
   if (el) {
     el.addEventListener('error', () => {
