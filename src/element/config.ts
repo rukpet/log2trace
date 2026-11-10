@@ -37,6 +37,8 @@ export interface TraceVisualizerConfig extends Partial<TransformConfig> {
   kindColors?: Record<string, string>;
   /** Whether a change of an external filter fetches at once (default) or waits for the Search button. */
   autoFetch?: boolean;
+  /** Whether mouse wheel zooms the timeline. */
+  wheelZoom?: boolean;
   /** The filter fields. */
   filterConfigs?: FilterFieldConfig[];
 }
@@ -168,6 +170,7 @@ export function readConfig(source: AttributeSource): TraceVisualizerConfig {
   set('detailPanelWidth', str('detail-panel-width'));
   set('kindColors', json('kind-colors') ?? json('color-scheme'));
   set('autoFetch', bool('auto-fetch'));
+  set('wheelZoom', bool('wheel-zoom'));
   return config;
 }
 
