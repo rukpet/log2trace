@@ -37,14 +37,14 @@ test('resolveRenderer takes the one asked for when the view has it, else the def
 });
 
 test('parseViewIds keeps the known ids once, in the order given', () => {
-  const known = ['waterfall', 'inspector', 'flame'];
-  assert.deepEqual(parseViewIds('inspector, waterfall', known), ['inspector', 'waterfall']);
+  const known = ['waterfall', 'sequence', 'flame'];
+  assert.deepEqual(parseViewIds('sequence, waterfall', known), ['sequence', 'waterfall']);
   assert.deepEqual(parseViewIds('waterfall,waterfall,flame', known), ['waterfall', 'flame']);
-  assert.deepEqual(parseViewIds(' waterfall ,, inspector ', known), ['waterfall', 'inspector']);
+  assert.deepEqual(parseViewIds(' waterfall ,, sequence ', known), ['waterfall', 'sequence']);
 });
 
 test('parseViewIds falls back to the first registered view when nothing usable is asked for', () => {
-  const known = ['waterfall', 'inspector'];
+  const known = ['waterfall', 'sequence'];
   assert.deepEqual(parseViewIds(null, known), ['waterfall']);
   assert.deepEqual(parseViewIds('', known), ['waterfall']);
   assert.deepEqual(parseViewIds('nope,also-nope', known), ['waterfall']);

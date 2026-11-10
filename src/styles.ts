@@ -18,7 +18,6 @@ import './shell/shell.css.ts';
 import './shell/filter-bar.css.ts';
 import './kit/a11y.css.ts';
 import './views/waterfall/view.css.ts';
-import './views/inspector/view.css.ts';
 import './views/flame/view.css.ts';
 import './views/service/view.css.ts';
 import './views/sequence/paint/dom.css.ts';

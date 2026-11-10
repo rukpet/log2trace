@@ -92,6 +92,23 @@ test('<trace-filter> children get defaults, and need field, label, type and sour
   assert.equal(filters[1].debounce, 50);
 });
 
+test('<trace-view> children: type, label, active; incomplete ones are skipped', () => {
+  const host = new FakeSource('x')
+    .child('TRACE-VIEW', { type: 'waterfall' })
+    .child('trace-view', { type: 'flame', label: 'Flamegraph', active: '' })
+    .child('trace-view', { id: 'sequence', label: 'Causal Sequence' })
+    .child('trace-view', { label: 'Missing type' });
+  const views = readConfig(host).viewConfigs ?? [];
+  assert.equal(views.length, 3);
+  assert.deepEqual(views[0], { type: 'waterfall' });
+  assert.deepEqual(views[1], { type: 'flame', label: 'Flamegraph', active: true });
+  assert.deepEqual(views[2], { type: 'sequence', label: 'Causal Sequence' });
+
+  // No trace-view children
+  const emptyHost = new FakeSource('trace-visualizer');
+  assert.equal(readConfig(emptyHost).viewConfigs, undefined);
+});
+
 test('the programmatic config wins field by field', () => {
   const merged = mergeConfig({ spanHeight: 20, dataUrl: 'a.json' }, { spanHeight: 40 });
   assert.equal(merged.spanHeight, 40);

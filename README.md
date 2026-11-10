@@ -71,21 +71,24 @@ Each original log line is preserved as an OpenTelemetry event on its correspondi
 
 ## Multi-View Visualization
 
-`<trace-visualizer>` renders one view at a time or provides switchable tabs when multiple views are specified in `views`. All views share a single synchronized store for selection, hover, time windows, and filtering:
+`<trace-visualizer>` renders one view at a time or provides switchable tabs when child `<trace-view>` elements are declared (`active` specifies which view is shown initially). All views share a single synchronized store for selection, hover, time windows, and filtering:
 
 ```html
-<trace-visualizer
-  views="waterfall,flame,service,sequence"
-  view="waterfall"
-  data-url="./logs.json"
-  ...
-></trace-visualizer>
+<trace-visualizer data-url="./logs.json">
+  <trace-view type="waterfall" active></trace-view>
+  <trace-view type="flame"></trace-view>
+  <trace-view type="service"></trace-view>
+  <trace-view type="sequence"></trace-view>
+</trace-visualizer>
 ```
 
 * **`waterfall`** *(default)*: Timeline displaying spans horizontally in execution order. Supports collapsing/expanding subtrees, synchronized tooltips, and time-range scrubbing.
 * **`flame`**: Flame graph aggregating cumulative execution time across identical call paths. Identifies bottlenecks answering *"where did the time go"*.
 * **`service`**: Directed topology graph displaying services, external peers (databases, queues, HTTP endpoints), request counts, latencies, and error rates.
 * **`sequence`**: Causal sequence diagram with participant lifelines, synchronous request/response pairs, asynchronous message flows, and loop folding.
+
+> [!NOTE]
+> **Migration note**: The `views="a,b"` attribute is deprecated in favor of declarative child `<trace-view type="a"></trace-view>` elements. The `inspector` view has been removed.
 
 Custom views can also be registered at runtime with `registerView()`.
 

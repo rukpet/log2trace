@@ -1,8 +1,8 @@
 /**
- * Configuration carriers: `<trace-filter>` and `<span-kind-rule>`.
+ * Configuration carriers: `<trace-view>`, `<trace-filter>` and `<span-kind-rule>`.
  *
- * Both render nothing and have no Shadow DOM. They are children of `<trace-visualizer>` that carry
- * one filter field or one span-kind rule in their attributes; the host reads them with
+ * They render nothing and have no Shadow DOM. They are children of `<trace-visualizer>` that carry
+ * view declarations, filter fields or span-kind rules in their attributes; the host reads them with
  * `readConfig` and is told through `_rerender()` whenever one of them is added, changed or removed.
  */
 
@@ -21,14 +21,19 @@ function isConfigHost(el: Element | null): el is ConfigHost {
 /** Shared lifecycle: find the host (waiting for its upgrade if needed) and report every change to it. */
 abstract class ConfigCarrier extends HTMLElement {
   private host: ConfigHost | null = null;
+  private observer: MutationObserver | null = null;
 
-  private notify(): void {
+  protected notify(): void {
     this.host?._rerender();
   }
 
   connectedCallback(): void {
     const el = this.closest(CONFIG_HOST);
     this.host = isConfigHost(el) ? el : null;
+    if (typeof MutationObserver !== 'undefined' && this.observer === null) {
+      this.observer = new MutationObserver(() => this.notify());
+      this.observer.observe(this, { attributes: true });
+    }
     if (this.host === null && el !== null) {
       // the host is in the document but not upgraded yet
       void customElements.whenDefined(el.localName).then(() => {
@@ -42,12 +47,27 @@ abstract class ConfigCarrier extends HTMLElement {
   }
 
   disconnectedCallback(): void {
+    this.observer?.disconnect();
+    this.observer = null;
     this.notify();
     this.host = null;
   }
 
   attributeChangedCallback(): void {
     this.notify();
+  }
+}
+
+/** `<trace-view type="..." label="..." active>`: one view tab and its view-specific options. */
+class TraceViewElement extends ConfigCarrier {
+  static get observedAttributes(): string[] {
+    return [
+      'type', 'label', 'active',
+      // waterfall attributes
+      'renderer', 'wheel-zoom', 'span-height', 'span-padding', 'gutter-width',
+      // sequence attributes
+      'sequence-internal', 'sequence-returns', 'sequence-fold', 'row-height',
+    ];
   }
 }
 
@@ -68,5 +88,6 @@ class SpanKindRuleElement extends ConfigCarrier {
   }
 }
 
+if (!customElements.get('trace-view')) customElements.define('trace-view', TraceViewElement);
 if (!customElements.get('trace-filter')) customElements.define('trace-filter', TraceFilterElement);
 if (!customElements.get('span-kind-rule')) customElements.define('span-kind-rule', SpanKindRuleElement);

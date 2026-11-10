@@ -39,6 +39,18 @@ export interface TraceVisualizerConfig extends Partial<TransformConfig> {
   autoFetch?: boolean;
   /** The filter fields. */
   filterConfigs?: FilterFieldConfig[];
+  /** The declared child views. */
+  viewConfigs?: TraceViewConfig[];
+}
+
+/** One declared view child element (`<trace-view>`). */
+export interface TraceViewConfig {
+  /** The registered view type/id (e.g. 'waterfall', 'flame', 'service', 'sequence'). */
+  type: string;
+  /** Optional custom tab label. */
+  label?: string;
+  /** Whether this view is initially active. */
+  active?: boolean;
 }
 
 /** What can be read from: an element, or anything shaped like one. */
@@ -100,7 +112,19 @@ function parseFilter(el: AttributeSource): FilterFieldConfig | null {
   };
 }
 
-/** Read the attributes and the `<trace-filter>` and `<span-kind-rule>` children of an element. */
+function parseTraceView(el: AttributeSource): TraceViewConfig | null {
+  const type = el.getAttribute('type') || el.getAttribute('id');
+  if (!type) return null;
+  const label = el.getAttribute('label') || undefined;
+  const active = el.hasAttribute('active');
+  return {
+    type,
+    ...(label ? { label } : {}),
+    ...(active ? { active: true } : {}),
+  };
+}
+
+/** Read the attributes and the `<trace-view>`, `<trace-filter>` and `<span-kind-rule>` children of an element. */
 export function readConfig(source: AttributeSource): TraceVisualizerConfig {
   const config: TraceVisualizerConfig = {};
   const str = (name: string): string | undefined => source.getAttribute(name) ?? undefined;
@@ -145,6 +169,7 @@ export function readConfig(source: AttributeSource): TraceVisualizerConfig {
 
   const spanKindRules: SpanKindRule[] = [];
   const filterConfigs: FilterFieldConfig[] = [];
+  const viewConfigs: TraceViewConfig[] = [];
   for (let i = 0; i < source.children.length; i++) {
     const child = source.children[i];
     const tag = child.tagName.toLowerCase();
@@ -154,10 +179,14 @@ export function readConfig(source: AttributeSource): TraceVisualizerConfig {
     } else if (tag === 'trace-filter') {
       const filter = parseFilter(child);
       if (filter) filterConfigs.push(filter);
+    } else if (tag === 'trace-view') {
+      const view = parseTraceView(child);
+      if (view) viewConfigs.push(view);
     }
   }
   if (spanKindRules.length > 0) set('spanKindRules', spanKindRules);
   if (filterConfigs.length > 0) set('filterConfigs', filterConfigs);
+  if (viewConfigs.length > 0) set('viewConfigs', viewConfigs);
 
   set('height', num('height'));
   set('spanHeight', num('span-height'));
