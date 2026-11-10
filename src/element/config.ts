@@ -124,8 +124,15 @@ function parseTraceView(el: AttributeSource): TraceViewConfig | null {
   };
 }
 
+/** Warning issued when deprecated `views` attribute is used. */
+export const DEPRECATED_VIEWS_WARNING =
+  '<trace-visualizer>: The "views" attribute is deprecated and ignored. Declare child <trace-view> elements instead.';
+
 /** Read the attributes and the `<trace-view>`, `<trace-filter>` and `<span-kind-rule>` children of an element. */
 export function readConfig(source: AttributeSource): TraceVisualizerConfig {
+  if (source.hasAttribute('views') || source.getAttribute('views') !== null) {
+    console.warn(DEPRECATED_VIEWS_WARNING);
+  }
   const config: TraceVisualizerConfig = {};
   const str = (name: string): string | undefined => source.getAttribute(name) ?? undefined;
   const csv = (name: string): string[] | undefined => {
@@ -229,3 +236,50 @@ export function kindColorOverrides(colors: Record<string, string> | undefined): 
   }
   return result;
 }
+
+/**
+ * Filter and deduplicate declared view configurations against registered/known views.
+ * An empty or unusable list falls back to the default waterfall view.
+ */
+export function resolveDeclaredViews(
+  viewConfigs: readonly TraceViewConfig[] | undefined,
+  isKnown: (type: string) => boolean = () => true,
+): TraceViewConfig[] {
+  if (!viewConfigs || viewConfigs.length === 0) {
+    return [{ type: 'waterfall' }];
+  }
+  const seen = new Set<string>();
+  const valid: TraceViewConfig[] = [];
+  for (const config of viewConfigs) {
+    if (!seen.has(config.type) && isKnown(config.type)) {
+      seen.add(config.type);
+      valid.push(config);
+    }
+  }
+  return valid.length > 0 ? valid : [{ type: 'waterfall' }];
+}
+
+/**
+ * Determine which view should be active:
+ * 1. `requested` view if it is among the available types.
+ * 2. The view marked `active` in `viewConfigs` if it is among the available types.
+ * 3. The first available view type (defaults to 'waterfall' if available is empty).
+ */
+export function resolveActiveView(
+  availableTypes: readonly string[],
+  requested: string | null | undefined,
+  viewConfigs?: readonly TraceViewConfig[],
+): string {
+  const fallback = availableTypes[0] ?? 'waterfall';
+  if (requested && availableTypes.includes(requested)) {
+    return requested;
+  }
+  if (viewConfigs) {
+    const activeConf = viewConfigs.find((c) => c.active && availableTypes.includes(c.type));
+    if (activeConf) {
+      return activeConf.type;
+    }
+  }
+  return fallback;
+}
+

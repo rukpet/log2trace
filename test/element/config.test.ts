@@ -4,7 +4,17 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, type AttributeSource } from '../../src/element/config.ts';
+import {
+  DEPRECATED_VIEWS_WARNING,
+  isTransformReady,
+  kindColorOverrides,
+  mergeConfig,
+  readConfig,
+  resolveActiveView,
+  resolveDeclaredViews,
+  type AttributeSource,
+} from '../../src/element/config.ts';
+import { TraceViewElement } from '../../src/element/carriers.ts';
 
 class FakeSource implements AttributeSource {
   readonly children: Array<FakeSource & { tagName: string }> = [];
@@ -129,4 +139,94 @@ test('kind colour overrides take numbers and names and skip the rest', () => {
     ['kindProducer', 'green'],
   ]);
   assert.deepEqual(kindColorOverrides(undefined), []);
+});
+
+test('the views attribute is ignored and warned about', () => {
+  const warnings: string[] = [];
+  const originalWarn = console.warn;
+  console.warn = (msg: string) => { warnings.push(msg); };
+  try {
+    const host = new FakeSource('trace-visualizer', { views: 'flame,service' });
+    const config = readConfig(host);
+    assert.equal(config.viewConfigs, undefined);
+    assert.equal(warnings.length, 1);
+    assert.equal(warnings[0], DEPRECATED_VIEWS_WARNING);
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test('resolveDeclaredViews drops unknown types and deduplicates type values', () => {
+  const isKnown = (type: string) => ['waterfall', 'flame', 'service'].includes(type);
+
+  // Unknown types dropped, duplicates dropped (first occurrence kept)
+  const configs = [
+    { type: 'waterfall', label: 'First Waterfall' },
+    { type: 'unknown-view' },
+    { type: 'flame', label: 'Flame' },
+    { type: 'waterfall', label: 'Duplicate Waterfall' },
+    { type: 'another-bogus' },
+  ];
+  const resolved = resolveDeclaredViews(configs, isKnown);
+  assert.deepEqual(resolved, [
+    { type: 'waterfall', label: 'First Waterfall' },
+    { type: 'flame', label: 'Flame' },
+  ]);
+
+  // When all declared are unknown, falls back to waterfall
+  assert.deepEqual(resolveDeclaredViews([{ type: 'bad1' }, { type: 'bad2' }], isKnown), [
+    { type: 'waterfall' },
+  ]);
+
+  // Empty or undefined fallback
+  assert.deepEqual(resolveDeclaredViews([], isKnown), [{ type: 'waterfall' }]);
+  assert.deepEqual(resolveDeclaredViews(undefined, isKnown), [{ type: 'waterfall' }]);
+});
+
+test('resolveActiveView preserves valid requested view, or falls back when view is removed', () => {
+  const available = ['waterfall', 'service', 'sequence'];
+
+  // 1. Valid requested view is preserved
+  assert.equal(resolveActiveView(available, 'service'), 'service');
+
+  // 2. Removed active view falls back to declared active view if present
+  const withActive = [
+    { type: 'waterfall' },
+    { type: 'service' },
+    { type: 'sequence', active: true },
+  ];
+  // 'flame' was active but is not in available: falls back to 'sequence' (active: true)
+  assert.equal(resolveActiveView(available, 'flame', withActive), 'sequence');
+
+  // 3. Removed active view falls back to first available view when no active flag
+  const withoutActive = [
+    { type: 'waterfall' },
+    { type: 'service' },
+  ];
+  assert.equal(resolveActiveView(available, 'flame', withoutActive), 'waterfall');
+
+  // 4. Fallback when requested is null
+  assert.equal(resolveActiveView(available, null, withActive), 'sequence');
+  assert.equal(resolveActiveView(available, null, withoutActive), 'waterfall');
+
+  // 5. Empty available types defaults to waterfall
+  assert.equal(resolveActiveView([], 'flame'), 'waterfall');
+});
+
+test('TraceViewElement attributeChangedCallback triggers a single host rerender passing itself', () => {
+  let rerenderCalls = 0;
+  let passedCarrier: unknown = null;
+  const fakeHost = {
+    _rerender(carrier?: HTMLElement) {
+      rerenderCalls++;
+      passedCarrier = carrier;
+    },
+  };
+
+  const carrier = new TraceViewElement();
+  (carrier as unknown as Record<string, unknown>).host = fakeHost;
+
+  carrier.attributeChangedCallback();
+  assert.equal(rerenderCalls, 1, 'notifies host exactly once per attribute change');
+  assert.equal(passedCarrier, carrier, 'passes the carrier itself to host _rerender');
 });

@@ -68,7 +68,16 @@ import type { WaterfallController } from '../views/waterfall/controller.ts';
 import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
 import { readWaterfallSettings } from '../views/waterfall/settings.ts';
 import { WaterfallView, waterfallDefinition } from '../views/waterfall/view.ts';
-import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, type TraceViewConfig, type TraceVisualizerConfig } from './config.ts';
+import {
+  isTransformReady,
+  kindColorOverrides,
+  mergeConfig,
+  readConfig,
+  resolveActiveView,
+  resolveDeclaredViews,
+  type TraceViewConfig,
+  type TraceVisualizerConfig,
+} from './config.ts';
 import { fetchJson, payloadToIndex } from './data-source.ts';
 import { FilterController } from './filter-controller.ts';
 import * as styles from './element.css.ts';
@@ -359,9 +368,11 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   /** Called by `<trace-view>`, `<trace-filter>` and `<span-kind-rule>` children when their attributes change. */
-  _rerender(): void {
-    if (this.connected !== null) {
-      this.configChanged();
+  _rerender(carrier?: HTMLElement): void {
+    if (this.connected === null) return;
+    const isViewChange = !carrier || carrier.tagName.toLowerCase() === 'trace-view';
+    this.configChanged();
+    if (isViewChange) {
       this.syncTabs();
     }
   }
@@ -465,38 +476,18 @@ export class TraceVisualizerElement extends HTMLElement {
 
   /** Declared views from `<trace-view>` children, or fallback to waterfall. */
   private declaredViews(): TraceViewConfig[] {
-    const fromConfig = this.config.viewConfigs;
-    if (fromConfig && fromConfig.length > 0) {
-      return fromConfig;
-    }
-    return [{ type: 'waterfall' }];
+    return resolveDeclaredViews(this.config.viewConfigs, (type) => getView(type) !== undefined);
   }
 
   /** The unique registered view configs to show as tabs. */
   private validViewConfigs(): TraceViewConfig[] {
-    const seen = new Set<string>();
-    const valid: TraceViewConfig[] = [];
-    for (const config of this.declaredViews()) {
-      if (!seen.has(config.type) && getView(config.type) !== undefined) {
-        seen.add(config.type);
-        valid.push(config);
-      }
-    }
-    return valid.length > 0 ? valid : [{ type: 'waterfall' }];
+    return this.declaredViews();
   }
 
   /** The view the attributes ask for: `view` when it is among the declared views, else `active` view, else the first view. */
   private wantedView(): string {
     const views = this.validViewConfigs();
-    const asked = this.getAttribute('view');
-    if (asked !== null && views.some((v) => v.type === asked)) {
-      return asked;
-    }
-    const activeView = views.find((v) => v.active === true);
-    if (activeView !== undefined) {
-      return activeView.type;
-    }
-    return views[0].type;
+    return resolveActiveView(views.map((v) => v.type), this.getAttribute('view'), views);
   }
 
   /** Draw the tabs for the declared views and show the view that is wanted. */

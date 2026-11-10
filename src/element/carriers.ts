@@ -10,34 +10,32 @@
 const CONFIG_HOST = 'trace-visualizer';
 
 /** What a carrier needs of its host: to be told that its configuration changed. */
-interface ConfigHost extends HTMLElement {
-  _rerender(): void;
+export interface ConfigHost extends HTMLElement {
+  _rerender(carrier?: HTMLElement): void;
 }
 
 function isConfigHost(el: Element | null): el is ConfigHost {
   return el !== null && typeof (el as Partial<ConfigHost>)._rerender === 'function';
 }
 
+const ElementBase: { new(): HTMLElement } =
+  typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as unknown as { new(): HTMLElement });
+
 /** Shared lifecycle: find the host (waiting for its upgrade if needed) and report every change to it. */
-abstract class ConfigCarrier extends HTMLElement {
+export abstract class ConfigCarrier extends ElementBase {
   private host: ConfigHost | null = null;
-  private observer: MutationObserver | null = null;
 
   protected notify(): void {
-    this.host?._rerender();
+    this.host?._rerender(this);
   }
 
   connectedCallback(): void {
-    const el = this.closest(CONFIG_HOST);
+    const el = this.closest?.(CONFIG_HOST) ?? null;
     this.host = isConfigHost(el) ? el : null;
-    if (typeof MutationObserver !== 'undefined' && this.observer === null) {
-      this.observer = new MutationObserver(() => this.notify());
-      this.observer.observe(this, { attributes: true });
-    }
     if (this.host === null && el !== null) {
       // the host is in the document but not upgraded yet
       void customElements.whenDefined(el.localName).then(() => {
-        const upgraded = this.closest(CONFIG_HOST);
+        const upgraded = this.closest?.(CONFIG_HOST) ?? null;
         this.host = isConfigHost(upgraded) ? upgraded : null;
         this.notify();
       });
@@ -47,8 +45,6 @@ abstract class ConfigCarrier extends HTMLElement {
   }
 
   disconnectedCallback(): void {
-    this.observer?.disconnect();
-    this.observer = null;
     this.notify();
     this.host = null;
   }
@@ -59,7 +55,7 @@ abstract class ConfigCarrier extends HTMLElement {
 }
 
 /** `<trace-view type="..." label="..." active>`: one view tab and its view-specific options. */
-class TraceViewElement extends ConfigCarrier {
+export class TraceViewElement extends ConfigCarrier {
   static get observedAttributes(): string[] {
     return [
       'type', 'label', 'active',
@@ -72,7 +68,7 @@ class TraceViewElement extends ConfigCarrier {
 }
 
 /** `<trace-filter field="..." type="...">`: one filter field. */
-class TraceFilterElement extends ConfigCarrier {
+export class TraceFilterElement extends ConfigCarrier {
   static get observedAttributes(): string[] {
     return [
       'field', 'label', 'type', 'source', 'target', 'required',
@@ -82,12 +78,14 @@ class TraceFilterElement extends ConfigCarrier {
 }
 
 /** `<span-kind-rule kind="..." match-field="..." match-value="...">`: one span-kind classification rule. */
-class SpanKindRuleElement extends ConfigCarrier {
+export class SpanKindRuleElement extends ConfigCarrier {
   static get observedAttributes(): string[] {
     return ['kind', 'match-field', 'match-value', 'match'];
   }
 }
 
-if (!customElements.get('trace-view')) customElements.define('trace-view', TraceViewElement);
-if (!customElements.get('trace-filter')) customElements.define('trace-filter', TraceFilterElement);
-if (!customElements.get('span-kind-rule')) customElements.define('span-kind-rule', SpanKindRuleElement);
+if (typeof customElements !== 'undefined') {
+  if (!customElements.get('trace-view')) customElements.define('trace-view', TraceViewElement);
+  if (!customElements.get('trace-filter')) customElements.define('trace-filter', TraceFilterElement);
+  if (!customElements.get('span-kind-rule')) customElements.define('span-kind-rule', SpanKindRuleElement);
+}
