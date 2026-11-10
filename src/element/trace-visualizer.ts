@@ -5,17 +5,16 @@
  * selection, hover, collapse, filter result, time window), the filter bar and its controller, the
  * toolbar with the legend, the view tabs, the tooltip, the detail panel, the status message, the
  * live region, the configuration and the data loading. The view is whatever `view` names
- * (`waterfall`, `inspector`, `flame`, `service` or `sequence` out of the box, anything registered with `registerView`): it is
+ * (`waterfall`, `flame`, `service` or `sequence` out of the box, anything registered with `registerView`): it is
  * mounted into one surface, reads and writes the store, and reports hovers through its context.
  * Only the active view is mounted; switching saves its state (`getState`) and restores it when
  * the tab is shown again.
  *
  * Data comes from `traceData`, `logData`, `data-url` (OTel trace data, or raw logs when the
  * transform attributes are given) or from external filters and `fetchCallback`. Configuration is
- * the set of attributes and `<trace-filter>` and `<span-kind-rule>` children, plus `theme`
+ * the set of attributes and `<trace-view>`, `<trace-filter>` and `<span-kind-rule>` children, plus `theme`
  * (`light`, `dark`, default follows the page), `wheel-zoom`, `gutter-width`, `kind-colors`,
- * `renderer` (`canvas`, `dom`, or `auto`, the default, which is `dom`), `view` (the active view) and
- * `views` (a comma-separated list of view ids; with more than one, tabs appear).
+ * `renderer` (`canvas`, `dom`, or `auto`, the default, which is `dom`), and `view` (the active view).
  */
 
 import componentCss from 'virtual:component-css';
@@ -46,8 +45,6 @@ import { KIND_TOKENS, cssVariableName } from '../kit/theme/theme.ts';
 import { vars } from '../kit/theme/tokens.css.ts';
 import {
   getView,
-  listViews,
-  parseViewIds,
   registerView,
   resolveRenderer,
   type RendererKind,
@@ -65,20 +62,27 @@ import { createToolbar, type Toolbar } from '../shell/toolbar.ts';
 import { Tooltip } from '../shell/tooltip.ts';
 import { createViewTabs, type ViewTabs } from '../shell/view-tabs.ts';
 import { flameDefinition } from '../views/flame/view.ts';
-import { inspectorDefinition } from '../views/inspector/view.ts';
 import { sequenceDefinition } from '../views/sequence/view.ts';
 import { serviceDefinition } from '../views/service/view.ts';
 import type { WaterfallController } from '../views/waterfall/controller.ts';
 import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
 import { readWaterfallSettings } from '../views/waterfall/settings.ts';
 import { WaterfallView, waterfallDefinition } from '../views/waterfall/view.ts';
-import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, type TraceVisualizerConfig } from './config.ts';
+import {
+  isTransformReady,
+  kindColorOverrides,
+  mergeConfig,
+  readConfig,
+  resolveActiveView,
+  resolveDeclaredViews,
+  type TraceViewConfig,
+  type TraceVisualizerConfig,
+} from './config.ts';
 import { fetchJson, payloadToIndex } from './data-source.ts';
 import { FilterController } from './filter-controller.ts';
 import * as styles from './element.css.ts';
 
 registerView(waterfallDefinition);
-registerView(inspectorDefinition);
 registerView(flameDefinition);
 registerView(serviceDefinition);
 registerView(sequenceDefinition);
@@ -102,7 +106,7 @@ let instances = 0;
 
 /** The attributes the element reacts to. */
 const OBSERVED = [
-  'data-url', 'theme', 'wheel-zoom', 'renderer', 'view', 'views',
+  'data-url', 'theme', 'wheel-zoom', 'renderer', 'view',
   'trace-id-field', 'span-group-fields', 'span-name-field', 'service-name-field', 'timestamp-field',
   'end-time-field', 'parent-span-id-field', 'parent-span-lookup-fields', 'span-id-field', 'status-code-field', 'default-span-kind',
   'height', 'span-height', 'span-padding', 'gutter-width', 'show-legend', 'full-width', 'detail-panel-width',
@@ -125,6 +129,40 @@ interface ActiveView {
 /** Everything that exists only while the element is in a document. */
 interface Connected {
   readonly cleanups: Array<() => void>;
+}
+
+/** View-specific options configured as attributes on a child `<trace-view>` element. */
+function parseViewElementAttributes(source: Element): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  const num = (name: string): number | undefined => {
+    const value = source.getAttribute(name);
+    const parsed = value ? parseInt(value, 10) : Number.NaN;
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+  const bool = (name: string): boolean | undefined => {
+    const value = source.getAttribute(name);
+    return value !== null ? value !== 'false' : undefined;
+  };
+
+  const spanHeight = num('span-height');
+  if (spanHeight !== undefined) result.spanHeight = spanHeight;
+  const spanPadding = num('span-padding');
+  if (spanPadding !== undefined) result.spanPadding = spanPadding;
+  const gutterWidth = num('gutter-width');
+  if (gutterWidth !== undefined) result.gutterWidth = gutterWidth;
+  const rowHeight = num('row-height');
+  if (rowHeight !== undefined) result.rowHeight = rowHeight;
+  const sequenceFold = num('sequence-fold');
+  if (sequenceFold !== undefined) result.sequenceFold = sequenceFold;
+  const wheelZoom = bool('wheel-zoom');
+  if (wheelZoom !== undefined) result.wheelZoom = wheelZoom;
+
+  const internal = source.getAttribute('sequence-internal');
+  if (internal !== null) result.sequenceInternal = internal;
+  const returns = source.getAttribute('sequence-returns');
+  if (returns !== null) result.sequenceReturns = returns;
+
+  return result;
 }
 
 /** Custom element backing the `<trace-visualizer>` tag. */
@@ -158,6 +196,7 @@ export class TraceVisualizerElement extends HTMLElement {
   private apiSelecting = false;
   private appliedHeight: number | undefined;
   private appliedKindVars = new Set<string>();
+  private readonly warnedUnknownTypes = new Set<string>();
 
   constructor() {
     super();
@@ -308,7 +347,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   /** The backend of the active view, or the one the waterfall will use once the element is in a document. */
   get renderer(): RendererKind {
-    return this.active?.view.renderer ?? resolveRenderer(readWaterfallSettings(this.viewOptions()).renderer, waterfallDefinition.renderers);
+    return this.active?.view.renderer ?? resolveRenderer(readWaterfallSettings(this.viewOptions('waterfall')).renderer, waterfallDefinition.renderers);
   }
 
   /** Parts of the active waterfall for tests and the performance harness; not a public API. */
@@ -329,9 +368,14 @@ export class TraceVisualizerElement extends HTMLElement {
     this.active?.view.themeChanged();
   }
 
-  /** Called by `<trace-filter>` and `<span-kind-rule>` children when their attributes change. */
-  _rerender(): void {
-    if (this.connected !== null) this.configChanged();
+  /** Called by `<trace-view>`, `<trace-filter>` and `<span-kind-rule>` children when their attributes change. */
+  _rerender(carrier?: HTMLElement): void {
+    if (this.connected === null) return;
+    const isViewChange = !carrier || carrier.tagName.toLowerCase() === 'trace-view';
+    this.configChanged();
+    if (isViewChange) {
+      this.syncTabs();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -363,9 +407,6 @@ export class TraceVisualizerElement extends HTMLElement {
         break;
       case 'view':
         this.showView(this.wantedView());
-        break;
-      case 'views':
-        this.syncTabs();
         break;
       case 'data-url':
         this.configChanged();
@@ -434,39 +475,74 @@ export class TraceVisualizerElement extends HTMLElement {
   // Views
   // ---------------------------------------------------------------------------
 
-  /** The ids shown as tabs: the `views` attribute, limited to the registered views. */
-  private viewIds(): string[] {
-    return parseViewIds(this.getAttribute('views'), listViews().map((definition) => definition.id));
+  /** Declared views from `<trace-view>` children, or fallback to waterfall. */
+  private declaredViews(): TraceViewConfig[] {
+    return resolveDeclaredViews(
+      this.config.viewConfigs,
+      (type) => getView(type) !== undefined,
+      (unknownType) => {
+        if (!this.warnedUnknownTypes.has(unknownType)) {
+          this.warnedUnknownTypes.add(unknownType);
+          console.warn(`<trace-visualizer>: Unknown view type "${unknownType}". Falling back to waterfall.`);
+        }
+      },
+    );
   }
 
-  /** The view the attributes ask for: `view` when it is among the tabs, else the first tab. */
+  /** The unique registered view configs to show as tabs. */
+  private validViewConfigs(): TraceViewConfig[] {
+    return this.declaredViews();
+  }
+
+  /** The view the attributes ask for: `view` when it is among the declared views, else `active` view, else the first view. */
   private wantedView(): string {
-    const ids = this.viewIds();
-    const asked = this.getAttribute('view');
-    return asked !== null && ids.includes(asked) ? asked : ids[0];
+    const views = this.validViewConfigs();
+    return resolveActiveView(views.map((v) => v.type), this.getAttribute('view'), views);
   }
 
-  /** Draw the tabs for the current `views` and show the view that is wanted. */
+  /** Draw the tabs for the declared views and show the view that is wanted. */
   private syncTabs(): void {
-    const tabs = this.viewIds().flatMap((id) => {
-      const definition = getView(id);
-      return definition === undefined ? [] : [{ id, label: definition.label }];
+    const views = this.validViewConfigs();
+    const tabs = views.flatMap((v) => {
+      const definition = getView(v.type);
+      return definition === undefined ? [] : [{ id: v.type, label: v.label ?? definition.label }];
     });
     const wanted = this.wantedView();
     this.tabs.set(tabs, wanted);
     this.showView(wanted);
   }
 
+  private findChildViewElement(type: string): Element | null {
+    for (let i = 0; i < this.children.length; i++) {
+      const child = this.children[i];
+      if (child.tagName.toLowerCase() === 'trace-view' && (child.getAttribute('type') === type || child.getAttribute('id') === type)) {
+        return child;
+      }
+    }
+    return null;
+  }
+
   /** The configuration as every view sees it; each view reads the options it knows. */
-  private viewOptions(): ViewOptions {
-    return { config: { ...this.config }, attribute: (name) => this.getAttribute(name) };
+  private viewOptions(viewId?: string): ViewOptions {
+    const id = viewId ?? this.active?.definition.id ?? this.wantedView();
+    const child = id ? this.findChildViewElement(id) : null;
+    const childConfig = child ? parseViewElementAttributes(child) : {};
+    return {
+      config: { ...this.config, ...childConfig },
+      attribute: (name) => {
+        if (child && child.hasAttribute(name)) {
+          return child.getAttribute(name);
+        }
+        return this.getAttribute(name);
+      },
+    };
   }
 
   private viewContext(definition: ViewDefinition): ViewContext {
     return {
       origin: `${definition.id}-${this.instance}`,
       store: this.shared,
-      options: () => this.viewOptions(),
+      options: () => this.viewOptions(definition.id),
       hover: (hit) => this.showHover(hit),
       refreshCommands: () => this.toolbar?.refresh(),
     };

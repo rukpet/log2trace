@@ -1446,11 +1446,10 @@ el23.addEventListener('span-selected', (e) => {
   <section id="ex-24">
     <h2><span class="ex-num">24</span>View tabs</h2>
     <p class="desc">
-      A trace can be drawn by more than one <em>view</em>. List them in the <code>views</code>
-      attribute and tabs appear; <code>view</code> says which one is shown first. The waterfall is
-      the default, <code>flame</code> is the flame graph of the next example, and <code>inspector</code>
-      is a small view that prints the shared state (selection, hover, collapsed spans, filter,
-      time window). The views share one store, so a
+      A trace can be drawn by more than one <em>view</em>. Declare them as <code>&lt;trace-view&gt;</code>
+      child elements and tabs appear; the <code>active</code> attribute says which one is shown first. The waterfall is
+      the default, <code>flame</code> is the flame graph of the next example, <code>service</code> is the dependency graph,
+      and <code>sequence</code> is the causal sequence diagram. The views share one store, so a
       span selected in one is selected in the other, and the waterfall comes back to the camera and
       scroll position you left. Other views register themselves with
       <code>registerView()</code> from the <code>log2trace-ui</code> entry. Listen for
@@ -1459,13 +1458,22 @@ el23.addEventListener('span-selected', (e) => {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer views="waterfall,flame,service,sequence,inspector" view="waterfall" show-legend&gt;
+      <pre><code class="language-html">&lt;trace-visualizer show-legend&gt;
+  &lt;trace-view type="waterfall" active&gt;&lt;/trace-view&gt;
+  &lt;trace-view type="flame"&gt;&lt;/trace-view&gt;
+  &lt;trace-view type="service"&gt;&lt;/trace-view&gt;
+  &lt;trace-view type="sequence"&gt;&lt;/trace-view&gt;
 &lt;/trace-visualizer&gt;</code></pre>
     </div>
 
-    <div class="result-label">&#9654; Live result — click a span, then switch between Waterfall, Flame, Service, Sequence, and Inspector tabs</div>
+    <div class="result-label">&#9654; Live result — click a span, then switch between Waterfall, Flame, Service, and Sequence tabs</div>
     <div class="result-box">
-      <trace-visualizer id="ex24" views="waterfall,flame,service,sequence,inspector" show-legend></trace-visualizer>
+      <trace-visualizer id="ex24" show-legend>
+        <trace-view type="waterfall" active></trace-view>
+        <trace-view type="flame"></trace-view>
+        <trace-view type="service"></trace-view>
+        <trace-view type="sequence"></trace-view>
+      </trace-visualizer>
     </div>
     <pre id="ex24-output" class="output-pre">// switch tabs to see view-changed here</pre>
   </section>
@@ -1501,14 +1509,18 @@ el23.addEventListener('span-selected', (e) => {
 
     <div class="code-block">
       <div class="code-label">HTML</div>
-      <pre><code class="language-html">&lt;trace-visualizer views="flame,waterfall" view="flame" show-legend
-                  data-url="./otel-trace.json"&gt;
+      <pre><code class="language-html">&lt;trace-visualizer show-legend data-url="./otel-trace.json"&gt;
+  &lt;trace-view type="flame" active&gt;&lt;/trace-view&gt;
+  &lt;trace-view type="waterfall"&gt;&lt;/trace-view&gt;
 &lt;/trace-visualizer&gt;</code></pre>
     </div>
 
     <div class="result-label">&#9654; Live result — click a box, double-click to focus, then open the Waterfall tab</div>
     <div class="result-box">
-      <trace-visualizer id="ex25" views="flame,waterfall" view="flame" show-legend data-url="./otel-trace.json"></trace-visualizer>
+      <trace-visualizer id="ex25" show-legend data-url="./otel-trace.json">
+        <trace-view type="flame" active></trace-view>
+        <trace-view type="waterfall"></trace-view>
+      </trace-visualizer>
     </div>
   </section>
 

@@ -6,18 +6,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tabAfterKey } from '../../src/shell/view-tabs-model.ts';
 
-const IDS = ['waterfall', 'inspector', 'flame'];
+const IDS = ['waterfall', 'flame', 'service'];
 
 test('the arrows move to the neighbour and wrap around', () => {
-  assert.equal(tabAfterKey(IDS, 'waterfall', 'ArrowRight'), 'inspector');
-  assert.equal(tabAfterKey(IDS, 'flame', 'ArrowRight'), 'waterfall');
-  assert.equal(tabAfterKey(IDS, 'waterfall', 'ArrowLeft'), 'flame');
-  assert.equal(tabAfterKey(IDS, 'inspector', 'ArrowLeft'), 'waterfall');
+  assert.equal(tabAfterKey(IDS, 'waterfall', 'ArrowRight'), 'flame');
+  assert.equal(tabAfterKey(IDS, 'service', 'ArrowRight'), 'waterfall');
+  assert.equal(tabAfterKey(IDS, 'waterfall', 'ArrowLeft'), 'service');
+  assert.equal(tabAfterKey(IDS, 'flame', 'ArrowLeft'), 'waterfall');
 });
 
 test('Home and End jump to the ends', () => {
-  assert.equal(tabAfterKey(IDS, 'inspector', 'Home'), 'waterfall');
-  assert.equal(tabAfterKey(IDS, 'inspector', 'End'), 'flame');
+  assert.equal(tabAfterKey(IDS, 'flame', 'Home'), 'waterfall');
+  assert.equal(tabAfterKey(IDS, 'flame', 'End'), 'service');
 });
 
 test('other keys, an unknown tab and a single tab go nowhere', () => {
