@@ -2,34 +2,30 @@
 name: pr-review-browser-validation
 description: Review a GitHub PR for a web-component/frontend repo, validate behavior in headless Chromium on a remote VM, and produce copy-pasteable author feedback. Use when asked to "review PR #N", "test in the browser", "review again", or "give me feedback text for the author".
 ---
-# PR review with headless browser validation
+# PR review with browser validation
 
-## 1. Gather context
-- `gh pr view N --json title,body,headRefName,files,state` and `gh pr diff N`.
-- Check out via the PR ref (branch names often fail on forks/odd refspecs):
-  `git fetch origin pull/N/head:prN && git checkout prN`.
-  For a re-review, fetch into a new local name (`prNnew`) and `git log prN..prNnew` + `git diff prN prNnew` to see only the new commit.
-- Install deps with `npm ci` BEFORE running anything. Do NOT chain `npm ci` with `;` after a failed checkout (you'll test the wrong branch). Run steps separately.
+## Goals
+- Understand what the PR claims to change and review the diff against it.
+- Prove it works: automated checks pass, and the real behavior is verified in a browser, not just by reading code.
+- Hand the author actionable feedback they can paste as-is.
 
-## 2. Automated checks
-Run `npm run check`, `npm run lint`, `npm test`, and the build (`npm run build:bundle`). Long commands go to background; check status with `manage_task` or `sleep` + read the task log. Don't poll in tight loops.
+## What to verify
+- **Automated checks:** typecheck, lint, tests and build all pass on the PR head.
+- **Behavior in a browser:** the changed feature works end to end, including defaults and fallbacks, dynamic changes, unchanged state on unrelated changes, and invalid or duplicate input. Prefer headless validation and say so, since there is no GUI on the VM.
+- **Baseline:** where practical, compare against `main` to show what changed.
+- **Cleanliness:** temporary test artifacts are removed and the working tree is left clean.
 
-## 3. Browser validation (no GUI on the VM)
-- Tell the user up front that only headless validation is possible; ask once if unsure.
-- Serve the repo's demo server with `IsDaemon: true` (it dies if the environment restarts; re-check with `curl -s -o /dev/null -w '%{http_code}' localhost:PORT`).
-- Screenshots: `chromium --headless --no-sandbox --disable-gpu --window-size=1400,900 --virtual-time-budget=6000 --screenshot=/tmp/shots/x.png URL`, then view the PNG.
-- Behavior probes: write a temporary `demo/probe-prN.html` that loads the bundle, manipulates the DOM (add/remove/change attributes, click tabs), and writes results into `<pre id="out">`; read it with `chromium ... --dump-dom | sed -n '/<pre id="out">/,/<\/pre>/p'`. To count console warnings, wrap `console.warn` before the module loads. DELETE the probe file afterwards and confirm `git status` is clean.
-- Test: defaults/fallbacks, ordering, labels, dynamic add/remove/attribute changes, state preserved on unrelated changes, removed/deprecated attributes (does the old API fail silently?), unknown/duplicate inputs, and per-element options.
-- If possible compare against `main` (baseline) to show before/after.
+## What to look for in review
+- Breaking changes that fail silently (need a warning and a migration note).
+- Removed features not called out in the PR description.
+- Redundant notification or update paths.
+- Side effects in frequently called code (e.g. a warning that fires on every read).
+- Over-broad rerenders and test-only code leaking into production.
 
-## 4. Review heuristics
-- Silent breaking changes (removed attributes/features) need a warning + migration note.
-- Removed features must be called out in the PR description.
-- Duplicate notification paths (observer + attributeChangedCallback).
-- Side-effects inside hot/pure functions (e.g. a warning in a getter-called parser => console spam). Verify by counting in the browser.
-- Over-broad rerenders; test-only guards leaking into production code.
+## Re-reviews
+Look only at what changed since the last review and confirm each earlier finding is fixed, still open, or newly introduced.
 
-## 5. Deliver
-- Concise summary: checks results, browser findings, numbered issues marked blocking vs follow-up.
-- When asked for feedback for the author, give it as a single copy-pasteable plain-text block (```text fence, no markdown formatting inside), numbered, with blocking items stated explicitly. Offer `gh pr review N` to post it; don't post without being asked.
-- Don't modify the PR or repo unless asked.
+## Output
+- A concise summary: check results, browser findings, numbered issues marked blocking or follow-up.
+- On request, author feedback as one copy-pasteable plain-text block, numbered, with blocking items stated explicitly.
+- Do not modify or comment on the PR unless asked.
