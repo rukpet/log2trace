@@ -469,16 +469,17 @@ describe('Adversarial Probe 3: HTML Validity Across demo/guide.html and demo/dem
     }
     assert.deepEqual(brokenAnchors, [], `${fileName} must not have broken internal anchor links`);
 
-    // 4. Local relative references exist on disk (excluding virtual docs/dist mapped by server)
+    // 4. Local relative references exist on disk (excluding generated docs/dist created by build)
     const relFileRegex = /\b(?:href|src)=["'](\.[^"'#?]+)(?:[?#][^"']*)?["']/gi;
     const dir = dirname(filePath);
     const brokenRefs: string[] = [];
     while ((m = relFileRegex.exec(contentWithoutCode)) !== null) {
       const rel = m[1];
-      // server.js maps /dist and /docs to parent dir
-      const resolved = (rel.startsWith('./dist/') || rel.startsWith('./docs/'))
-        ? resolve(ROOT, rel.replace(/^\.\//, ''))
-        : resolve(dir, rel);
+      // server.js maps /dist and /docs to parent dir; these are generated at build time
+      if (rel.startsWith('./dist/') || rel.startsWith('./docs/')) {
+        continue;
+      }
+      const resolved = resolve(dir, rel);
       if (!existsSync(resolved)) {
         brokenRefs.push(`${rel} -> ${resolved}`);
       }
