@@ -105,8 +105,9 @@ const OBSERVED = [
   'data-url', 'theme', 'wheel-zoom', 'renderer', 'view', 'views',
   'trace-id-field', 'span-group-fields', 'span-name-field', 'service-name-field', 'timestamp-field',
   'end-time-field', 'parent-span-id-field', 'parent-span-lookup-fields', 'span-id-field', 'status-code-field', 'default-span-kind',
-  'height', 'span-height', 'span-padding', 'gutter-width', 'show-legend', 'full-width', 'detail-panel-width',
+  'height', 'span-height', 'span-padding', 'row-height', 'gutter-width', 'show-legend', 'full-width', 'detail-panel-width',
   'kind-colors', 'color-scheme', 'auto-fetch',
+  'sequence-internal', 'sequence-returns', 'sequence-fold',
 ];
 
 /** What the status message says, or nothing when the view is showing data. */
@@ -359,6 +360,11 @@ export class TraceVisualizerElement extends HTMLElement {
         break;
       case 'renderer':
       case 'wheel-zoom':
+      case 'sequence-internal':
+      case 'sequence-returns':
+      case 'sequence-fold':
+      case 'row-height':
+      case 'gutter-width':
         this.active?.view.optionsChanged();
         break;
       case 'view':
