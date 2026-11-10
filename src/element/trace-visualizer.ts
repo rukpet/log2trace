@@ -69,7 +69,6 @@ import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/pa
 import { readWaterfallSettings } from '../views/waterfall/settings.ts';
 import { WaterfallView, waterfallDefinition } from '../views/waterfall/view.ts';
 import {
-  checkViewsDeprecated,
   isTransformReady,
   kindColorOverrides,
   mergeConfig,
@@ -107,7 +106,7 @@ let instances = 0;
 
 /** The attributes the element reacts to. */
 const OBSERVED = [
-  'data-url', 'theme', 'wheel-zoom', 'renderer', 'view', 'views',
+  'data-url', 'theme', 'wheel-zoom', 'renderer', 'view',
   'trace-id-field', 'span-group-fields', 'span-name-field', 'service-name-field', 'timestamp-field',
   'end-time-field', 'parent-span-id-field', 'parent-span-lookup-fields', 'span-id-field', 'status-code-field', 'default-span-kind',
   'height', 'span-height', 'span-padding', 'gutter-width', 'show-legend', 'full-width', 'detail-panel-width',
@@ -197,12 +196,7 @@ export class TraceVisualizerElement extends HTMLElement {
   private apiSelecting = false;
   private appliedHeight: number | undefined;
   private appliedKindVars = new Set<string>();
-  private warnedViews = false;
   private readonly warnedUnknownTypes = new Set<string>();
-
-  private checkViewsAttribute(): void {
-    this.warnedViews = checkViewsDeprecated(this, this.warnedViews);
-  }
 
   constructor() {
     super();
@@ -389,7 +383,6 @@ export class TraceVisualizerElement extends HTMLElement {
   // ---------------------------------------------------------------------------
 
   connectedCallback(): void {
-    this.checkViewsAttribute();
     this.mount();
     this.configChanged();
     const { dataUrl } = this.config;
@@ -414,9 +407,6 @@ export class TraceVisualizerElement extends HTMLElement {
         break;
       case 'view':
         this.showView(this.wantedView());
-        break;
-      case 'views':
-        this.checkViewsAttribute();
         break;
       case 'data-url':
         this.configChanged();

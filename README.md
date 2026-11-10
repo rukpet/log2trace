@@ -87,9 +87,6 @@ Each original log line is preserved as an OpenTelemetry event on its correspondi
 * **`service`**: Directed topology graph displaying services, external peers (databases, queues, HTTP endpoints), request counts, latencies, and error rates.
 * **`sequence`**: Causal sequence diagram with participant lifelines, synchronous request/response pairs, asynchronous message flows, and loop folding.
 
-> [!NOTE]
-> **Migration note**: The `views="a,b"` attribute is deprecated in favor of declarative child `<trace-view type="a"></trace-view>` elements. The `inspector` view has been removed.
-
 Custom views can also be registered at runtime with `registerView()`.
 
 ---

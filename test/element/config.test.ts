@@ -5,8 +5,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  checkViewsDeprecated,
-  DEPRECATED_VIEWS_WARNING,
   isTransformReady,
   kindColorOverrides,
   mergeConfig,
@@ -146,35 +144,6 @@ test('the views attribute is ignored in readConfig', () => {
   const host = new FakeSource('trace-visualizer', { views: 'flame,service' });
   const config = readConfig(host);
   assert.equal(config.viewConfigs, undefined);
-});
-
-test('checkViewsDeprecated warns once per element when views attribute is present', () => {
-  const warnings: string[] = [];
-  const originalWarn = console.warn;
-  console.warn = (msg: string) => { warnings.push(msg); };
-  try {
-    const hostWithViews = new FakeSource('trace-visualizer', { views: 'flame,service' });
-    let warned = false;
-
-    // First check triggers warning and returns true
-    warned = checkViewsDeprecated(hostWithViews, warned);
-    assert.equal(warned, true);
-    assert.equal(warnings.length, 1);
-    assert.equal(warnings[0], DEPRECATED_VIEWS_WARNING);
-
-    // Subsequent checks (e.g. repeated read or lifecycle) do not warn again
-    warned = checkViewsDeprecated(hostWithViews, warned);
-    assert.equal(warned, true);
-    assert.equal(warnings.length, 1, 'warned only once');
-
-    // Host without views attribute does not warn
-    const hostWithoutViews = new FakeSource('trace-visualizer');
-    const unwarned = checkViewsDeprecated(hostWithoutViews, false);
-    assert.equal(unwarned, false);
-    assert.equal(warnings.length, 1);
-  } finally {
-    console.warn = originalWarn;
-  }
 });
 
 test('resolveDeclaredViews drops unknown types, warns about them, and deduplicates type values', () => {

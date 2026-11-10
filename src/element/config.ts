@@ -124,19 +124,6 @@ function parseTraceView(el: AttributeSource): TraceViewConfig | null {
   };
 }
 
-/** Warning issued when deprecated `views` attribute is used. */
-export const DEPRECATED_VIEWS_WARNING =
-  '<trace-visualizer>: The "views" attribute is deprecated and ignored. Declare child <trace-view> elements instead.';
-
-/** Warn once if the deprecated `views` attribute is present on an element. */
-export function checkViewsDeprecated(source: AttributeSource, alreadyWarned: boolean): boolean {
-  if (!alreadyWarned && source.hasAttribute('views')) {
-    console.warn(DEPRECATED_VIEWS_WARNING);
-    return true;
-  }
-  return alreadyWarned;
-}
-
 /** Read the attributes and the `<trace-view>`, `<trace-filter>` and `<span-kind-rule>` children of an element. */
 export function readConfig(source: AttributeSource): TraceVisualizerConfig {
   const config: TraceVisualizerConfig = {};
