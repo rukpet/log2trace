@@ -4,24 +4,32 @@
  * All three render nothing and have no Shadow DOM. They are children of `<trace-visualizer>` that
  * carry one filter field, one span-kind rule, or one view declaration with its per-view options
  * in their attributes; the host reads them with `readConfig` / `readViews` and is told through
- * `_rerender()` whenever one of them is added, changed or removed.
+ * `_rerender()` or `_viewsChanged()` whenever one of them is added, changed or removed.
  */
 
 /** The element that reads the carriers among its children. */
 const CONFIG_HOST = 'trace-visualizer';
 
-/** What a carrier needs of its host: to be told that its configuration changed. */
+/** Attributes of `<trace-view>` that affect tabs or active selection rather than per-view options. */
+const VIEW_TAB_ATTRIBUTES = new Set(['type', 'label', 'active']);
+
+/** What a carrier needs of its host: to be told when its configuration or view declarations change. */
 interface ConfigHost extends HTMLElement {
   _rerender(): void;
+  _viewsChanged(tabsAffected: boolean, viewType?: string | null): void;
 }
 
 function isConfigHost(el: Element | null): el is ConfigHost {
-  return el !== null && typeof (el as Partial<ConfigHost>)._rerender === 'function';
+  return (
+    el !== null
+    && typeof (el as Partial<ConfigHost>)._rerender === 'function'
+    && typeof (el as Partial<ConfigHost>)._viewsChanged === 'function'
+  );
 }
 
 /** Shared lifecycle: find the host (waiting for its upgrade if needed) and report every change to it. */
 abstract class ConfigCarrier extends HTMLElement {
-  private host: ConfigHost | null = null;
+  protected host: ConfigHost | null = null;
 
   protected notify(): void {
     this.host?._rerender();
@@ -31,11 +39,13 @@ abstract class ConfigCarrier extends HTMLElement {
     const el = this.closest(CONFIG_HOST);
     this.host = isConfigHost(el) ? el : null;
     if (this.host === null && el !== null) {
-      // the host is in the document but not upgraded yet
+      // The host is in the document but not upgraded yet; attach once defined so later
+      // mutations and removals reach it. Its own connectedCallback reads all children already
+      // present, so no extra notification is needed on upgrade.
       void customElements.whenDefined(el.localName).then(() => {
+        if (!this.isConnected) return;
         const upgraded = this.closest(CONFIG_HOST);
         this.host = isConfigHost(upgraded) ? upgraded : null;
-        this.notify();
       });
       return;
     }
@@ -73,9 +83,37 @@ class SpanKindRuleElement extends ConfigCarrier {
 class TraceViewElement extends ConfigCarrier {
   private observer: MutationObserver | null = null;
 
+  protected override notify(): void {
+    this.host?._viewsChanged(true, this.getAttribute('type')?.trim() || undefined);
+  }
+
+  private onAttributes(records: MutationRecord[]): void {
+    let tabsAffected = false;
+    let optionsAffected = false;
+    let typeChanged = false;
+    for (const record of records) {
+      const name = record.attributeName;
+      if (name === null) continue;
+      if (name === 'type') {
+        tabsAffected = true;
+        optionsAffected = true;
+        typeChanged = true;
+      } else if (VIEW_TAB_ATTRIBUTES.has(name)) {
+        tabsAffected = true;
+      } else {
+        optionsAffected = true;
+      }
+    }
+    if (!tabsAffected && !optionsAffected) return;
+    const viewType = optionsAffected
+      ? (typeChanged ? undefined : (this.getAttribute('type')?.trim() || undefined))
+      : null;
+    this.host?._viewsChanged(tabsAffected, viewType);
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
-    this.observer ??= new MutationObserver(() => this.notify());
+    this.observer ??= new MutationObserver((records) => this.onAttributes(records));
     this.observer.observe(this, { attributes: true });
   }
 

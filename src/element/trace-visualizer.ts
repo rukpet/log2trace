@@ -163,6 +163,10 @@ export class TraceVisualizerElement extends HTMLElement {
   private appliedHeight: number | undefined;
   private appliedKindVars = new Set<string>();
   private tabsKey = '';
+  private pendingConfig = false;
+  private pendingTabs = false;
+  private pendingViewOptions: Set<string> | 'all' | null = null;
+  private carrierFlushScheduled = false;
 
   constructor() {
     super();
@@ -265,7 +269,7 @@ export class TraceVisualizerElement extends HTMLElement {
 
   set view(id: string) {
     if (this.getAttribute('view') !== id) this.setAttribute('view', id);
-    else this.showView(id);
+    else this.showView(this.wantedView());
   }
 
   /** Select a span and, by default, bring it into view. Does not fire `span-selected`. */
@@ -334,11 +338,51 @@ export class TraceVisualizerElement extends HTMLElement {
     this.active?.view.themeChanged();
   }
 
-  /** Called by `<trace-filter>`, `<span-kind-rule>`, and `<trace-view>` children when their attributes or presence change. */
+  /** Called by `<trace-filter>` and `<span-kind-rule>` children when their attributes or presence change. */
   _rerender(): void {
     if (this.connected === null) return;
-    this.syncTabs();
-    this.configChanged();
+    this.pendingConfig = true;
+    this.scheduleCarrierFlush();
+  }
+
+  /** Called by `<trace-view>` children when their attributes or presence change. */
+  _viewsChanged(tabsAffected: boolean, viewType?: string | null): void {
+    if (this.connected === null) return;
+    if (tabsAffected) this.pendingTabs = true;
+    if (viewType === undefined) {
+      this.pendingViewOptions = 'all';
+    } else if (viewType !== null && this.pendingViewOptions !== 'all') {
+      this.pendingViewOptions ??= new Set();
+      this.pendingViewOptions.add(viewType);
+    }
+    this.scheduleCarrierFlush();
+  }
+
+  private scheduleCarrierFlush(): void {
+    if (this.carrierFlushScheduled) return;
+    this.carrierFlushScheduled = true;
+    queueMicrotask(() => this.flushCarrierChanges());
+  }
+
+  private flushCarrierChanges(): void {
+    this.carrierFlushScheduled = false;
+    const runConfig = this.pendingConfig;
+    const runTabs = this.pendingTabs;
+    const viewOpts = this.pendingViewOptions;
+    this.pendingConfig = false;
+    this.pendingTabs = false;
+    this.pendingViewOptions = null;
+    if (this.connected === null) return;
+
+    const previousActive = this.active;
+    if (runTabs) this.syncTabs();
+    if (runConfig) {
+      this.configChanged();
+    } else if (viewOpts !== null && this.active !== null && this.active === previousActive) {
+      if (viewOpts === 'all' || viewOpts.has(this.active.definition.id)) {
+        this.active.view.optionsChanged();
+      }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -428,6 +472,9 @@ export class TraceVisualizerElement extends HTMLElement {
     const connected = this.connected;
     if (connected === null) return;
     this.connected = null;
+    this.pendingConfig = false;
+    this.pendingTabs = false;
+    this.pendingViewOptions = null;
     for (const cleanup of connected.cleanups) cleanup();
     this.leaveView();
     this.filters.dispose();
@@ -444,22 +491,28 @@ export class TraceVisualizerElement extends HTMLElement {
   }
 
   /** The view to show: `view` when it names a declared tab, else the initial view. */
-  private wantedView(): string {
-    const { tabs, initial } = this.resolvedViews();
+  private wantedView(resolved = this.resolvedViews()): string {
     const asked = this.getAttribute('view');
-    return asked !== null && tabs.some((tab) => tab.id === asked) ? asked : initial;
+    return asked !== null && resolved.tabs.some((tab) => tab.id === asked) ? asked : resolved.initial;
   }
 
   /** Draw the tabs when the tab list changed, and show the view that is wanted. */
   private syncTabs(): void {
-    const { tabs } = this.resolvedViews();
-    const wanted = this.wantedView();
-    const key = tabs.map((tab) => `${tab.id}\u0000${tab.label}`).join('\u0001');
+    const resolved = this.resolvedViews();
+    const asked = this.getAttribute('view');
+    const wanted = this.wantedView(resolved);
+    const staleViewAttr = asked !== null && wanted !== asked;
+    const key = resolved.tabs.map((tab) => `${tab.id}\u0000${tab.label}`).join('\u0001');
     if (key !== this.tabsKey) {
       this.tabsKey = key;
-      this.tabs.set(tabs, wanted);
+      this.tabs.set(resolved.tabs, wanted);
     }
+    const hadActive = this.active !== null;
     this.showView(wanted);
+    if (hadActive && staleViewAttr) {
+      if (wanted) this.setAttribute('view', wanted);
+      else this.removeAttribute('view');
+    }
   }
 
   /** The first `<trace-view>` child matching `id`, if any. */
