@@ -17,7 +17,12 @@
     </header>
 
     <h2>OTel Trace Data (otel-trace.json)</h2>
-    <trace-visualizer data-url="./otel-trace.json" views="waterfall,flame,service,sequence,inspector" full-width show-legend></trace-visualizer>
+    <trace-visualizer data-url="./otel-trace.json" full-width show-legend>
+      <trace-view type="waterfall"></trace-view>
+      <trace-view type="flame"></trace-view>
+      <trace-view type="service"></trace-view>
+      <trace-view type="sequence"></trace-view>
+    </trace-visualizer>
 
     <footer style="margin-top:3rem;color:#999;font-size:0.85rem;text-align:center">
       Built on <time>__BUILD_DATE__</time> &middot;

@@ -24,7 +24,7 @@
       <select id="renderer"><option value="">auto</option><option>canvas</option><option>dom</option></select>
     </label>
     <label><input type="checkbox" id="wheel-zoom"> wheel zooms</label>
-    <label><input type="checkbox" id="tabs"> inspector and flame graph tabs</label>
+    <label><input type="checkbox" id="tabs"> flame, service and sequence tabs</label>
     <span id="info"></span>
     <span>Data: <code>#n=50000&amp;renderer=dom</code> for a generated trace (also <code>seed</code>, <code>ev</code>), otherwise the sample OTel file.</span>
   </header>
@@ -48,8 +48,21 @@
     if (params.get('renderer')) { el.setAttribute('renderer', params.get('renderer')); renderer.value = params.get('renderer'); }
     document.getElementById('wheel-zoom').addEventListener('change', (e) => el.toggleAttribute('wheel-zoom', e.target.checked));
     const tabs = document.getElementById('tabs');
-    if (params.get('views')) { el.setAttribute('views', params.get('views')); tabs.checked = true; }
-    tabs.addEventListener('change', (e) => { if (e.target.checked) el.setAttribute('views', 'waterfall,flame,service,sequence,inspector'); else el.removeAttribute('views'); });
+    function setViews(ids) {
+      for (const child of el.querySelectorAll('trace-view')) child.remove();
+      for (const id of ids) {
+        const view = document.createElement('trace-view');
+        view.setAttribute('type', id);
+        el.appendChild(view);
+      }
+    }
+    if (params.get('views')) {
+      setViews(params.get('views').split(',').map((id) => id.trim()).filter(Boolean));
+      tabs.checked = true;
+    }
+    tabs.addEventListener('change', (e) => {
+      setViews(e.target.checked ? ['waterfall', 'flame', 'service', 'sequence'] : []);
+    });
 
     if (params.get('n')) {
       const t0 = performance.now();

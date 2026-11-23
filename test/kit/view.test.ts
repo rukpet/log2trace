@@ -1,10 +1,10 @@
 /**
- * The view registry and the helpers that read the `views` attribute.
+ * The view registry and the helpers that resolve `<trace-view>` declarations.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getView, listViews, parseViewIds, registerView, resolveRenderer, type TraceView, type ViewDefinition } from '../../src/kit/view.ts';
+import { getView, listViews, registerView, resolveRenderer, resolveViews, type TraceView, type ViewDefinition } from '../../src/kit/view.ts';
 
 function definition(id: string, renderers: ViewDefinition['renderers'] = ['dom']): ViewDefinition {
   return { id, label: id.toUpperCase(), renderers, capabilities: {}, create: () => ({}) as TraceView };
@@ -36,16 +36,66 @@ test('resolveRenderer takes the one asked for when the view has it, else the def
   assert.equal(resolveRenderer('canvas', ['dom']), 'dom', 'a view without a canvas backend ignores the request');
 });
 
-test('parseViewIds keeps the known ids once, in the order given', () => {
-  const known = ['waterfall', 'inspector', 'flame'];
-  assert.deepEqual(parseViewIds('inspector, waterfall', known), ['inspector', 'waterfall']);
-  assert.deepEqual(parseViewIds('waterfall,waterfall,flame', known), ['waterfall', 'flame']);
-  assert.deepEqual(parseViewIds(' waterfall ,, inspector ', known), ['waterfall', 'inspector']);
+test('resolveViews keeps known types once in document order, overrides labels, and picks the active tab', () => {
+  const known = [definition('waterfall'), definition('flame'), definition('service')];
+  assert.deepEqual(
+    resolveViews(
+      [
+        { type: 'flame', active: false },
+        { type: 'unknown', active: true },
+        { type: 'waterfall', label: 'Timeline', active: false },
+        { type: 'flame', label: 'Duplicate', active: true },
+        { type: 'service', active: true },
+      ],
+      known,
+    ),
+    {
+      tabs: [
+        { id: 'flame', label: 'FLAME' },
+        { id: 'waterfall', label: 'Timeline' },
+        { id: 'service', label: 'SERVICE' },
+      ],
+      initial: 'service',
+    },
+  );
+  assert.deepEqual(
+    resolveViews(
+      [
+        { type: 'service', active: false },
+        { type: 'flame', active: true },
+        { type: 'waterfall', active: true },
+      ],
+      known,
+    ),
+    {
+      tabs: [
+        { id: 'service', label: 'SERVICE' },
+        { id: 'flame', label: 'FLAME' },
+        { id: 'waterfall', label: 'WATERFALL' },
+      ],
+      initial: 'flame',
+    },
+    'first active declaration wins',
+  );
+  assert.deepEqual(
+    resolveViews([{ type: 'service', active: false }, { type: 'flame', active: false }], known),
+    {
+      tabs: [
+        { id: 'service', label: 'SERVICE' },
+        { id: 'flame', label: 'FLAME' },
+      ],
+      initial: 'service',
+    },
+    'defaults to the first tab when none is marked active',
+  );
 });
 
-test('parseViewIds falls back to the first registered view when nothing usable is asked for', () => {
-  const known = ['waterfall', 'inspector'];
-  assert.deepEqual(parseViewIds(null, known), ['waterfall']);
-  assert.deepEqual(parseViewIds('', known), ['waterfall']);
-  assert.deepEqual(parseViewIds('nope,also-nope', known), ['waterfall']);
+test('resolveViews falls back to waterfall, then the first known view, or empty when none are registered', () => {
+  const withWaterfall = [definition('flame'), definition('waterfall')];
+  assert.deepEqual(resolveViews([], withWaterfall), { tabs: [{ id: 'waterfall', label: 'WATERFALL' }], initial: 'waterfall' });
+  assert.deepEqual(resolveViews([{ type: 'nope', active: true }], withWaterfall), { tabs: [{ id: 'waterfall', label: 'WATERFALL' }], initial: 'waterfall' });
+
+  const withoutWaterfall = [definition('flame'), definition('service')];
+  assert.deepEqual(resolveViews([], withoutWaterfall), { tabs: [{ id: 'flame', label: 'FLAME' }], initial: 'flame' });
+  assert.deepEqual(resolveViews([], []), { tabs: [], initial: '' });
 });

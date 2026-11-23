@@ -6,8 +6,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { choiceOption, flagOption, numberOption, type ViewOptions } from '../../src/kit/view-options.ts';
 
-function options(config: Record<string, unknown>, attributes: Record<string, string> = {}): ViewOptions {
-  return { config, attribute: (name) => attributes[name] ?? null };
+function options(
+  config: Record<string, unknown>,
+  attributes: Record<string, string> = {},
+  viewAttributes?: Record<string, string>,
+): ViewOptions {
+  const base: ViewOptions = { config, attribute: (name) => attributes[name] ?? null };
+  return viewAttributes === undefined
+    ? base
+    : { ...base, viewAttribute: (name) => viewAttributes[name] ?? null };
 }
 
 test('numberOption takes finite numbers only', () => {
@@ -17,17 +24,30 @@ test('numberOption takes finite numbers only', () => {
   for (const key of ['text', 'nan', 'inf', 'nothing', 'missing']) assert.equal(numberOption(o, key), undefined, key);
 });
 
-test('flagOption is true for a present attribute whatever its value', () => {
+test('numberOption prefers a finite child viewAttribute over config and falls back when invalid or absent', () => {
+  assert.equal(numberOption(options({ spanHeight: 20 }, {}, { 'span-height': '32' }), 'spanHeight', 'span-height'), 32);
+  assert.equal(numberOption(options({ spanHeight: 20 }, {}, { 'span-height': 'nope' }), 'spanHeight', 'span-height'), 20);
+  assert.equal(numberOption(options({ spanHeight: 20 }, {}, { 'span-height': '   ' }), 'spanHeight', 'span-height'), 20);
+  assert.equal(numberOption(options({ spanHeight: 20 }, {}), 'spanHeight', 'span-height'), 20);
+});
+
+test('flagOption is true for a present attribute whatever its value, with viewAttribute taking precedence', () => {
   const o = options({}, { 'wheel-zoom': '', other: 'false' });
   assert.equal(flagOption(o, 'wheel-zoom'), true);
   assert.equal(flagOption(o, 'other'), true);
   assert.equal(flagOption(o, 'absent'), false);
+
+  assert.equal(flagOption(options({}, { 'wheel-zoom': '' }, { 'wheel-zoom': 'false' }), 'wheel-zoom'), false);
+  assert.equal(flagOption(options({}, {}, { 'wheel-zoom': '' }), 'wheel-zoom'), true);
 });
 
-test('choiceOption takes a listed value and nothing else', () => {
+test('choiceOption takes a listed value and nothing else, preferring viewAttribute over the element', () => {
   const o = options({}, { renderer: 'canvas', bad: 'svg' });
   assert.equal(choiceOption(o, 'renderer', ['dom', 'canvas']), 'canvas');
   assert.equal(choiceOption(o, 'bad', ['dom', 'canvas']), undefined);
   assert.equal(choiceOption(o, 'absent', ['dom', 'canvas']), undefined);
   assert.equal(choiceOption(o, 'renderer', ['dom']), undefined);
+
+  assert.equal(choiceOption(options({}, { renderer: 'dom' }, { renderer: 'canvas' }), 'renderer', ['dom', 'canvas']), 'canvas');
+  assert.equal(choiceOption(options({}, { renderer: 'dom' }, { renderer: 'svg' }), 'renderer', ['dom', 'canvas']), 'dom');
 });
