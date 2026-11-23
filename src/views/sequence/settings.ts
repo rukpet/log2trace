@@ -52,13 +52,8 @@ function readChoice<T extends string>(
 }
 
 function readNumber(options: ViewOptions, configKey: string, attribute: string, viewName: string): number | undefined {
-  const own = options.viewAttribute?.(viewName);
-  if (own != null && own.trim() !== '') {
-    const parsed = Number(own);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  const fromConfig = numberOption(options, configKey);
-  if (fromConfig !== undefined) return fromConfig;
+  const fromOption = numberOption(options, configKey, viewName);
+  if (fromOption !== undefined) return fromOption;
   const rawConfig = options.config[configKey];
   if (typeof rawConfig === 'string' && rawConfig.trim() !== '') {
     const parsed = Number(rawConfig);
