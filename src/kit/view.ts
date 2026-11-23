@@ -1,10 +1,10 @@
 /**
  * Kit: the contract of a view
  *
- * A view is one way of drawing the loaded trace: the waterfall today, a flame graph, a service
- * graph or a sequence diagram tomorrow. The element hosts exactly one at a time in a surface it
- * hands over, and everything it needs of a view is in {@link TraceView}; the shell (toolbar,
- * tooltip, detail panel, tabs) needs even less and never imports a view.
+ * A view is one way of drawing the loaded trace: the waterfall, a flame graph, a service graph or
+ * a sequence diagram. The element hosts exactly one at a time in a surface it hands over, and
+ * everything it needs of a view is in {@link TraceView}; the shell (toolbar, tooltip, detail panel,
+ * tabs) needs even less and never imports a view.
  *
  * What is shared by every view lives in the store: the data, the selection, the hover, the
  * collapsed spans, the filter result and the time window. What is a view's own (the camera, the
@@ -79,7 +79,7 @@ export interface TraceView {
 
 /** What the page can tell about a view without mounting it. */
 export interface ViewDefinition {
-  /** The id used in the `view` and `views` attributes. */
+  /** The id used in `<trace-view type>` and the `view` attribute. */
   readonly id: string;
   /** The text of its tab. */
   readonly label: string;
@@ -114,12 +114,45 @@ export function resolveRenderer(asked: RendererKind | undefined, available: read
   return asked !== undefined && available.includes(asked) ? asked : available[0];
 }
 
+/** One `<trace-view>` child as declared, before it is checked against the registry. */
+export interface ViewDeclaration {
+  readonly type: string;
+  readonly label?: string;
+  readonly active: boolean;
+}
+
+/** One tab to show. */
+export interface ViewTab {
+  readonly id: string;
+  readonly label: string;
+}
+
+/** The view shown when nothing usable is declared. */
+export const DEFAULT_VIEW = 'waterfall';
+
 /**
- * The ids to show as tabs, from the value of the `views` attribute: the registered ones, once each,
- * in the order given. An empty or unusable list falls back to the first registered view.
+ * The tabs to show and the view to start with. Registered types only, once each (the first
+ * declaration of a type wins), in document order; `label` overrides the definition's label.
+ * `initial` is the first declaration marked `active`, else the first tab. When nothing usable
+ * is declared, falls back to the default view (or the first registered one if absent).
  */
-export function parseViewIds(value: string | null, known: readonly string[]): string[] {
-  const asked = (value ?? '').split(',').map((id) => id.trim()).filter((id) => id !== '');
-  const ids = [...new Set(asked)].filter((id) => known.includes(id));
-  return ids.length > 0 ? ids : known.slice(0, 1);
+export function resolveViews(
+  declared: readonly ViewDeclaration[],
+  known: readonly ViewDefinition[],
+): { tabs: ViewTab[]; initial: string } {
+  const tabs: ViewTab[] = [];
+  let initial: string | undefined;
+  for (const d of declared) {
+    const def = known.find((k) => k.id === d.type);
+    if (def === undefined || tabs.some((t) => t.id === def.id)) continue;
+    tabs.push({ id: def.id, label: d.label ?? def.label });
+    if (d.active && initial === undefined) initial = def.id;
+  }
+  if (tabs.length === 0) {
+    const fallback = known.find((k) => k.id === DEFAULT_VIEW) ?? known[0];
+    return fallback === undefined
+      ? { tabs: [], initial: '' }
+      : { tabs: [{ id: fallback.id, label: fallback.label }], initial: fallback.id };
+  }
+  return { tabs, initial: initial ?? tabs[0].id };
 }

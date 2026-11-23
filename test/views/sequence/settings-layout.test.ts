@@ -36,11 +36,15 @@ import {
 function makeOptions(
   config: Record<string, unknown> = {},
   attrs: Record<string, string> = {},
+  viewAttrs: Record<string, string> = {},
 ): ViewOptions {
   return {
     config,
     attribute(name: string): string | null {
       return Object.prototype.hasOwnProperty.call(attrs, name) ? (attrs[name] ?? null) : null;
+    },
+    viewAttribute(name: string): string | null {
+      return Object.prototype.hasOwnProperty.call(viewAttrs, name) ? (viewAttrs[name] ?? null) : null;
     },
   };
 }
@@ -91,6 +95,23 @@ test('readSequenceSettings reads wheelZoom from attribute or config', () => {
   assert.equal(readSequenceSettings(makeOptions({}, { 'wheel-zoom': '' })).wheelZoom, true);
   assert.equal(readSequenceSettings(makeOptions({ wheelZoom: true })).wheelZoom, true);
   assert.equal(readSequenceSettings(makeOptions({ wheelZoom: false })).wheelZoom, false);
+});
+
+test('readSequenceSettings prefers short <trace-view> attributes over element attributes and config', () => {
+  const settings = readSequenceSettings(
+    makeOptions(
+      { sequenceInternal: 'hide', sequenceReturns: 'none', sequenceFold: 2, rowHeight: 22, wheelZoom: true },
+      { 'sequence-internal': 'hide', 'sequence-returns': 'none', 'sequence-fold': '2', 'row-height': '24', 'wheel-zoom': '' },
+      { internal: 'show', returns: 'errors', fold: '5', 'row-height': '36', 'wheel-zoom': 'false' },
+    ),
+  );
+  assert.deepEqual(settings, {
+    internal: 'show',
+    returns: 'errors',
+    foldMin: 5,
+    rowHeight: 36,
+    wheelZoom: false,
+  });
 });
 
 test('computeSequenceLayout computes default geometry and dimensions', () => {

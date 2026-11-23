@@ -1,7 +1,8 @@
 /**
  * The waterfall's own settings
  *
- * What the waterfall reads from the element's options: the row metrics, the wheel behaviour and the
+ * What the waterfall reads from the element's options (checking its `<trace-view type="waterfall">`
+ * child first, then the host attributes and config): the row metrics, the wheel behaviour and the
  * backend. Kept apart from the view so that it loads in Node and is tested there; the element and
  * every other view know none of these names.
  */
@@ -28,9 +29,9 @@ export interface WaterfallSettings {
 /** Read the settings of the waterfall from the options of the element. */
 export function readWaterfallSettings(options: ViewOptions): WaterfallSettings {
   return {
-    spanHeight: numberOption(options, 'spanHeight'),
-    spanPadding: numberOption(options, 'spanPadding'),
-    gutterWidth: numberOption(options, 'gutterWidth'),
+    spanHeight: numberOption(options, 'spanHeight', 'span-height'),
+    spanPadding: numberOption(options, 'spanPadding', 'span-padding'),
+    gutterWidth: numberOption(options, 'gutterWidth', 'gutter-width'),
     wheelZoom: flagOption(options, 'wheel-zoom'),
     renderer: choiceOption(options, 'renderer', WATERFALL_RENDERERS),
   };

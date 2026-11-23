@@ -1,8 +1,9 @@
 /**
  * log2trace-ui — embeddable trace visualization Web Component.
  *
- * Importing this module registers three custom elements as a side
- * effect: `<trace-visualizer>` (the trace view), `<trace-filter>`
+ * Importing this module registers four custom elements as a side
+ * effect: `<trace-visualizer>` (the trace view), `<trace-view>`
+ * (declarative view tabs and per-view options), `<trace-filter>`
  * (declarative filter inputs), and `<span-kind-rule>` (declarative
  * span-kind classification rules). After import the component can be
  * used directly from HTML, or driven programmatically via the exports
@@ -31,7 +32,7 @@
  * @packageDocumentation
  */
 
-// Auto-register <trace-visualizer>, <trace-filter> and <span-kind-rule> when imported
+// Auto-register <trace-visualizer>, <trace-view>, <trace-filter> and <span-kind-rule> when imported
 import './element/carriers.ts';
 import './element/trace-visualizer.ts';
 
@@ -40,7 +41,7 @@ export { TraceVisualizerElement } from './element/trace-visualizer.ts';
 export type { LogDataInput, SelectSpanOptions } from './element/trace-visualizer.ts';
 export type { TraceVisualizerConfig } from './element/config.ts';
 
-// The view contract: register a view of your own next to the waterfall, the inspector and the flame graph
+// The view contract: register a view of your own next to the waterfall, flame graph, service map and sequence diagram
 export { getView, listViews, registerView } from './kit/view.ts';
 export type { RendererKind, TraceView, ViewContext, ViewDefinition, ViewHit } from './kit/view.ts';
 export { choiceOption, flagOption, numberOption, type ViewOptions } from './kit/view-options.ts';

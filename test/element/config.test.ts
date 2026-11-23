@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, type AttributeSource } from '../../src/element/config.ts';
+import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, readViews, type AttributeSource } from '../../src/element/config.ts';
 
 class FakeSource implements AttributeSource {
   readonly children: Array<FakeSource & { tagName: string }> = [];
@@ -112,4 +112,19 @@ test('kind colour overrides take numbers and names and skip the rest', () => {
     ['kindProducer', 'green'],
   ]);
   assert.deepEqual(kindColorOverrides(undefined), []);
+});
+
+test('<trace-view> children are read in document order, trimmed, and invalid ones skipped', () => {
+  const host = new FakeSource('trace-visualizer')
+    .child('trace-filter', { field: 'spanName', label: 'Name', type: 'text', source: 'local' })
+    .child('TRACE-VIEW', { type: ' waterfall ', label: '  Timeline  ', active: '' })
+    .child('trace-view', { label: 'Missing type', active: '' })
+    .child('trace-view', { type: '   ' })
+    .child('trace-view', { type: 'flame', label: '   ', active: 'false' })
+    .child('trace-view', { type: 'sequence' });
+  assert.deepEqual(readViews(host), [
+    { type: 'waterfall', label: 'Timeline', active: true },
+    { type: 'flame', active: false },
+    { type: 'sequence', active: false },
+  ]);
 });

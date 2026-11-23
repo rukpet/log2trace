@@ -26,10 +26,12 @@
       timestamp-field="text.CreateDate"
       status-code-field="text.Code"
       parent-span-lookup-fields="text.InitiatingApplication"
-      views="waterfall,flame,service,inspector"
       full-width
       show-legend
     >
+      <trace-view type="waterfall"></trace-view>
+      <trace-view type="flame"></trace-view>
+      <trace-view type="service"></trace-view>
       <span-kind-rule kind="Server"   match-field="text.ClassName"  match-value="API"></span-kind-rule>
       <span-kind-rule kind="Client"   match-field="text.MethodName" match-value="LogOutgoingDomainRequest"></span-kind-rule>
       <span-kind-rule kind="Client"   match-field="text.MethodName" match-value="LogReceivedDomainResponse"></span-kind-rule>

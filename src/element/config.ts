@@ -5,6 +5,7 @@
  * Every field maps to a kebab-case attribute. The transform fields say how raw logs become
  * spans (the headless `TransformConfig`), the rest is display and data-source behaviour. The
  * programmatic `config` property wins over attributes, field by field, as it always did.
+ * Declared `<trace-view>` children are read separately via {@link readViews}.
  *
  * Nothing here touches the DOM beyond reading attributes from what it is given, so it is tested
  * in Node with plain objects.
@@ -14,6 +15,7 @@ import type { FilterFieldConfig, FilterFieldType, FilterOption, FilterSource, Fi
 import { normalizeOptions } from '../core/config.ts';
 import { SpanKind } from '../core/otel/trace.ts';
 import { KIND_TOKENS, type ColorToken } from '../kit/theme/theme.ts';
+import type { ViewDeclaration } from '../kit/view.ts';
 
 /** Everything configurable, all optional: one type for the attributes and the resolved result. */
 export interface TraceVisualizerConfig extends Partial<TransformConfig> {
@@ -169,6 +171,22 @@ export function readConfig(source: AttributeSource): TraceVisualizerConfig {
   set('kindColors', json('kind-colors') ?? json('color-scheme'));
   set('autoFetch', bool('auto-fetch'));
   return config;
+}
+
+/** Read the `<trace-view>` children of an element in document order. */
+export function readViews(source: AttributeSource): ViewDeclaration[] {
+  const views: ViewDeclaration[] = [];
+  for (let i = 0; i < source.children.length; i++) {
+    const child = source.children[i];
+    if (child.tagName.toLowerCase() !== 'trace-view') continue;
+    const type = child.getAttribute('type')?.trim();
+    if (!type) continue;
+    const label = child.getAttribute('label')?.trim();
+    const activeAttr = child.getAttribute('active');
+    const active = activeAttr !== null && activeAttr !== 'false';
+    views.push(label ? { type, label, active } : { type, active });
+  }
+  return views;
 }
 
 /**

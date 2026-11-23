@@ -1,9 +1,10 @@
 /**
- * Configuration carriers: `<trace-filter>` and `<span-kind-rule>`.
+ * Configuration carriers: `<trace-filter>`, `<span-kind-rule>`, and `<trace-view>`.
  *
- * Both render nothing and have no Shadow DOM. They are children of `<trace-visualizer>` that carry
- * one filter field or one span-kind rule in their attributes; the host reads them with
- * `readConfig` and is told through `_rerender()` whenever one of them is added, changed or removed.
+ * All three render nothing and have no Shadow DOM. They are children of `<trace-visualizer>` that
+ * carry one filter field, one span-kind rule, or one view declaration with its per-view options
+ * in their attributes; the host reads them with `readConfig` / `readViews` and is told through
+ * `_rerender()` whenever one of them is added, changed or removed.
  */
 
 /** The element that reads the carriers among its children. */
@@ -22,7 +23,7 @@ function isConfigHost(el: Element | null): el is ConfigHost {
 abstract class ConfigCarrier extends HTMLElement {
   private host: ConfigHost | null = null;
 
-  private notify(): void {
+  protected notify(): void {
     this.host?._rerender();
   }
 
@@ -68,5 +69,22 @@ class SpanKindRuleElement extends ConfigCarrier {
   }
 }
 
+/** `<trace-view type="..." label="..." active ...options>`: one view of the host and its own options. Any attribute can be an option, so all of them are watched. */
+class TraceViewElement extends ConfigCarrier {
+  private observer: MutationObserver | null = null;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.observer ??= new MutationObserver(() => this.notify());
+    this.observer.observe(this, { attributes: true });
+  }
+
+  override disconnectedCallback(): void {
+    this.observer?.disconnect();
+    super.disconnectedCallback();
+  }
+}
+
 if (!customElements.get('trace-filter')) customElements.define('trace-filter', TraceFilterElement);
 if (!customElements.get('span-kind-rule')) customElements.define('span-kind-rule', SpanKindRuleElement);
+if (!customElements.get('trace-view')) customElements.define('trace-view', TraceViewElement);

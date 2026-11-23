@@ -1011,7 +1011,7 @@ export function edgesMatched(graph: ServiceGraph, matched: SpanMask | null): Uin
   return result;
 }
 
-/** Describe a node for the tooltip or inspector. */
+/** Describe a node for the tooltip. */
 export function describeNode(graph: ServiceGraph, nodeIdx: number): InfoModel {
   const name = graph.topology.names[nodeIdx];
   const isInf = graph.topology.nodeKind[nodeIdx] === NodeKind.Inferred;
@@ -1042,7 +1042,7 @@ export function describeNode(graph: ServiceGraph, nodeIdx: number): InfoModel {
   };
 }
 
-/** Describe an edge for the tooltip or inspector. */
+/** Describe an edge for the tooltip. */
 export function describeEdge(graph: ServiceGraph, edgeIdx: number): InfoModel {
   const srcName = graph.topology.names[graph.topology.source[edgeIdx]];
   const dstName = graph.topology.names[graph.topology.target[edgeIdx]];
