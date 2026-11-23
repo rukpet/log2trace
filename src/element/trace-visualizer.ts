@@ -507,9 +507,9 @@ export class TraceVisualizerElement extends HTMLElement {
       this.tabsKey = key;
       this.tabs.set(resolved.tabs, wanted);
     }
-    const hadActive = this.active !== null;
+    const activeWasAsked = this.active?.definition.id === asked;
     this.showView(wanted);
-    if (hadActive && staleViewAttr) {
+    if (activeWasAsked && staleViewAttr) {
       if (wanted) this.setAttribute('view', wanted);
       else this.removeAttribute('view');
     }
