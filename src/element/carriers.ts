@@ -29,10 +29,21 @@ function isConfigHost(el: Element | null): el is ConfigHost {
 
 /** Shared lifecycle: find the host (waiting for its upgrade if needed) and report every change to it. */
 abstract class ConfigCarrier extends HTMLElement {
-  protected host: ConfigHost | null = null;
+  private host: ConfigHost | null = null;
+  private pendingHost: Element | null = null;
+
+  protected resolveHost(): ConfigHost | null {
+    if (this.host !== null) return this.host;
+    const candidate = this.isConnected ? this.closest(CONFIG_HOST) : this.pendingHost;
+    if (isConfigHost(candidate)) {
+      this.host = candidate;
+      this.pendingHost = null;
+    }
+    return this.host;
+  }
 
   protected notify(): void {
-    this.host?._rerender();
+    this.resolveHost()?._rerender();
   }
 
   connectedCallback(): void {
@@ -42,19 +53,26 @@ abstract class ConfigCarrier extends HTMLElement {
       // The host is in the document but not upgraded yet; attach once defined so later
       // mutations and removals reach it. Its own connectedCallback reads all children already
       // present, so no extra notification is needed on upgrade.
+      this.pendingHost = el;
       void customElements.whenDefined(el.localName).then(() => {
-        if (!this.isConnected) return;
+        if (!this.isConnected) {
+          this.pendingHost = null;
+          return;
+        }
         const upgraded = this.closest(CONFIG_HOST);
         this.host = isConfigHost(upgraded) ? upgraded : null;
+        this.pendingHost = null;
       });
       return;
     }
+    this.pendingHost = null;
     this.notify();
   }
 
   disconnectedCallback(): void {
     this.notify();
     this.host = null;
+    this.pendingHost = null;
   }
 
   attributeChangedCallback(): void {
@@ -84,7 +102,7 @@ class TraceViewElement extends ConfigCarrier {
   private observer: MutationObserver | null = null;
 
   protected override notify(): void {
-    this.host?._viewsChanged(true, this.getAttribute('type')?.trim() || undefined);
+    this.resolveHost()?._viewsChanged(true, this.getAttribute('type')?.trim() || null);
   }
 
   private onAttributes(records: MutationRecord[]): void {
@@ -106,9 +124,9 @@ class TraceViewElement extends ConfigCarrier {
     }
     if (!tabsAffected && !optionsAffected) return;
     const viewType = optionsAffected
-      ? (typeChanged ? undefined : (this.getAttribute('type')?.trim() || undefined))
+      ? (typeChanged ? undefined : (this.getAttribute('type')?.trim() || null))
       : null;
-    this.host?._viewsChanged(tabsAffected, viewType);
+    this.resolveHost()?._viewsChanged(tabsAffected, viewType);
   }
 
   override connectedCallback(): void {
