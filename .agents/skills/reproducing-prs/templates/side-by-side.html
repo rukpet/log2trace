@@ -108,6 +108,11 @@
       min-height: 0;
     }
 
+    main.stacked {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
     .pane {
       background: var(--bg-base);
       display: flex;
@@ -213,8 +218,8 @@
       <span class="pill">branch: {{PR_BRANCH}}</span>
     </div>
     <div class="controls">
-      <button onclick="reloadBoth()">↻ Reload Both Panes</button>
-      <button class="primary" onclick="window.close()">Finish Review</button>
+      <button id="layout-btn" onclick="toggleLayout()">⇅ Stack Vertically</button>
+      <button class="primary" onclick="reloadBoth()">↻ Reload Both Panes</button>
     </div>
   </header>
 
@@ -226,7 +231,7 @@
           <span>Case A: Baseline (main)</span>
           <span class="state-badge error">With Bug</span>
         </div>
-        <span class="pill">bundle: dist-main</span>
+        <span class="pill">base: main</span>
       </div>
       <div class="pane-notes">
         <strong>Expected Bug:</strong> {{BUG_DESCRIPTION}}
@@ -250,7 +255,7 @@
           <span>Case B: Pull Request</span>
           <span class="state-badge fixed">Fix Verified</span>
         </div>
-        <span class="pill">bundle: dist-pr</span>
+        <span class="pill">head: {{PR_BRANCH}}</span>
       </div>
       <div class="pane-notes">
         <strong>Expected Fix:</strong> {{FIX_DESCRIPTION}}
@@ -269,6 +274,13 @@
   </main>
 
   <script>
+    function toggleLayout() {
+      const main = document.querySelector('main');
+      const btn = document.getElementById('layout-btn');
+      const stacked = main.classList.toggle('stacked');
+      if (btn) btn.textContent = stacked ? '⇄ Split Side-by-Side' : '⇅ Stack Vertically';
+    }
+
     function reloadBoth() {
       const frameA = document.getElementById('frame-a');
       const frameB = document.getElementById('frame-b');
