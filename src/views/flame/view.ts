@@ -16,9 +16,6 @@
  * Keys: arrows move the selection (up to the parent box, down to the heaviest child, left and right
  * to the neighbours), `F` focuses the selected box, Escape leaves the focus, or else clears the
  * selection. A double click focuses the box.
- *
- * @module
- * @internal
  */
 
 import { Slice, touches, formatDuration, type ChangeSet, type SpanId } from '../../core/index.ts';

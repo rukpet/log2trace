@@ -5,9 +5,6 @@
  * anchor, and flip it to the left or above when it would leave the container.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 /** Where the tooltip points, in the coordinates of its container. */

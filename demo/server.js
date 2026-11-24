@@ -25,7 +25,7 @@ try {
 } catch {}
 
 const server = http.createServer((req, res) => {
-  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  const pathname = (req.url ?? '/').split(/[?#]/, 1)[0];
   const filePath = pathname === '/' || pathname === '' ? '/demo.html' : pathname;
 
   // Map paths to actual file locations

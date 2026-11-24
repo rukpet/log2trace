@@ -6,9 +6,6 @@
  * view state, dirty flags for the painter, and store/scroll side-effects.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import type { SpanId } from '../../../core/index.ts';

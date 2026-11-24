@@ -4,9 +4,6 @@
  * Everything dynamic (positions, widths) is written from the painter through `element.style`;
  * these classes carry the rest. Colours come from the theme tokens, so the DOM painter follows
  * light, dark, forced colours and the host page's overrides without a probe.
- *
- * @module
- * @internal
  */
 
 import { createVar, style, styleVariants } from '@vanilla-extract/css';

@@ -7,9 +7,6 @@
  *
  * Styles are injected (`SequenceDomClasses`) so this module never imports a `*.css.ts` file
  * at runtime and can be unit-tested in Node against the fake DOM.
- *
- * @module
- * @internal
  */
 
 import { h } from '../../../kit/dom.ts';

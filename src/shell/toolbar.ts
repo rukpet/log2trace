@@ -3,9 +3,6 @@
  *
  * A button per view command, plus the readouts commands carry (the zoom level). It knows
  * `ViewCommand` and nothing about which view the commands belong to.
- *
- * @module
- * @internal
  */
 
 import type { ViewCommand } from '../kit/commands.ts';

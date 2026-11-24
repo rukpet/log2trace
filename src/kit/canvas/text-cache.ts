@@ -14,9 +14,6 @@
  * fake in tests), and the module reads no browser global at import time.
  * Answers depend on the loaded fonts, so the cache must be cleared when they
  * change: `clearOnFontLoad` does it on `document.fonts`' `loadingdone`.
- *
- * @module
- * @internal
  */
 
 /** Width in CSS px of `text` set in `font` (a CSS font shorthand, such as `12px "Segoe UI"`). */

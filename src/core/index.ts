@@ -49,4 +49,5 @@ export { formatDuration, formatOffset, formatAbsoluteTime, extractAnyValue } fro
 // OpenTelemetry trace types
 export { SpanKind, spanKindName } from './otel/trace.ts';
 export type { TraceData, ResourceSpans, ScopeSpans, Span, Event, Link, Status } from './otel/trace.ts';
-export type { AnyValue, KeyValue, ArrayValue, KeyValueList, InstrumentationScope } from './otel/common.ts';
+export type { Resource } from './otel/resource.ts';
+export type { AnyValue, KeyValue, ArrayValue, KeyValueList, InstrumentationScope, EntityRef } from './otel/common.ts';

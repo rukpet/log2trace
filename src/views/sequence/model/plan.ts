@@ -2,9 +2,6 @@
  * SequencePlan: preallocated typed arrays describing one visible frame of the sequence diagram.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import { formatDuration, formatOffset, type SpanSet } from '../../../core/index.ts';

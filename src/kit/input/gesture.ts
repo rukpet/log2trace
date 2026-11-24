@@ -22,9 +22,6 @@
  * starts a gesture. Safari's `gesture*` events, which it sends for a trackpad
  * pinch and, redundantly, for a two-finger touch pinch, are accepted only while
  * no pointer gesture runs, so a pinch is never zoomed twice.
- *
- * @module
- * @internal
  */
 
 import {

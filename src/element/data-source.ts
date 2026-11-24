@@ -6,9 +6,6 @@
  * query parameters or as the callback's argument. Whatever arrives is turned into a span index.
  *
  * No DOM here, and `fetch` can be replaced, so the whole path is tested in Node.
- *
- * @module
- * @internal
  */
 
 import type { FetchCallback, LogEntry, TransformConfig } from '../core/config.ts';

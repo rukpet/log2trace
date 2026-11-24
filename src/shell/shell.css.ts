@@ -3,9 +3,6 @@
  *
  * Colours and fonts come from the theme tokens only, so the whole shell follows light, dark and
  * the host page's overrides without a rule of its own.
- *
- * @module
- * @internal
  */
 
 import { globalStyle, keyframes, style, styleVariants } from '@vanilla-extract/css';

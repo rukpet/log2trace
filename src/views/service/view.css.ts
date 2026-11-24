@@ -1,8 +1,5 @@
 /**
  * Styles for the Service Graph view.
- *
- * @module
- * @internal
  */
 
 import { style } from '@vanilla-extract/css';

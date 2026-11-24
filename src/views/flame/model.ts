@@ -15,9 +15,6 @@
  * focus (which box fills the width) and the width belong to the view and enter only the layout.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import {

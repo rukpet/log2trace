@@ -7,9 +7,6 @@
  * `filter.ts`. The filter bar draws it and writes user input into it; nothing here knows how.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import type { Filter, FilterFieldConfig, FilterSource, FilterValue } from './config.ts';
