@@ -4,9 +4,6 @@
  * hit testing, and tooltip descriptions.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import {

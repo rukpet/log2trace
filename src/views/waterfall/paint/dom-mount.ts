@@ -2,9 +2,6 @@
  * The DOM painter with its stylesheet: the factory the element mounts.
  *
  * Kept apart from `dom.ts` so that file never imports a `*.css.ts` module and can be tested in Node.
- *
- * @module
- * @internal
  */
 
 import { createDomPainter } from './dom.ts';

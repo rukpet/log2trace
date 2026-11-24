@@ -1,9 +1,6 @@
 /**
  * Flame graph view styles. Positions and widths of the boxes are written through `element.style`;
  * everything else, including the colours (the span-kind tokens), is here.
- *
- * @module
- * @internal
  */
 
 import { createVar, style, styleVariants } from '@vanilla-extract/css';

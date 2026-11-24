@@ -10,9 +10,6 @@
  * Light is the default. `theme="dark"` selects the dark values, `theme="light"` the light
  * ones, and without the attribute (or with `theme="auto"`) the page's
  * `prefers-color-scheme` decides.
- *
- * @module
- * @internal
  */
 
 import { assignVars, createGlobalTheme, createGlobalThemeContract, globalStyle } from '@vanilla-extract/css';

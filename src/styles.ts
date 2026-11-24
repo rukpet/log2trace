@@ -9,9 +9,6 @@
  * To add a stylesheet: create the `*.css.ts` file and import it below. The CSS comes out in the
  * order of the imports and a later rule wins a tie in the cascade, so list a file after the ones
  * whose rules it overrides.
- *
- * @module
- * @internal
  */
 
 import './kit/theme/tokens.css.ts';

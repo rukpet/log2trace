@@ -11,9 +11,6 @@
  *
  * The core has no DOM typings, so `performance` is looked up on `globalThis`
  * and typed here. Where a runtime has none, the calls do nothing.
- *
- * @module
- * @internal
  */
 
 const PREFIX = 'log2trace';

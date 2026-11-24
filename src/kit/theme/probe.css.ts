@@ -3,9 +3,6 @@
  *
  * Each probe element takes one token through the stylesheet, so the browser resolves
  * whatever the host wrote into it. See `theme.ts`.
- *
- * @module
- * @internal
  */
 
 import { style, styleVariants } from '@vanilla-extract/css';

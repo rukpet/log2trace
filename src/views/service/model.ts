@@ -3,9 +3,6 @@
  * and laying out nodes and directed edges in a layered hierarchical DAG.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import {

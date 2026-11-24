@@ -1,6 +1,5 @@
 {
-  "entryPoints": ["src"],
-  "entryPointStrategy": "expand",
+  "entryPoints": ["src/log2trace.ts", "src/core/index.ts"],
   "out": "docs",
   "name": "log2trace-ui",
   "includeVersion": true,

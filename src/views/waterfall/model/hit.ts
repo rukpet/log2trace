@@ -7,9 +7,6 @@
  * at 50. Reuse one {@link HitResult} for every pointer move to avoid garbage.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import { pxPerMs, type Camera1D } from '../../../kit/geometry/camera1d.ts';

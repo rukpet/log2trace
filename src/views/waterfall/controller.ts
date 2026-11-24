@@ -8,9 +8,6 @@
  * behaviour is tested in Node against a real store.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import {

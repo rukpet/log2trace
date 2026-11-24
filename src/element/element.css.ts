@@ -3,9 +3,6 @@
  *
  * The rules for `:host` name the element (`:host(trace-visualizer)`) because every element of
  * the library adopts the same stylesheet.
- *
- * @module
- * @internal
  */
 
 import { globalStyle, style } from '@vanilla-extract/css';

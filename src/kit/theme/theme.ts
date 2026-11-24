@@ -12,9 +12,6 @@
  *
  * The class names are passed in (they come from `probe.css.ts`, which Node cannot import),
  * so this module has no stylesheet dependency and runs against fakes under `node:test`.
- *
- * @module
- * @internal
  */
 
 /** Every colour token. */

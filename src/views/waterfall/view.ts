@@ -8,9 +8,6 @@
  * virtualized DOM, chosen by `renderer`), keeps the accessibility tree of the canvas painter, and
  * reports hovers to the page through the view context. Nothing here knows about the filter bar,
  * the detail panel or the tabs.
- *
- * @module
- * @internal
  */
 
 import { Slice, touches, type ChangeSet, type SpanId } from '../../core/index.ts';

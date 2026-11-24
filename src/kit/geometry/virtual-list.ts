@@ -10,9 +10,6 @@
  * Pure functions with no DOM: the canvas and DOM painters share them, and
  * tests run in plain Node. Bad input (zero or negative sizes, NaN) gives an
  * empty range or a scroll position of 0, never NaN.
- *
- * @module
- * @internal
  */
 
 /** Geometry of a list: rows of one height in a viewport of another. */

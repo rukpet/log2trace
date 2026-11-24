@@ -2,9 +2,6 @@
  * Sequence diagram step & activation projection.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import type { SpanMask, TimeWindow } from '../../../core/index.ts';

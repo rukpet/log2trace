@@ -12,9 +12,6 @@
  * match are skipped in one step through `subtreeEnd`.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import type { SpanMask } from '../../../core/span-set.ts';

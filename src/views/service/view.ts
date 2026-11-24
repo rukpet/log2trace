@@ -4,9 +4,6 @@
  * Visualizes services as nodes and inter-service communications as directed edges,
  * with zero external visualization dependencies. Synchronizes with the shared store
  * (data, selection, hover target, filter matches, and time-window bounds).
- *
- * @module
- * @internal
  */
 
 import {

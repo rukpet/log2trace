@@ -9,9 +9,6 @@
  * - Every change a user makes is reported as a `filter-changed` event.
  *
  * It draws nothing itself (the bar is given), so it is tested in Node with a fake bar.
- *
- * @module
- * @internal
  */
 
 import type { FetchCallback, FilterSource, FilterValue } from '../core/config.ts';

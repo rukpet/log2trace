@@ -1,8 +1,5 @@
 /**
  * Styles for the Sequence Diagram DOM painter.
- *
- * @module
- * @internal
  */
 
 import { style, styleVariants } from '@vanilla-extract/css';

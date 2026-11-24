@@ -23,9 +23,6 @@
  * Nothing here touches a browser global at import time: the environment is
  * injected (`requestFrame`, `cancelFrame`, `now`) and defaults to the page's
  * own on first use, so the whole module runs under `node:test`.
- *
- * @module
- * @internal
  */
 
 import type { FlushScheduler } from '../core/index.ts';

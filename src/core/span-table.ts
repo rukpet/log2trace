@@ -70,10 +70,7 @@ export interface SpanTable {
   readonly evSrc: Int32Array;
 }
 
-/**
- * What {@link buildSpanTable} reads: one entry per span, in any order ("slot" order).
- * @internal
- */
+/** What {@link buildSpanTable} reads: one entry per span, in any order ("slot" order). */
 export interface SpanTableInput {
   readonly spans: readonly Span[];
   /** Service name of each span. */
@@ -86,10 +83,7 @@ export interface SpanTableInput {
   readonly endNs: BigInt64Array;
 }
 
-/**
- * A built table and where each input slot ended up.
- * @internal
- */
+/** A built table and where each input slot ended up. */
 export interface BuiltSpanTable {
   readonly table: SpanTable;
   /** Row of each input slot. */
@@ -98,7 +92,6 @@ export interface BuiltSpanTable {
 
 /**
  * Build the table for a set of spans.
- * @internal
  *
  * Parent links that form a cycle (a span that is its own ancestor, which no
  * well-formed trace has) are broken at the cycle member that starts first, so

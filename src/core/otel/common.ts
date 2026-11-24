@@ -54,7 +54,6 @@ export interface KeyValue {
 
 /**
  * Extract a string from an AnyValue, returning undefined if not a string.
- * @internal
  */
 export function extractString(value?: AnyValue): string | undefined {
   return value?.stringValue;
@@ -82,7 +81,6 @@ export interface InstrumentationScope {
  * EntityRef is a reference to an Entity.
  * Entity represents an object of interest associated with produced telemetry.
  * Status: Development
- * @internal
  */
 export interface EntityRef {
   /** The Schema URL, if known */

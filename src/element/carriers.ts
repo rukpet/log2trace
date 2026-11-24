@@ -5,9 +5,6 @@
  * carry one filter field, one span-kind rule, or one view declaration with its per-view options
  * in their attributes; the host reads them with `readConfig` / `readViews` and is told through
  * `_rerender()` or `_viewsChanged()` whenever one of them is added, changed or removed.
- *
- * @module
- * @internal
  */
 
 /** The element that reads the carriers among its children. */

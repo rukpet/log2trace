@@ -126,37 +126,25 @@ export function listViews(): readonly ViewDefinition[] {
   return [...registry.values()];
 }
 
-/**
- * The backend to use: the one asked for when the view has it, else the view's default.
- * @internal
- */
+/** The backend to use: the one asked for when the view has it, else the view's default. */
 export function resolveRenderer(asked: RendererKind | undefined, available: readonly RendererKind[]): RendererKind {
   return asked !== undefined && available.includes(asked) ? asked : available[0];
 }
 
-/**
- * One `<trace-view>` child as declared, before it is checked against the registry.
- * @internal
- */
+/** One `<trace-view>` child as declared, before it is checked against the registry. */
 export interface ViewDeclaration {
   readonly type: string;
   readonly label?: string;
   readonly active: boolean;
 }
 
-/**
- * One tab to show.
- * @internal
- */
+/** One tab to show. */
 export interface ViewTab {
   readonly id: string;
   readonly label: string;
 }
 
-/**
- * The view shown when nothing usable is declared.
- * @internal
- */
+/** The view shown when nothing usable is declared. */
 export const DEFAULT_VIEW = 'waterfall';
 
 /**
@@ -164,7 +152,6 @@ export const DEFAULT_VIEW = 'waterfall';
  * declaration of a type wins), in document order; `label` overrides the definition's label.
  * `initial` is the first declaration marked `active`, else the first tab. When nothing usable
  * is declared, falls back to the default view (or the first registered one if absent).
- * @internal
  */
 export function resolveViews(
   declared: readonly ViewDeclaration[],

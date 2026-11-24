@@ -2,9 +2,6 @@
  * Sequence diagram selection/hover span resolution and tooltip InfoModel builders.
  *
  * Headless: no DOM, no browser globals.
- *
- * @module
- * @internal
  */
 
 import {

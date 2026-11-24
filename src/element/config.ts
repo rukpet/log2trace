@@ -5,7 +5,7 @@
  * Every field maps to a kebab-case attribute. The transform fields say how raw logs become
  * spans (the headless `TransformConfig`), the rest is display and data-source behaviour. The
  * programmatic `config` property wins over attributes, field by field, as it always did.
- * Declared `<trace-view>` children are read separately via `readViews`.
+ * Declared `<trace-view>` children are read separately via {@link readViews}.
  *
  * Nothing here touches the DOM beyond reading attributes from what it is given, so it is tested
  * in Node with plain objects.
@@ -43,20 +43,14 @@ export interface TraceVisualizerConfig extends Partial<TransformConfig> {
   filterConfigs?: FilterFieldConfig[];
 }
 
-/**
- * What can be read from: an element, or anything shaped like one.
- * @internal
- */
+/** What can be read from: an element, or anything shaped like one. */
 export interface AttributeSource {
   getAttribute(name: string): string | null;
   hasAttribute(name: string): boolean;
   readonly children: ArrayLike<AttributeSource & { readonly tagName: string }>;
 }
 
-/**
- * The part of the config the transform needs to be present.
- * @internal
- */
+/** The part of the config the transform needs to be present. */
 export function isTransformReady(config: TraceVisualizerConfig): config is TraceVisualizerConfig & TransformConfig {
   return [config.traceIdField, config.spanNameField, config.serviceNameField, config.timestampField].every(Boolean);
 }
@@ -108,10 +102,7 @@ function parseFilter(el: AttributeSource): FilterFieldConfig | null {
   };
 }
 
-/**
- * Read the attributes and the `<trace-filter>` and `<span-kind-rule>` children of an element.
- * @internal
- */
+/** Read the attributes and the `<trace-filter>` and `<span-kind-rule>` children of an element. */
 export function readConfig(source: AttributeSource): TraceVisualizerConfig {
   const config: TraceVisualizerConfig = {};
   const str = (name: string): string | undefined => source.getAttribute(name) ?? undefined;
@@ -182,10 +173,7 @@ export function readConfig(source: AttributeSource): TraceVisualizerConfig {
   return config;
 }
 
-/**
- * Read the `<trace-view>` children of an element in document order.
- * @internal
- */
+/** Read the `<trace-view>` children of an element in document order. */
 export function readViews(source: AttributeSource): ViewDeclaration[] {
   const views: ViewDeclaration[] = [];
   for (let i = 0; i < source.children.length; i++) {
@@ -204,7 +192,6 @@ export function readViews(source: AttributeSource): ViewDeclaration[] {
 /**
  * Layer the programmatic config over the one read from attributes. A single `spanGroupFields`
  * string becomes a list.
- * @internal
  */
 export function mergeConfig(fromAttributes: TraceVisualizerConfig, programmatic: TraceVisualizerConfig): TraceVisualizerConfig {
   const config = { ...fromAttributes, ...programmatic };
@@ -215,7 +202,6 @@ export function mergeConfig(fromAttributes: TraceVisualizerConfig, programmatic:
 /**
  * Colour overrides for span kinds as `[token, colour]` pairs. Keys are the kind number (`"2"`) or
  * its name (`"Server"`, any case); anything else is skipped.
- * @internal
  */
 export function kindColorOverrides(colors: Record<string, string> | undefined): Array<[ColorToken, string]> {
   const result: Array<[ColorToken, string]> = [];
