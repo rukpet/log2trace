@@ -41,14 +41,17 @@ If browser validation can't run (no browser, bundle build or server fails), stop
 Look only at what changed since the last review and confirm each earlier finding is fixed, still open, or newly introduced.
 
 ## Output
-Do not modify or comment on the PR on GitHub unless asked. Give a concise summary of diff and browser findings (omit CI boilerplate unless CI is failing), then, on request, author feedback as one plain-text block:
+Do not modify or comment on the PR on GitHub unless asked. Give a concise summary of diff and browser findings (omit CI boilerplate unless CI is failing). When requested, provide author feedback in one single fenced block (no nested triple-backticks inside so it copies cleanly):
 
-```text
-<one line on what was verified in the browser>
+```markdown
+Verified in Chrome: <views/scenarios exercised>.
 
-Blocking
-1. <issue and the fix wanted>
+**Blocking**
+1. `path/to/file.ts:42` — <observed bug/risk and how to trigger it>. <Expected behavior or fix.>
 
-Follow-ups
-2. <issue>
+**Non-blocking**
+2. `path/to/file.ts:88` — <concise suggestion or question>.
 ```
+
+- **Omit empty sections:** If nothing is blocking, drop `**Blocking**`; if there are no findings at all, output only the `Verified in Chrome: ...` line and `LGTM.`.
+- **Number continuously** across sections (`1.`, `2.`, ...) so re-reviews can reference items by number.
