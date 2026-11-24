@@ -47,29 +47,17 @@ For UI or behavioral changes, build a live split comparison:
 
 ### Phase 4: PR Delivery (Only When Code Was Modified)
 
-Skip this phase if you only reproduced or demonstrated an existing PR without changing code—CI already runs automated checks on the PR.
+Skip this phase if you only reproduced or demonstrated an existing PR without changing code. Do not run `lint`, `typecheck`, or unit `test` suites locally—Husky hooks and GitHub Actions run automated checks automatically.
 
 When you authored or modified code to fix the bug:
-1. **Run automated checks once before pushing:**
-   `npm run lint && npm run check && npm test`
-2. **Commit and push clean changes:**
-   - Never stage or commit temporary repro files (`demo/reproduce-pr-*.html`, `demo/.repro-pr-*`).
-   - Follow `CONTRIBUTING.md` (Chris Beams' 7 rules: imperative mood, `<= 50`-char subject, blank line, `<= 72`-char wrapped body, no Conventional Commits prefixes) and validate with `npm run check:commit` before pushing.
-3. **Update the GitHub PR description:**
-   Follow `CONTRIBUTING.md` and `.github/PULL_REQUEST_TEMPLATE.md`: delete non-applicable optional sections, keep the description shorter than the diff itself, and fact-check every technical claim against source code.
+1. **Commit and push clean changes:**
+   Follow `CONTRIBUTING.md` (Chris Beams' 7 rules) and push to the PR branch, excluding temporary repro files (`demo/reproduce-pr-*.html`, `demo/.repro-pr-*`).
+2. **Update the GitHub PR description:**
+   Follow `CONTRIBUTING.md` and `.github/PULL_REQUEST_TEMPLATE.md` (delete non-applicable optional sections, keep the description shorter than the diff itself, and fact-check every technical claim against source code).
 
 ## Gotchas
 
-- `prebuild` (`rimraf dist`) wipes `dist/` on every build—stash `main`'s bundle inside `demo/.repro-pr-<num>/` before switching to the PR branch.
 - `demo/server.js` serves `/dist/` and `/docs/` from the repo root and everything else from `demo/`; avoid URL query strings (`?case=a`) on static paths when the server maps `req.url` directly to disk.
 - Author CSS (`display: flex`, `display: block`) overrides browser `[hidden]`—always verify `getComputedStyle` and rendered visibility.
 - `git checkout <branch>` and `gh pr checkout` can fail on single-branch clones; fetch `pull/<num>/head` explicitly and chain with `&&` so a failed checkout never builds the wrong branch.
-- Remove temporary `demo/reproduce-pr-*.html` and `demo/.repro-pr-*` artifacts once the user finishes reviewing (or when cleaning up), and never commit them.
-
-## Quick Reference Checklist
-
-- [ ] Built `main` bundle, created minimal fixture, and confirmed **Case A** reproduces the issue.
-- [ ] Stashed `main` bundle in `demo/.repro-pr-<num>/` before switching branches.
-- [ ] Built PR bundle and verified **Case B** interactively and visually (real input, `getComputedStyle`, screenshots, zero console/pageerror regressions).
-- [ ] Wired `demo/reproduce-pr-<num>.html` from `templates/side-by-side.html` and presented Case A vs. Case B.
-- [ ] *(If code was modified)* Passed `lint`, `check`, `test`, and `check:commit`, pushed clean commits (excluding temporary `demo/` repro files), and updated the PR description per `.github/PULL_REQUEST_TEMPLATE.md`.
+- Remove temporary `demo/reproduce-pr-*.html` and `demo/.repro-pr-*` artifacts once the user finishes reviewing (or when cleaning up), and never stage or commit them.
