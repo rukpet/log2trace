@@ -11,6 +11,8 @@
  * ```
  *
  * The package root re-exports all of this next to the `<trace-visualizer>` element.
+ *
+ * @module log2trace-ui/core
  */
 
 // Log → trace → index
