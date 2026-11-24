@@ -4,9 +4,12 @@
  * to minimize cross-column message distance while respecting causal left-to-right flow.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
-import { SpanKind, type SpanIndex } from '../../../core.ts';
+import { SpanKind, type SpanIndex } from '../../../core/index.ts';
 import { inferredPeerOf } from '../../../core/peers.ts';
 
 /** Kind of participant lifeline column in the sequence diagram. */

@@ -7,6 +7,9 @@
  * come from the camera helpers (`normalizeWheelDelta`, `wheelZoomFactor`), so a
  * wheel zooms the same wherever it is used. No DOM types: a plain object with
  * the right fields stands in for the event, which is how the tests run.
+ *
+ * @module
+ * @internal
  */
 
 import { normalizeWheelDelta, wheelZoomFactor } from '../geometry/camera1d.ts';

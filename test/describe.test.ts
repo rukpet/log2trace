@@ -13,7 +13,7 @@ import {
   formatOffset,
   SpanKind,
   type InfoModel,
-} from '../src/core.ts';
+} from '../src/core/index.ts';
 import { demoLogsIndex, demoOtelIndex } from './support/demo-data.ts';
 import { event, kv, span, trace } from './support/trace-builder.ts';
 

@@ -38,7 +38,7 @@ import {
   type TraceData,
   type TraceStore,
   type TransformConfig,
-} from '../core.ts';
+} from '../core/index.ts';
 import { measure } from '../core/instrumentation.ts';
 import type { SpanIndex } from '../core/span-index.ts';
 import * as a11yStyles from '../kit/a11y.css.ts';
@@ -89,7 +89,9 @@ styleSheet.replaceSync(componentCss);
 
 /** Raw logs and how to read them, as the `logData` setter takes them. */
 export interface LogDataInput {
+  /** Raw JSON log records to transform into OpenTelemetry spans. */
   readonly logs: LogEntry[];
+  /** Field mappings and classification rules used by `transformLogs`. */
   readonly config: TransformConfig;
 }
 
@@ -133,6 +135,7 @@ interface Connected {
 
 /** Custom element backing the `<trace-visualizer>` tag. */
 export class TraceVisualizerElement extends HTMLElement {
+  /** HTML attribute names observed for reactive updates. */
   static get observedAttributes(): string[] {
     return OBSERVED;
   }
@@ -235,6 +238,7 @@ export class TraceVisualizerElement extends HTMLElement {
     return mergeConfig(readConfig(this), this.programmatic);
   }
 
+  /** Merge programmatic configuration fields over attribute-derived defaults (`undefined` restores the attribute value). */
   set config(config: TraceVisualizerConfig) {
     for (const key of Object.keys(config) as Array<keyof TraceVisualizerConfig>) {
       if (config[key] === undefined) delete this.programmatic[key];
@@ -248,6 +252,7 @@ export class TraceVisualizerElement extends HTMLElement {
     return this.fetchCallbackValue;
   }
 
+  /** Set or clear (`null`) the external-filter data fetch callback. */
   set fetchCallback(callback: FetchCallback | null) {
     this.fetchCallbackValue = callback;
   }
@@ -267,6 +272,7 @@ export class TraceVisualizerElement extends HTMLElement {
     return this.active?.definition.id ?? this.wantedView();
   }
 
+  /** Switch the active view by id (falling back to the default view when unknown) and synchronize the `view` attribute. */
   set view(id: string) {
     if (this.getAttribute('view') !== id) this.setAttribute('view', id);
     else this.showView(this.wantedView());
@@ -320,14 +326,20 @@ export class TraceVisualizerElement extends HTMLElement {
     return this.active?.view.renderer ?? resolveRenderer(readWaterfallSettings(this.viewOptions(waterfallDefinition.id)).renderer, waterfallDefinition.renderers);
   }
 
-  /** Parts of the active waterfall for tests and the performance harness; not a public API. */
+  /**
+   * Parts of the active waterfall for tests and the performance harness; not a public API.
+   * @internal
+   */
   get internals(): { readonly controller: WaterfallController | null; readonly store: TraceStore; readonly painter: WaterfallPainter | null; readonly plot: HTMLElement | null } {
     const view = this.active?.view;
     const inner = view instanceof WaterfallView ? view.internals : null;
     return { controller: inner?.controller ?? null, store: this.shared, painter: inner?.painter ?? null, plot: inner?.plot ?? null };
   }
 
-  /** What the recent frames cost and how much the painter drew, for the performance harness. */
+  /**
+   * What the recent frames cost and how much the painter drew, for the performance harness.
+   * @internal
+   */
   frameStats(): { readonly frames: ReturnType<ReturnType<typeof getFrameScheduler>['stats']>; readonly painter: PainterStats | null } {
     const view = this.active?.view;
     return { frames: getFrameScheduler().stats(), painter: view instanceof WaterfallView ? view.painterStats : null };
@@ -396,6 +408,7 @@ export class TraceVisualizerElement extends HTMLElement {
   // Lifecycle
   // ---------------------------------------------------------------------------
 
+  /** Custom Element lifecycle hook invoked when `<trace-visualizer>` connects to a document. */
   connectedCallback(): void {
     this.mount();
     this.configChanged();
@@ -405,10 +418,12 @@ export class TraceVisualizerElement extends HTMLElement {
     }
   }
 
+  /** Custom Element lifecycle hook invoked when `<trace-visualizer>` disconnects from a document. */
   disconnectedCallback(): void {
     this.unmount();
   }
 
+  /** Custom Element lifecycle hook invoked when an observed HTML attribute changes. */
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     if (oldValue === newValue || this.connected === null) return;
     switch (name) {

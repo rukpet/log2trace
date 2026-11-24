@@ -15,12 +15,15 @@
  * focus (which box fills the width) and the width belong to the view and enter only the layout.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import {
   Slice, defineSelector, formatDuration,
   type InfoModel, type Selector, type SpanId, type SpanIndex, type SpanSet, type TimeWindow,
-} from '../../core.ts';
+} from '../../core/index.ts';
 
 /** The trace folded into boxes: parallel arrays with one entry per box, in order of first appearance. */
 export interface FlameTree {

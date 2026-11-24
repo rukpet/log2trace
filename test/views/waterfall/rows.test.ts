@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSpanIndex, SpanMask, type SpanIndex } from '../../../src/core.ts';
+import { buildSpanIndex, SpanMask, type SpanIndex } from '../../../src/core/index.ts';
 import { Chevron, chevronOf, projectRows, type RowProjection } from '../../../src/views/waterfall/model/rows.ts';
 import { demoLogsIndex } from '../../support/demo-data.ts';
 import { random, span, trace, treeTrace, type TreeNode } from '../../support/trace-builder.ts';

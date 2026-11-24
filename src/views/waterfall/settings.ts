@@ -5,6 +5,9 @@
  * child first, then the host attributes and config): the row metrics, the wheel behaviour and the
  * backend. Kept apart from the view so that it loads in Node and is tested there; the element and
  * every other view know none of these names.
+ *
+ * @module
+ * @internal
  */
 
 import { choiceOption, flagOption, numberOption, type RendererKind, type ViewOptions } from '../../kit/view-options.ts';

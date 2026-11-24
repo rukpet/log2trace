@@ -2,9 +2,12 @@
  * Sequence diagram static message classification per span row.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
-import { Slice, SpanKind, defineSelector, type Selector, type SpanIndex } from '../../../core.ts';
+import { Slice, SpanKind, defineSelector, type Selector, type SpanIndex } from '../../../core/index.ts';
 import { buildParticipants, ParticipantKind, type Participants } from './participants.ts';
 
 /** How a `SpanTable` row participates in the sequence diagram. */

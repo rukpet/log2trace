@@ -8,9 +8,12 @@
  * the next key. The owner moves the focus in on an explicit request (Enter on a selected span) with
  * {@link DetailPanel.focus}. Escape inside the panel, and hiding the panel while it holds the focus,
  * hand the focus back through `onReturn`, so the keyboard never lands on a hidden element.
+ *
+ * @module
+ * @internal
  */
 
-import type { InfoModel } from '../core.ts';
+import type { InfoModel } from '../core/index.ts';
 import { h } from '../kit/dom.ts';
 import { renderInfoHeader, renderSections } from './info.ts';
 import * as styles from './shell.css.ts';

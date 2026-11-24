@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSpanIndex, createTraceStore, type TraceStore } from '../../../src/core.ts';
+import { buildSpanIndex, createTraceStore, type TraceStore } from '../../../src/core/index.ts';
 import type { CanvasSurface } from '../../../src/kit/canvas/surface.ts';
 import { createTextMeter } from '../../../src/kit/canvas/text-cache.ts';
 import { Dirty } from '../../../src/kit/scheduler.ts';

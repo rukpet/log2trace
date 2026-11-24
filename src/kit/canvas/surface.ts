@@ -33,6 +33,9 @@
  * (`position: relative` or similar), and the surface adds its canvases before
  * the host's existing children, so later siblings (a scroller, a mirror of rows
  * for screen readers) stack above them. The canvases take no pointer events.
+ *
+ * @module
+ * @internal
  */
 
 import { Dirty, getFrameScheduler, type FrameScheduler } from '../scheduler.ts';

@@ -1,5 +1,8 @@
 /**
  * Waterfall view styles: the native scroller over the painter and its cursor.
+ *
+ * @module
+ * @internal
  */
 
 import { style, styleVariants } from '@vanilla-extract/css';

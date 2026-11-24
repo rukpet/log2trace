@@ -2,9 +2,12 @@
  * Sequence diagram view: mounts the native 2D scroller (`part="plot"`), binds pointer/wheel/key
  * input, connects `SequenceController` to `SequenceDomPainter` via the shared frame scheduler,
  * and exposes the sequence toolbar commands.
+ *
+ * @module
+ * @internal
  */
 
-import type { ChangeSet, SpanId } from '../../core.ts';
+import type { ChangeSet, SpanId } from '../../core/index.ts';
 import type { ViewCommand } from '../../kit/commands.ts';
 import { h } from '../../kit/dom.ts';
 import { bindInput } from '../../kit/input/bind.ts';

@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSpanIndex } from '../../../src/core.ts';
+import { buildSpanIndex } from '../../../src/core/index.ts';
 import { createCamera, pxPerMs, withWindow } from '../../../src/kit/geometry/camera1d.ts';
 import {
   CLIP_MARGIN,

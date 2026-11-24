@@ -36,7 +36,7 @@
 import './element/carriers.ts';
 import './element/trace-visualizer.ts';
 
-export * from './core.ts';
+export * from './core/index.ts';
 export { TraceVisualizerElement } from './element/trace-visualizer.ts';
 export type { LogDataInput, SelectSpanOptions } from './element/trace-visualizer.ts';
 export type { TraceVisualizerConfig } from './element/config.ts';

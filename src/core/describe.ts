@@ -22,26 +22,35 @@ export type InfoRow = readonly [label: string, value: string];
 
 /** Rows under a heading of their own, such as one event of a span. */
 export interface InfoGroup {
+  /** Group heading (for example, an event name). */
   readonly title: string;
   /** Text next to the title, such as when an event happened. */
   readonly aside?: string;
+  /** Label/value rows inside the group. */
   readonly rows: readonly InfoRow[];
 }
 
 /** One block of an {@link InfoModel}. */
 export interface InfoSection {
+  /** Section heading (such as `"Overview"`, `"Attributes"`, or `"Events"`). */
   readonly title: string;
   /** A count to show next to the title. */
   readonly badge?: number;
+  /** Flat label/value rows in this section. */
   readonly rows?: readonly InfoRow[];
+  /** Titled subgroups in this section (used for events). */
   readonly groups?: readonly InfoGroup[];
 }
 
 /** A description of something on screen, ready to render. */
 export interface InfoModel {
+  /** Primary heading (such as the span operation name). */
   readonly title: string;
+  /** Secondary subtitle (such as the service name). */
   readonly subtitle?: string;
+  /** Status badge tone, if applicable. */
   readonly status?: InfoStatus;
+  /** Ordered content sections. */
   readonly sections: readonly InfoSection[];
 }
 

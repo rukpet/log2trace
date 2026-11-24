@@ -5,7 +5,7 @@
 
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSpanIndex, createTraceStore, type TraceStore } from '../../../src/core.ts';
+import { buildSpanIndex, createTraceStore, type TraceStore } from '../../../src/core/index.ts';
 import { createTextMeter } from '../../../src/kit/canvas/text-cache.ts';
 import { createFrameScheduler, type FrameScheduler } from '../../../src/kit/scheduler.ts';
 import { COLOR_TOKENS, KIND_TOKENS, type ColorToken, type ResolvedTheme } from '../../../src/kit/theme/theme.ts';

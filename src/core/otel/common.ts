@@ -10,19 +10,27 @@
  * The value can be a primitive (string, bool, int, double, bytes) or a complex structure (array, key-value list).
  */
 export interface AnyValue {
+  /** UTF-8 string value. */
   stringValue?: string;
+  /** Boolean value. */
   boolValue?: boolean;
+  /** Signed 64-bit integer value (encoded as decimal string or number in JSON). */
   intValue?: string | number;
+  /** IEEE 754 double-precision floating-point value. */
   doubleValue?: number;
+  /** Homogeneous or heterogeneous array value. */
   arrayValue?: ArrayValue;
+  /** Nested key-value map value. */
   kvlistValue?: KeyValueList;
-  bytesValue?: string; // base64 encoded bytes
+  /** Base64-encoded byte sequence. */
+  bytesValue?: string;
 }
 
 /**
  * ArrayValue is a list of AnyValue messages.
  */
 export interface ArrayValue {
+  /** Elements of the array; may be empty. */
   values: AnyValue[];
 }
 
@@ -30,6 +38,7 @@ export interface ArrayValue {
  * KeyValueList is a list of KeyValue messages.
  */
 export interface KeyValueList {
+  /** Key-value entries in the list. */
   values: KeyValue[];
 }
 
@@ -37,12 +46,15 @@ export interface KeyValueList {
  * KeyValue is a key-value pair that is used to store attributes, etc.
  */
 export interface KeyValue {
+  /** Attribute or property key. */
   key: string;
+  /** Attribute value. */
   value: AnyValue;
 }
 
 /**
  * Extract a string from an AnyValue, returning undefined if not a string.
+ * @internal
  */
 export function extractString(value?: AnyValue): string | undefined {
   return value?.stringValue;
@@ -70,6 +82,7 @@ export interface InstrumentationScope {
  * EntityRef is a reference to an Entity.
  * Entity represents an object of interest associated with produced telemetry.
  * Status: Development
+ * @internal
  */
 export interface EntityRef {
   /** The Schema URL, if known */

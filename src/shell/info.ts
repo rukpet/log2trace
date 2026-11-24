@@ -4,9 +4,12 @@
  * One description of a span (`describeSpan`) is shown twice, small in the tooltip and in full in
  * the detail panel. These functions turn the model into DOM nodes without ever parsing markup,
  * so a value from a log record can only become text.
+ *
+ * @module
+ * @internal
  */
 
-import type { InfoGroup, InfoModel, InfoRow, InfoSection } from '../core.ts';
+import type { InfoGroup, InfoModel, InfoRow, InfoSection } from '../core/index.ts';
 import { h } from '../kit/dom.ts';
 import * as styles from './shell.css.ts';
 

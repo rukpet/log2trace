@@ -8,10 +8,13 @@
  * virtualized DOM, chosen by `renderer`), keeps the accessibility tree of the canvas painter, and
  * reports hovers to the page through the view context. Nothing here knows about the filter bar,
  * the detail panel or the tabs.
+ *
+ * @module
+ * @internal
  */
 
-import { Slice, touches, type ChangeSet, type SpanId } from '../../core.ts';
-import { describeSpan } from '../../core.ts';
+import { Slice, touches, type ChangeSet, type SpanId } from '../../core/index.ts';
+import { describeSpan } from '../../core/index.ts';
 import * as a11yStyles from '../../kit/a11y.css.ts';
 import { createTextMeter, measureWithContext, type TextMeter } from '../../kit/canvas/text-cache.ts';
 import type { ViewCommand } from '../../kit/commands.ts';

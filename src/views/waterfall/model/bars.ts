@@ -9,6 +9,9 @@
  * coordinates the painters or the browser cannot represent.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import { pxPerMs, type Camera1D } from '../../../kit/geometry/camera1d.ts';

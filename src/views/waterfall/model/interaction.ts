@@ -12,6 +12,9 @@
  * here, and `handled` tells the binding whether to cancel the event's default action.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import {

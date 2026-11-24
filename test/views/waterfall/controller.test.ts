@@ -11,7 +11,7 @@ import {
   type ChangeSet,
   type SpanIndex,
   type TraceStore,
-} from '../../../src/core.ts';
+} from '../../../src/core/index.ts';
 import { WaterfallController } from '../../../src/views/waterfall/controller.ts';
 import { WaterfallDirty } from '../../../src/views/waterfall/model/interaction.ts';
 import { FramePlan } from '../../../src/views/waterfall/model/plan.ts';

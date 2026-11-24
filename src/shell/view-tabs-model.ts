@@ -3,6 +3,9 @@
  *
  * The keyboard behaviour of a tab list, apart from the DOM so it can be tested in Node: arrows
  * move to the neighbour and wrap around, Home and End jump to the ends.
+ *
+ * @module
+ * @internal
  */
 
 /**

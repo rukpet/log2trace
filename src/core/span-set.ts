@@ -17,8 +17,11 @@ export type SpanId = string;
 
 /** A read-only set of span ids. A `ReadonlySet<string>` satisfies it. */
 export interface SpanSet {
+  /** Number of span ids in the set. */
   readonly size: number;
+  /** Whether the span with `id` is in the set. */
   has(id: SpanId): boolean;
+  /** Iterate over the span ids in the set. */
   [Symbol.iterator](): Iterator<SpanId>;
 }
 
@@ -84,6 +87,7 @@ export class SpanMask implements SpanSet {
     return this.bits[row] === 1;
   }
 
+  /** Whether the span with `id` is a member. */
   has(id: SpanId): boolean {
     const indexed = this.index.spans.get(id);
     return indexed !== undefined && this.bits[indexed.idx] === 1;

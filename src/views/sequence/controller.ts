@@ -4,6 +4,9 @@
  * hit testing, and tooltip descriptions.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import {
@@ -18,7 +21,7 @@ import {
   type Origin,
   type SpanId,
   type TraceStore,
-} from '../../core.ts';
+} from '../../core/index.ts';
 import {
   describeActivation,
   describeParticipant,

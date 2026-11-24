@@ -13,5 +13,9 @@
   "navigationLinks": {
     "GitHub": "https://github.com/rukpet/log2trace"
   },
-  "tsconfig": "tsconfig.json"
+  "tsconfig": "tsconfig.json",
+  "validation": {
+    "notDocumented": true
+  },
+  "treatWarningsAsErrors": true
 }

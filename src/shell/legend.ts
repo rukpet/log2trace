@@ -3,6 +3,9 @@
  *
  * A swatch and a name per kind, in the colours of the theme (the swatches take the same tokens
  * as the bars, so the legend follows light, dark and overrides).
+ *
+ * @module
+ * @internal
  */
 
 import { h } from '../kit/dom.ts';

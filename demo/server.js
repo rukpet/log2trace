@@ -25,12 +25,8 @@ try {
 } catch {}
 
 const server = http.createServer((req, res) => {
-  let filePath = req.url;
-  
-  // Default to demo.html
-  if (filePath === '/' || filePath === '') {
-    filePath = '/demo.html';
-  }
+  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  const filePath = pathname === '/' || pathname === '' ? '/demo.html' : pathname;
 
   // Map paths to actual file locations
   let actualPath;

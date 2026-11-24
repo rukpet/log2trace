@@ -1,18 +1,18 @@
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 
-// Markup and styles are never built from strings: DOM nodes use textContent / setAttribute,
-// and every class and token comes from a typed vanilla-extract export (`*.css.ts`), so a typo
-// fails the build instead of silently producing unstyled output.
+// Markup and styles are never built from strings: DOM nodes use h() (`src/kit/dom.ts`) or
+// textContent / setAttribute, and every class and token comes from a typed vanilla-extract export
+// (`*.css.ts`), so a typo fails the build instead of silently producing unstyled output.
 const bannedMarkupApis = [
-  { property: 'innerHTML', message: 'Build DOM nodes with textContent / setAttribute instead of HTML strings.' },
-  { property: 'outerHTML', message: 'Build DOM nodes with textContent / setAttribute instead of HTML strings.' },
-  { property: 'insertAdjacentHTML', message: 'Build DOM nodes with textContent / setAttribute instead of HTML strings.' },
-  { property: 'cssText', message: 'Style through vanilla-extract classes or element.style.<prop>.' },
+  { property: 'innerHTML', message: 'Build DOM nodes with h() (src/kit/dom.ts) or textContent / setAttribute instead of HTML strings.' },
+  { property: 'outerHTML', message: 'Build DOM nodes with h() (src/kit/dom.ts) or textContent / setAttribute instead of HTML strings.' },
+  { property: 'insertAdjacentHTML', message: 'Build DOM nodes with h() (src/kit/dom.ts) or textContent / setAttribute instead of HTML strings.' },
+  { property: 'cssText', message: 'Style through vanilla-extract classes (*.css.ts registered in src/styles.ts) or element.style.<prop>.' },
 ];
 const bannedStyleAttribute = {
   selector: "CallExpression[callee.property.name='setAttribute'][arguments.0.value='style']",
-  message: 'Do not set the style attribute from a string; use a vanilla-extract class or element.style.<prop>.',
+  message: 'Do not set the style attribute from a string; use a vanilla-extract class (*.css.ts) or element.style.<prop>.',
 };
 
 export default [
@@ -45,7 +45,7 @@ export default [
   {
     // The headless core sits below everything else: it must not import the layers above it
     // (kit, views, shell, element, or the public entry). test/layers.test.ts checks every import.
-    files: ['src/core.ts', 'src/core/**/*.ts'],
+    files: ['src/core/**/*.ts'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{

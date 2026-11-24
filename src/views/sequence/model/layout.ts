@@ -2,6 +2,9 @@
  * Layout: the fixed and dynamic geometry of the sequence diagram.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 /** Height of the sticky lifeline header band in CSS px. */

@@ -10,6 +10,9 @@
  * Coordinates are CSS px in the bound element's own frame: 0, 0 is the top left
  * of its padding box, so a view can use them for hit testing and cursor-anchored
  * zoom as they are.
+ *
+ * @module
+ * @internal
  */
 
 /** Modifier keys held while an event happened. */

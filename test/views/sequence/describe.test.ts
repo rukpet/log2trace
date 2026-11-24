@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SpanKind, buildSpanIndex, type SpanIndex } from '../../../src/core.ts';
+import { SpanKind, buildSpanIndex, type SpanIndex } from '../../../src/core/index.ts';
 import {
   GATE_NAME,
   ParticipantKind,

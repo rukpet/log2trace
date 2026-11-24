@@ -2,6 +2,9 @@
  * The Sequence Diagram DOM painter with its stylesheet: the factory `SequenceView` mounts.
  *
  * Kept apart from `dom.ts` so `dom.ts` never imports a `*.css.ts` module and can be tested in Node.
+ *
+ * @module
+ * @internal
  */
 
 import {

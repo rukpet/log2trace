@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SpanKind, buildSpanIndex, createTraceStore } from '../../../src/core.ts';
+import { SpanKind, buildSpanIndex, createTraceStore } from '../../../src/core/index.ts';
 import {
   MsgKind,
   buildSequenceModel,

@@ -6,7 +6,7 @@ import {
   buildSpanIndex,
   createTraceStore,
   type SpanIndex,
-} from '../../../src/core.ts';
+} from '../../../src/core/index.ts';
 import { computeSequenceLayout } from '../../../src/views/sequence/model/layout.ts';
 import {
   buildSequenceModel,

@@ -7,6 +7,9 @@
  * coordinates (origin at the top-left corner of the surface).
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import type { ListMetrics } from '../../../kit/geometry/virtual-list.ts';

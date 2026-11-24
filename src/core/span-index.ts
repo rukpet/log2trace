@@ -58,7 +58,12 @@ export interface SpanIndex {
   /** Parent spanId → child spanIds, sorted by start time. */
   readonly childrenOf: ReadonlyMap<string, readonly string[]>;
   /** Pre-computed bounding time range in whole milliseconds since the Unix epoch. */
-  readonly timeRange: Readonly<{ min: number; max: number }>;
+  readonly timeRange: Readonly<{
+    /** Earliest span start time in whole milliseconds since the Unix epoch. */
+    min: number;
+    /** Latest span end time in whole milliseconds since the Unix epoch. */
+    max: number;
+  }>;
   /** Trace ID from the first root span (for display). */
   readonly traceId: string;
   /** Total number of spans. */

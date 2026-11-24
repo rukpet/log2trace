@@ -3,6 +3,9 @@
  *
  * External filters (sent to the data source) and local filters (applied to the loaded spans) sit in
  * two rows, tinted with the accent and the "ok" colour of the theme.
+ *
+ * @module
+ * @internal
  */
 
 import { style } from '@vanilla-extract/css';

@@ -10,9 +10,12 @@
  * with hundreds of boxes cost about 3 ms. Instead a `ResizeObserver` reports the size once the
  * browser has laid the box out in the normal rendering step, and the tooltip is placed with the
  * last known size at once and again, before painting, if the size turns out to have changed.
+ *
+ * @module
+ * @internal
  */
 
-import type { InfoModel } from '../core.ts';
+import type { InfoModel } from '../core/index.ts';
 import { h } from '../kit/dom.ts';
 import { renderBrief } from './info.ts';
 import * as styles from './shell.css.ts';

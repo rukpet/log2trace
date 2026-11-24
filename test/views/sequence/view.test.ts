@@ -12,7 +12,7 @@ import {
   createTraceStore,
   type SpanIndex,
   type TraceStore,
-} from '../../../src/core.ts';
+} from '../../../src/core/index.ts';
 import type { ViewCommand } from '../../../src/kit/commands.ts';
 import { createFrameScheduler } from '../../../src/kit/scheduler.ts';
 import { InputActionKind, Key } from '../../../src/kit/input/types.ts';

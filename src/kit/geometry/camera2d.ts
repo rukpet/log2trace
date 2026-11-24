@@ -10,6 +10,9 @@
  *
  * Every function takes a camera and returns a new immutable camera, so zoom, pan, fit-to-screen,
  * and resize can be unit-tested in Node without any DOM dependencies.
+ *
+ * @module
+ * @internal
  */
 
 /** Minimum zoom scale (10%). */

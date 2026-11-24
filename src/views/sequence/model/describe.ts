@@ -2,6 +2,9 @@
  * Sequence diagram selection/hover span resolution and tooltip InfoModel builders.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import {
@@ -14,7 +17,7 @@ import {
   type InfoRow,
   type InfoSection,
   type SpanId,
-} from '../../../core.ts';
+} from '../../../core/index.ts';
 import { ParticipantKind } from './participants.ts';
 import { MsgKind, type SequenceModel } from './messages.ts';
 import { StepFlag, StepKind, type SequenceSteps } from './steps.ts';
