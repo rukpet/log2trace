@@ -29,7 +29,7 @@
  * });
  * ```
  *
- * @packageDocumentation
+ * @module log2trace-ui
  */
 
 // Auto-register <trace-visualizer>, <trace-view>, <trace-filter> and <span-kind-rule> when imported
