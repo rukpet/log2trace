@@ -126,6 +126,7 @@ class TraceViewElement extends ConfigCarrier {
     const viewType = optionsAffected
       ? (typeChanged ? undefined : (this.getAttribute('type')?.trim() || null))
       : null;
+    if (!tabsAffected && viewType === null) return;
     this.resolveHost()?._viewsChanged(tabsAffected, viewType);
   }
 
