@@ -338,16 +338,23 @@ export class TraceVisualizerElement extends HTMLElement {
     this.active?.view.themeChanged();
   }
 
-  /** Called by `<trace-filter>` and `<span-kind-rule>` children when their attributes or presence change. */
+  /**
+   * Called by `<trace-filter>` and `<span-kind-rule>` children when their attributes or presence change.
+   * @internal
+   */
   _rerender(): void {
     if (this.connected === null) return;
     this.pendingConfig = true;
     this.scheduleCarrierFlush();
   }
 
-  /** Called by `<trace-view>` children when their attributes or presence change. */
+  /**
+   * Called by `<trace-view>` children when their attributes or presence change.
+   * @internal
+   */
   _viewsChanged(tabsAffected: boolean, viewType?: string | null): void {
     if (this.connected === null) return;
+    if (!tabsAffected && viewType === null) return;
     if (tabsAffected) this.pendingTabs = true;
     if (viewType === undefined) {
       this.pendingViewOptions = 'all';
