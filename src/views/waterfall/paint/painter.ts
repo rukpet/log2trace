@@ -8,6 +8,9 @@
  *
  * A painter owns its drawing surface inside `host` and nothing else: input, scrolling, the
  * tooltip and the detail panel belong to the element.
+ *
+ * @module
+ * @internal
  */
 
 import type { FrameScheduler } from '../../../kit/scheduler.ts';

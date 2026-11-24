@@ -2,6 +2,9 @@
  * The sequence diagram's own settings.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import { choiceOption, numberOption, type ViewOptions } from '../../kit/view-options.ts';

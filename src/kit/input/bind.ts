@@ -27,6 +27,9 @@
  * are the element's CSS, not set here. `wheel` and Safari `gesture*` listeners are
  * registered non-passive, because they must be able to prevent the browser's page
  * zoom.
+ *
+ * @module
+ * @internal
  */
 
 import { IDLE_GESTURE_STATE, GesturePhase, reduceGesture, type GestureState } from './gesture.ts';

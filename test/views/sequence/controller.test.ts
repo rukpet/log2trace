@@ -8,7 +8,7 @@ import {
   type ChangeSet,
   type SpanIndex,
   type TraceStore,
-} from '../../../src/core.ts';
+} from '../../../src/core/index.ts';
 import { SequenceController } from '../../../src/views/sequence/controller.ts';
 import { HitKind, NO_SEQUENCE_HIT, type SequenceHit } from '../../../src/views/sequence/model/hit.ts';
 import { SequenceDirty } from '../../../src/views/sequence/model/interaction.ts';

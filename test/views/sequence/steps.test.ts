@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SpanKind, SpanMask, buildSpanIndex, createTraceStore } from '../../../src/core.ts';
+import { SpanKind, SpanMask, buildSpanIndex, createTraceStore } from '../../../src/core/index.ts';
 import { buildSequenceModel } from '../../../src/views/sequence/model/messages.ts';
 import { GATE_NAME } from '../../../src/views/sequence/model/participants.ts';
 import { StepFlag, StepKind, projectSteps } from '../../../src/views/sequence/model/steps.ts';

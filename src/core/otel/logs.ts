@@ -1,6 +1,9 @@
 /**
  * OpenTelemetry Logs Data Types
  * Based on opentelemetry-proto/logs/v1/logs.proto
+ *
+ * @module
+ * @internal
  */
 
 import type { AnyValue, KeyValue, InstrumentationScope } from './common.ts';

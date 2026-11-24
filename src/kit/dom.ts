@@ -19,6 +19,9 @@
  * attribute (inline event handlers); use classes, `element.style.<prop>` and
  * `addEventListener`. The document is taken lazily, on the first call of `h`, or
  * injected through {@link createBuilder}, so the module works in Node tests.
+ *
+ * @module
+ * @internal
  */
 
 /**

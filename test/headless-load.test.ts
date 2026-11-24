@@ -12,11 +12,10 @@ const SRC = new URL('../src/', import.meta.url);
 
 /** Every module of the headless core, found on disk so that a new file is covered without editing this test. */
 function coreModules(): string[] {
-  const inside = readdirSync(new URL('core/', SRC), { recursive: true })
+  return readdirSync(new URL('core/', SRC), { recursive: true })
     .map((entry) => String(entry).replaceAll('\\', '/'))
     .filter((entry) => entry.endsWith('.ts'))
     .map((entry) => `core/${entry}`);
-  return ['core.ts', ...inside];
 }
 
 test('core modules load without DOM globals', async () => {

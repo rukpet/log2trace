@@ -48,7 +48,7 @@ const buildOptions = [
   },
   {
     ...sharedOptions,
-    entryPoints: ['src/core.ts'],
+    entryPoints: ['src/core/index.ts'],
     platform: 'neutral',
     minify: true,
     outfile: 'dist/core.min.js',
@@ -56,7 +56,7 @@ const buildOptions = [
   },
   {
     ...sharedOptions,
-    entryPoints: ['src/core.ts'],
+    entryPoints: ['src/core/index.ts'],
     platform: 'neutral',
     minify: false,
     outfile: 'dist/core.js',

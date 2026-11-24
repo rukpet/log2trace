@@ -2,7 +2,7 @@
  * A ready-made waterfall state for model tests: a trace, its rows, a layout and a camera.
  */
 
-import { buildSpanIndex, SpanMask, type SpanIndex, type TraceData } from '../../src/core.ts';
+import { buildSpanIndex, SpanMask, type SpanIndex, type TraceData } from '../../src/core/index.ts';
 import { createCamera, type Camera1D } from '../../src/kit/geometry/camera1d.ts';
 import { computeLayout, DEFAULT_METRICS, type WaterfallLayout, type WaterfallMetrics } from '../../src/views/waterfall/model/layout.ts';
 import { projectRows, type RowProjection } from '../../src/views/waterfall/model/rows.ts';

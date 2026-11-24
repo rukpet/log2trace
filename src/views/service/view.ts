@@ -4,6 +4,9 @@
  * Visualizes services as nodes and inter-service communications as directed edges,
  * with zero external visualization dependencies. Synchronizes with the shared store
  * (data, selection, hover target, filter matches, and time-window bounds).
+ *
+ * @module
+ * @internal
  */
 
 import {
@@ -12,7 +15,7 @@ import {
   touches,
   type ChangeSet,
   type SpanId,
-} from '../../core.ts';
+} from '../../core/index.ts';
 import * as a11yStyles from '../../kit/a11y.css.ts';
 import type { ViewCommand } from '../../kit/commands.ts';
 import { h } from '../../kit/dom.ts';

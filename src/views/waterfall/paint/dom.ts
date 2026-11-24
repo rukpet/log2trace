@@ -15,6 +15,9 @@
  *
  * Input is not handled here: the element's native scroller sits above the layer and its events go
  * through the controller's geometric hit test, exactly as for the canvas.
+ *
+ * @module
+ * @internal
  */
 
 import { timeToPx } from '../../../kit/geometry/camera1d.ts';

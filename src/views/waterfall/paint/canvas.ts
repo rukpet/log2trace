@@ -16,6 +16,9 @@
  *
  * The painter is a function of the surface's dirty bits (`paint`); the element feeds it the
  * controller's {@link WaterfallDirty} bits translated with {@link toSurfaceDirty}.
+ *
+ * @module
+ * @internal
  */
 
 import { niceTicks } from '../../../kit/geometry/ticks.ts';

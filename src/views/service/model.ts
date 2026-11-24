@@ -3,6 +3,9 @@
  * and laying out nodes and directed edges in a layered hierarchical DAG.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import {
@@ -19,7 +22,7 @@ import {
   type SpanMask,
   type SpanSet,
   type TimeWindow,
-} from '../../core.ts';
+} from '../../core/index.ts';
 import { inferredPeerOf } from '../../core/peers.ts';
 
 /** Kind of node in the service graph. */

@@ -23,7 +23,7 @@ import {
   type SpanIndex,
   type TraceData,
   type TraceStore,
-} from '../src/core.ts';
+} from '../src/core/index.ts';
 import { demoLogsIndex, demoOtelIndex, readDemoJson } from './support/demo-data.ts';
 
 // The otel demo tree (ids shortened in the comments):

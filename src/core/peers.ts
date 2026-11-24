@@ -2,6 +2,9 @@
  * Extracting uninstrumented peer dependencies from span attributes.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import type { SpanIndex } from './span-index.ts';

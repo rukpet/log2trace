@@ -33,14 +33,23 @@ export const MIXED_ORIGIN: Origin = '*';
  * with `store.touch` so that views repaint.
  */
 export enum Slice {
+  /** Loaded trace index, loading phase, and error state. */
   Data = 1,
+  /** Selected spans. */
   Selection = 2,
+  /** Hovered span or view target. */
   Hover = 4,
+  /** Collapsed span subtrees. */
   Collapse = 8,
+  /** Filter match mask. */
   Filter = 16,
+  /** Shared visible time window. */
   Window = 32,
+  /** Element configuration options (`store.touch`). */
   Config = 64,
+  /** Theme CSS custom properties (`store.touch`). */
   Theme = 128,
+  /** Bitmask covering every slice. */
   All = 255,
 }
 
@@ -70,7 +79,9 @@ export type DataPhase = 'empty' | 'loading' | 'ready' | 'error';
  * trace (`SpanTable.originNs`), the same unit and orientation as `Camera1D`.
  */
 export interface TimeWindow {
+  /** Window start in milliseconds from the trace origin. */
   readonly t0: number;
+  /** Window end in milliseconds from the trace origin. */
   readonly t1: number;
 }
 
@@ -79,15 +90,18 @@ export interface TimeWindow {
  * change shows up as a different object and `prev` states stay valid.
  */
 export interface TraceState {
+  /** Loaded trace index and loading lifecycle state. */
   readonly data: {
     /** The loaded spans; an empty index before any data arrives. */
     readonly index: SpanIndex;
+    /** Current loading lifecycle phase. */
     readonly phase: DataPhase;
     /** Message to show when `phase` is `'error'`. */
     readonly error?: string;
     /** Counts how many different indexes were loaded; 0 before the first. */
     readonly generation: number;
   };
+  /** Currently selected span target (`selection.ids` is empty when nothing is selected). */
   readonly selection: Target;
   /** What the pointer is over; `null` for nothing. */
   readonly hover: Target | null;

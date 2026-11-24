@@ -9,13 +9,16 @@
 
 /** A button or key a view offers. */
 export interface ViewCommand {
+  /** Stable command identifier within the view. */
   readonly id: string;
   /** What the button says and a screen reader announces. */
   readonly label: string;
   /** Keys that trigger it, as `KeyboardEvent.key` values. */
   readonly keys?: readonly string[];
+  /** Execute the command. */
   run(): void;
   /** Text to show next to the command, such as the zoom level. */
   readonly readout?: () => string;
+  /** Whether the command can currently run; defaults to enabled. */
   readonly enabled?: () => boolean;
 }

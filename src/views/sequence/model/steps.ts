@@ -2,9 +2,12 @@
  * Sequence diagram step & activation projection.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
-import type { SpanMask, TimeWindow } from '../../../core.ts';
+import type { SpanMask, TimeWindow } from '../../../core/index.ts';
 import type { ReturnArrowMode } from '../settings.ts';
 import { detectTimeGaps } from './layout.ts';
 import { MsgKind, type SequenceModel } from './messages.ts';

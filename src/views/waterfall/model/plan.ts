@@ -14,6 +14,9 @@
  * to grow.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import type { Camera1D } from '../../../kit/geometry/camera1d.ts';

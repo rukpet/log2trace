@@ -17,7 +17,7 @@
  * not mounted and costs nothing.
  */
 
-import type { ChangeSet, InfoModel, SpanId, TraceStore } from '../core.ts';
+import type { ChangeSet, InfoModel, SpanId, TraceStore } from '../core/index.ts';
 import type { ViewCommand } from './commands.ts';
 import type { RendererKind, ViewOptions } from './view-options.ts';
 
@@ -28,9 +28,23 @@ export interface ViewHit {
   /** Identifies what is shown, so the content is rebuilt only when it changes. */
   readonly key: string;
   /** The element's box in the coordinates of the view's surface. */
-  readonly anchor: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
+  readonly anchor: {
+    /** Left edge in surface CSS pixels. */
+    readonly x: number;
+    /** Top edge in surface CSS pixels. */
+    readonly y: number;
+    /** Width in surface CSS pixels. */
+    readonly w: number;
+    /** Height in surface CSS pixels. */
+    readonly h: number;
+  };
   /** Size of the surface, so the tooltip can stay inside it. */
-  readonly bounds: { readonly width: number; readonly height: number };
+  readonly bounds: {
+    /** Surface width in CSS pixels. */
+    readonly width: number;
+    /** Surface height in CSS pixels. */
+    readonly height: number;
+  };
   /** What to say about it, built only when it is shown. */
   info(): InfoModel | null;
 }
@@ -39,6 +53,7 @@ export interface ViewHit {
 export interface ViewContext {
   /** Names this view in the store: the changes it writes carry it, and it ignores their echoes. */
   readonly origin: string;
+  /** Shared trace store holding loaded spans, selection, hover, collapse, filter, and window state. */
   readonly store: TraceStore;
   /**
    * The current configuration of the element, read again whenever {@link TraceView.optionsChanged}
@@ -85,10 +100,12 @@ export interface ViewDefinition {
   readonly label: string;
   /** The backends it draws with, the default first. */
   readonly renderers: readonly RendererKind[];
+  /** Optional shell chrome features supported by this view. */
   readonly capabilities: {
     /** Show the span-kind legend in the toolbar. */
     readonly legend?: boolean;
   };
+  /** Instantiate a fresh, unmounted view instance. */
   create(): TraceView;
 }
 
@@ -109,25 +126,37 @@ export function listViews(): readonly ViewDefinition[] {
   return [...registry.values()];
 }
 
-/** The backend to use: the one asked for when the view has it, else the view's default. */
+/**
+ * The backend to use: the one asked for when the view has it, else the view's default.
+ * @internal
+ */
 export function resolveRenderer(asked: RendererKind | undefined, available: readonly RendererKind[]): RendererKind {
   return asked !== undefined && available.includes(asked) ? asked : available[0];
 }
 
-/** One `<trace-view>` child as declared, before it is checked against the registry. */
+/**
+ * One `<trace-view>` child as declared, before it is checked against the registry.
+ * @internal
+ */
 export interface ViewDeclaration {
   readonly type: string;
   readonly label?: string;
   readonly active: boolean;
 }
 
-/** One tab to show. */
+/**
+ * One tab to show.
+ * @internal
+ */
 export interface ViewTab {
   readonly id: string;
   readonly label: string;
 }
 
-/** The view shown when nothing usable is declared. */
+/**
+ * The view shown when nothing usable is declared.
+ * @internal
+ */
 export const DEFAULT_VIEW = 'waterfall';
 
 /**
@@ -135,6 +164,7 @@ export const DEFAULT_VIEW = 'waterfall';
  * declaration of a type wins), in document order; `label` overrides the definition's label.
  * `initial` is the first declaration marked `active`, else the first tab. When nothing usable
  * is declared, falls back to the default view (or the first registered one if absent).
+ * @internal
  */
 export function resolveViews(
   declared: readonly ViewDeclaration[],

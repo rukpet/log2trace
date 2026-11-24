@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Slice, createTraceStore } from '../../src/core.ts';
+import { Slice, createTraceStore } from '../../src/core/index.ts';
 import {
   DEFAULT_STATS_WINDOW,
   Dirty,

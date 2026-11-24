@@ -2,6 +2,9 @@
  * Kit: accessibility helpers
  *
  * Styles for what is present to assistive technology and invisible to everyone else.
+ *
+ * @module
+ * @internal
  */
 
 import { style } from '@vanilla-extract/css';

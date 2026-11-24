@@ -5,6 +5,9 @@
  * once for a set of filter configs and then only has its values synchronised, so typing never
  * loses focus; it is rebuilt (keeping focus and an open multiselect) only when the configs or the
  * option lists change, for instance when `auto` dropdowns learn their options from new data.
+ *
+ * @module
+ * @internal
  */
 
 import type { FilterFieldConfig, FilterSource, FilterValue } from '../core/config.ts';

@@ -1,5 +1,8 @@
 /**
  * Styles for the Sequence Diagram view outer scroller and banner.
+ *
+ * @module
+ * @internal
  */
 
 import { style } from '@vanilla-extract/css';

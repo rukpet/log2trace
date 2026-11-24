@@ -2,6 +2,9 @@
  * Hit testing: what is under a pointer coordinate in the sequence diagram.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import { columnAtContentX, stepAtBodyY } from './layout.ts';

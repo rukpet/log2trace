@@ -203,7 +203,16 @@ export function normalizeOptions(raw: (string | FilterOption)[]): FilterOption[]
  * Empty values (empty string, empty array, `false`, range with neither
  * bound) mean the filter is inactive.
  */
-export type FilterValue = string | boolean | { from?: string; to?: string } | string[];
+export type FilterValue =
+  | string
+  | boolean
+  | {
+    /** Inclusive range start as an ISO timestamp string. */
+    from?: string;
+    /** Inclusive range end as an ISO timestamp string. */
+    to?: string;
+  }
+  | string[];
 
 /** Runtime pairing of a filter's static config and its current value. */
 export interface Filter {

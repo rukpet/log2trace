@@ -9,6 +9,9 @@
  *
  * Pure functions with no DOM: the canvas and DOM painters draw from the same
  * {@link TickSet}, and tests run in plain Node.
+ *
+ * @module
+ * @internal
  */
 
 /** Closest two ticks are placed, px. A label is about 60-80 px wide. */

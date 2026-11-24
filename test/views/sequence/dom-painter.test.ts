@@ -15,7 +15,7 @@ import {
   buildSpanIndex,
   spanSetOf,
   type SpanSet,
-} from '../../../src/core.ts';
+} from '../../../src/core/index.ts';
 import { SequenceDirty } from '../../../src/views/sequence/model/interaction.ts';
 import { computeSequenceLayout } from '../../../src/views/sequence/model/layout.ts';
 import { buildSequenceModel } from '../../../src/views/sequence/model/messages.ts';

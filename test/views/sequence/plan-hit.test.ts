@@ -6,7 +6,7 @@ import {
   SpanMask,
   buildSpanIndex,
   spanSetOf,
-} from '../../../src/core.ts';
+} from '../../../src/core/index.ts';
 import {
   ACT_W,
   CANVAS_PAD_X,

@@ -23,7 +23,7 @@ interface Layer {
 }
 
 const LAYERS: readonly Layer[] = [
-  { name: 'core', paths: ['core.ts', 'core'], mayImport: [] },
+  { name: 'core', paths: ['core'], mayImport: [] },
   // Pure math with no DOM (tsconfig.headless.json type-checks it without the DOM lib as well).
   // It must come before `kit`, whose directory contains it: a file belongs to the first layer that matches.
   { name: 'kit/geometry', paths: ['kit/geometry'], mayImport: ['core'] },
@@ -70,7 +70,10 @@ for (const layer of LAYERS) {
     for (const file of files) {
       for (const specifier of relativeImports(file)) {
         const target = resolve(dirname(file), specifier);
-        assert.ok(existsSync(target), `${relative(SRC, file)} imports ${specifier}, which does not exist`);
+        assert.ok(
+          existsSync(target),
+          `${relative(SRC, file)} imports ${specifier}, which does not exist (relative imports must end in .ts)`,
+        );
         const targetLayer = layerOf(target);
         assert.ok(
           targetLayer !== undefined && allowed.has(targetLayer.name),

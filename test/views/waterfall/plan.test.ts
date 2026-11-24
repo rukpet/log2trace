@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SpanKind } from '../../../src/core.ts';
+import { SpanKind } from '../../../src/core/index.ts';
 import { createCamera, withWindow } from '../../../src/kit/geometry/camera1d.ts';
 import { Chevron } from '../../../src/views/waterfall/model/rows.ts';
 import { FramePlan, LabelMode, RowFlag, buildFramePlan, type PlanInput } from '../../../src/views/waterfall/model/plan.ts';

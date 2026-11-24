@@ -44,6 +44,7 @@ export function defineSelector<T>(
 
 /** How many spans there are and how many passed the filter. */
 export interface MatchSummary {
+  /** Total number of spans in the loaded trace. */
   readonly total: number;
   /** Spans that passed the filter; equals `total` when no filter is active. */
   readonly matched: number;

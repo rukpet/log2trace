@@ -4,6 +4,9 @@
  * A tab list for the views the element shows. It is hidden while there is only one view, follows
  * the WAI-ARIA tabs pattern (one tab in the tab order, arrows move between tabs and select them)
  * and reports a choice through a callback. It knows ids and labels, never a particular view.
+ *
+ * @module
+ * @internal
  */
 
 import { h } from '../kit/dom.ts';

@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSpanIndex, createTraceStore } from '../../../src/core.ts';
+import { buildSpanIndex, createTraceStore } from '../../../src/core/index.ts';
 import {
   MIN_BAR_WIDTH, boxName, boxesMatched, boxesOfSpans, buildFlameTree, describeBox, flameTree, layoutFlame, neighbour, spansOfBox,
 } from '../../../src/views/flame/model.ts';

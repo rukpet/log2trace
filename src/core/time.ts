@@ -1,4 +1,9 @@
-/** Nanoseconds in a millisecond. */
+/**
+ * Nanoseconds in a millisecond.
+ *
+ * @module
+ * @internal
+ */
 const NANOS_PER_MS = 1_000_000n;
 
 /**

@@ -13,6 +13,9 @@
  * (up to floating-point rounding), so the pixel scale is always defined. The
  * functions that read a camera also cope with a hand-built degenerate one
  * (say a zero-length window) without returning NaN or Infinity.
+ *
+ * @module
+ * @internal
  */
 
 /** Narrowest window the camera will show, ms (one microsecond). */

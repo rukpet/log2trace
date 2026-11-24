@@ -8,6 +8,9 @@
  * behaviour is tested in Node against a real store.
  *
  * Headless: no DOM, no browser globals.
+ *
+ * @module
+ * @internal
  */
 
 import {
@@ -18,7 +21,7 @@ import {
   type SpanId,
   type TraceState,
   type TraceStore,
-} from '../../core.ts';
+} from '../../core/index.ts';
 import type { ViewCommand } from '../../kit/commands.ts';
 import { formatZoom, withWindow, zoomRatio } from '../../kit/geometry/camera1d.ts';
 import type { SpanIndex } from '../../core/span-index.ts';
