@@ -33,7 +33,7 @@ test.describe('Shell chrome, events & accessibility', () => {
     await expect(legend).toBeVisible();
 
     // Zoom waterfall in via toolbar buttons so we verify both toolbar command wiring and state preservation across tab switches
-    const dbBar = waterfallRows(viz).nth(3).locator('> div').nth(1).locator('> div').first();
+    const dbBar = viz.locator('[data-span-id="span-db"] [data-part="bar"]');
     const widthBeforeZoom = (await dbBar.boundingBox())?.width ?? 0;
     await toolbar.getByRole('button', { name: 'Zoom in' }).click();
     await toolbar.getByRole('button', { name: 'Zoom in' }).click();

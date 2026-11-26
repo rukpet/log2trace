@@ -176,7 +176,7 @@ function resetRowSlotCache(slot: RowSlot): void {
 }
 
 function createRowSlot(styles: SequenceDomClasses): RowSlot {
-  const gutterCell = h('div', { class: styles.gutterCell });
+  const gutterCell = h('div', { class: styles.gutterCell, 'data-part': 'gutter' });
   const gapBannerEl = h('div', { class: styles.gapBanner });
   gapBannerEl.style.display = 'none';
   const arrowLineEl = h('div', { class: styles.arrowLine });

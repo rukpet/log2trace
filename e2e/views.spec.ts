@@ -22,10 +22,9 @@ test.describe('DOM & SVG views and real input gestures', () => {
     await expect(rows.nth(3)).toHaveAttribute('aria-level', '3');
 
     // Click chevron on createOrder row to collapse its 2 children (SELECT inventory, chargeCard)
-    const orderRow = rows.nth(2);
-    await clickCenter(page, orderRow.locator('span').first());
+    await clickCenter(page, viz.locator('[data-span-id="span-order"] [data-part="chevron"]'));
     await expect(rows).toHaveCount(3);
-    await expect(rows.nth(2)).toHaveAttribute('aria-expanded', 'false');
+    await expect(viz.locator('[data-span-id="span-order"]')).toHaveAttribute('aria-expanded', 'false');
 
     // Programmatic expandAll / collapseAll
     await viz.evaluate((el) => {
@@ -68,7 +67,7 @@ test.describe('DOM & SVG views and real input gestures', () => {
       await expect(zoomReadout).not.toHaveText('100%');
 
       // Real pointer drag pans the zoomed timeline and shifts rendered span bars horizontally
-      const authBar = rows.nth(1).locator('> div').nth(1).locator('> div').first();
+      const authBar = viz.locator('[data-span-id="span-auth"] [data-part="bar"]');
       const barBeforeDrag = await authBar.boundingBox();
       await page.mouse.move(targetX, targetY);
       await page.mouse.down();
@@ -216,7 +215,7 @@ test.describe('DOM & SVG views and real input gestures', () => {
     expect(rowCount).toBeGreaterThanOrEqual(4);
 
     // Click first message row's time gutter to select GET /orders (highlights both request & return rows)
-    await messageRows.nth(0).locator('div').first().click();
+    await messageRows.nth(0).locator('[data-part="gutter"]').click();
     await expect(seq.locator('[role="row"][aria-selected="true"]')).toHaveCount(2);
     await expect(viz.locator('aside[aria-label="Span details"]')).toBeVisible();
 

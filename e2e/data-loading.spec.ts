@@ -171,11 +171,19 @@ test.describe('Data loading & status states', () => {
       };
     }, SAMPLE_TRACE);
 
+    const filterChangedPromise = viz.evaluate(
+      (el) =>
+        new Promise<unknown>((resolve) => {
+          el.addEventListener('filter-changed', (e) => resolve((e as CustomEvent).detail), { once: true });
+        }),
+    );
+
     const input = viz.locator('[data-filter-field="service"][data-filter-source="external"]');
     await input.fill('order-service');
 
-    // With auto-fetch="false", callback is not invoked until Search is clicked
-    await page.waitForTimeout(60);
+    // Wait for debounce to fire filter-changed; with auto-fetch="false", fetchCallback must still not run
+    const filterDetail = await filterChangedPromise;
+    expect(filterDetail).toMatchObject({ field: 'service', source: 'external', value: 'order-service' });
     const beforeClick = await page.evaluate(() => (window as unknown as { __fetchCalls: unknown[] }).__fetchCalls.length);
     expect(beforeClick).toBe(0);
 

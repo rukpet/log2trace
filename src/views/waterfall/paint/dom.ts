@@ -87,11 +87,11 @@ interface TickElements {
 }
 
 function createSlot(styles: DomClasses, kindClasses: readonly string[]): Slot {
-  const chevron = h('span', { class: [styles.chevron, styles.chevronState.none] });
+  const chevron = h('span', { class: [styles.chevron, styles.chevronState.none], 'data-part': 'chevron' });
   const name = h('span', { class: styles.name });
   const service = h('span', { class: styles.service });
   const gutter = h('div', { class: styles.gutter }, chevron, name, service);
-  const bar = h('div', { class: [styles.bar, kindClasses[0]] });
+  const bar = h('div', { class: [styles.bar, kindClasses[0]], 'data-part': 'bar' });
   const duration = h('span', { class: styles.duration });
   const markers: HTMLElement[] = [];
   for (let i = 0; i < MAX_DOM_MARKERS; i++) markers.push(h('span', { class: [styles.marker, styles.hidden] }));
@@ -275,6 +275,7 @@ class WaterfallDomPainter implements WaterfallPainter {
     for (const slot of this.slots) {
       if (slot.usedFrame !== frame && !slot.hidden) {
         slot.row.style.display = 'none';
+        slot.row.removeAttribute('data-span-id');
         slot.hidden = true;
         slot.span = -1;
       }
@@ -293,6 +294,7 @@ class WaterfallDomPainter implements WaterfallPainter {
       slot.chevronState = chevron;
     }
     const { row: element } = slot;
+    element.setAttribute('data-span-id', table.ids[span]);
     element.setAttribute('aria-level', String(depth + 1));
     element.setAttribute('aria-posinset', String(row + 1));
     element.setAttribute('aria-setsize', String(controller.projection.count));
