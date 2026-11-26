@@ -1,5 +1,5 @@
 /**
- * Kit canvas: text cache
+ * Kit: text cache
  *
  * Measuring text is the slow part of drawing labels: `measureText` is a call
  * into the browser's text shaper, and a frame needs a width for every label,

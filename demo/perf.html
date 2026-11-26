@@ -62,7 +62,7 @@
      *
      * Flags go in the query string or, for the unmodified demo/server.js (which 404s on
      * query strings), in the fragment: perf.html?impl=dom&n=10000 == perf.html#impl=dom&n=10000
-     *   impl=canvas|dom           which painter drives the visualizer (default dom)
+     *   impl=dom                  which painter drives the visualizer (default dom)
      *   n=<spans>  seed=  ns=0  flat=1  heavy=  ev=    dataset, see perf-gen.js
      *   auto=1                    start as soon as the page loads
      *   only=a,b                  run only these scenarios (first-render always runs)
@@ -114,7 +114,7 @@
     } from './perf-gen.js';
 
     const SCHEMA = 'log2trace-perf/1';
-    const IMPLS = ['canvas', 'dom'];
+    const IMPLS = ['dom'];
     const q = new URLSearchParams(location.search);
     // demo/server.js resolves files from the raw request URL, so "perf.html?n=1000" is a 404 there;
     // the fragment never reaches the server, so "perf.html#n=1000" works with it as well.
@@ -594,15 +594,14 @@
     class NotImplemented extends Error {}
 
     /**
-     * Drives `<trace-visualizer>` with the `canvas` or the `dom` painter. Input goes to the
+     * Drives `<trace-visualizer>` with the DOM painter. Input goes to the
      * interaction surface `[part="plot"]` as the events a user would produce (pointer, ctrl+wheel,
      * key); reads and state changes that have no gesture (collapse, filter) go through the element's
      * store, which is what its toolbar and filter bar use.
      */
     class NextAdapter {
-      constructor(renderer) {
-        this.name = renderer;
-        this.renderer = renderer;
+      constructor(name) {
+        this.name = name;
         this.implemented = true;
         this.stageMode = 'fixed';
         this.el = null;
@@ -621,7 +620,6 @@
 
       mount(stageEl, traceData) {
         const el = document.createElement('trace-visualizer');
-        el.setAttribute('renderer', this.renderer);
         el.style.height = '100%';
         el.style.border = '0';
         stageEl.appendChild(el);
@@ -747,7 +745,7 @@
       }
 
       timings() { return { frames: this.el.frameStats() }; }
-      notes() { return { renderer: this.el.renderer, domNodes: this.el.shadowRoot.querySelectorAll('*').length }; }
+      notes() { return { domNodes: this.el.shadowRoot.querySelectorAll('*').length }; }
     }
 
     function createAdapter(impl) {

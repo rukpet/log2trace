@@ -24,7 +24,7 @@ import type { ViewCommand } from '../../kit/commands.ts';
 import { h } from '../../kit/dom.ts';
 import { getFrameScheduler, type FrameHandle } from '../../kit/scheduler.ts';
 import { cssVariableName } from '../../kit/theme/theme.ts';
-import type { RendererKind, TraceView, ViewContext, ViewDefinition } from '../../kit/view.ts';
+import type { TraceView, ViewContext, ViewDefinition } from '../../kit/view.ts';
 import {
   boxName, boxesMatched, boxesOfSpans, describeBox, flameTree, layoutFlame, neighbour, spansOfBox,
   type FlameLayout, type FlameTree,
@@ -120,7 +120,6 @@ function isSavedState(value: unknown): value is SavedState {
 
 /** The flame graph view. */
 export class FlameView implements TraceView {
-  readonly renderer: RendererKind = 'dom';
   private mounted: Mounted | null = null;
 
   mount(surface: HTMLElement, ctx: ViewContext): void {
@@ -488,7 +487,6 @@ export class FlameView implements TraceView {
 export const flameDefinition: ViewDefinition = {
   id: 'flame',
   label: 'Flame graph',
-  renderers: ['dom'],
   capabilities: { legend: true },
   create: () => new FlameView(),
 };

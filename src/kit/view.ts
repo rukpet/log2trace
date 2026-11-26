@@ -19,9 +19,7 @@
 
 import type { ChangeSet, InfoModel, SpanId, TraceStore } from '../core/index.ts';
 import type { ViewCommand } from './commands.ts';
-import type { RendererKind, ViewOptions } from './view-options.ts';
-
-export type { RendererKind } from './view-options.ts';
+import type { ViewOptions } from './view-options.ts';
 
 /** The element a pointer rests on, as the page needs to describe it. */
 export interface ViewHit {
@@ -68,8 +66,6 @@ export interface ViewContext {
 
 /** A mounted view. */
 export interface TraceView {
-  /** The backend in use, for a view that has one. */
-  readonly renderer?: RendererKind;
   /** Build the view inside `surface`, an element the view may fill and listen on. */
   mount(surface: HTMLElement, ctx: ViewContext): void;
   /** The store changed. Only mark what is dirty; drawing waits for the frame. */
@@ -98,8 +94,6 @@ export interface ViewDefinition {
   readonly id: string;
   /** The text of its tab. */
   readonly label: string;
-  /** The backends it draws with, the default first. */
-  readonly renderers: readonly RendererKind[];
   /** Optional shell chrome features supported by this view. */
   readonly capabilities: {
     /** Show the span-kind legend in the toolbar. */
@@ -124,11 +118,6 @@ export function getView(id: string): ViewDefinition | undefined {
 /** All registered views, in the order they were registered. */
 export function listViews(): readonly ViewDefinition[] {
   return [...registry.values()];
-}
-
-/** The backend to use: the one asked for when the view has it, else the view's default. */
-export function resolveRenderer(asked: RendererKind | undefined, available: readonly RendererKind[]): RendererKind {
-  return asked !== undefined && available.includes(asked) ? asked : available[0];
 }
 
 /** One `<trace-view>` child as declared, before it is checked against the registry. */

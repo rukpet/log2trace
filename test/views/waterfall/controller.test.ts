@@ -273,33 +273,3 @@ test('the view state can be saved and restored, for tab switches', () => {
   assert.deepEqual([h.view.state.camera.t0, h.view.state.camera.t1], [saved.t0, saved.t1]);
   assert.equal(restored.scrollTo, true);
 });
-
-test('the accessibility tree lists the rows in view with their levels and states', () => {
-  const h = harness();
-  h.store.toggleCollapse('a');
-  h.store.setSelection(['b']);
-  h.flush();
-
-  const tree = h.view.a11y('Trace');
-  assert.equal(tree.role, 'tree');
-  assert.equal(tree.size, 4);
-  assert.equal(tree.activeId, 'b');
-  assert.deepEqual(tree.items.map((item) => [item.id, item.level, item.expanded, item.selected, item.position]), [
-    ['r', 0, true, false, 1],
-    ['a', 1, false, false, 2],
-    ['b', 1, undefined, true, 3],
-    ['c', 1, undefined, false, 4],
-  ]);
-  assert.equal(tree.items[0].label, 'svc: r');
-});
-
-test('the accessibility tree is windowed for a long trace', () => {
-  const spans = Array.from({ length: 5000 }, (_, i) => span(`s${i}`, undefined, i, i + 1));
-  const h = harness(buildSpanIndex(trace(['svc', spans])), 40 + 35 * 10);
-  h.view.input({ type: 'scroll', top: 35 * 2000 });
-
-  const tree = h.view.a11y('Trace', 3);
-  assert.equal(tree.size, 5000);
-  assert.equal(tree.items[0].position, 2000 - 3 + 1);
-  assert.ok(tree.items.length <= 10 + 7 + 1, `${tree.items.length} items`);
-});

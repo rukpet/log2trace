@@ -13,11 +13,10 @@
  * Data comes from `traceData`, `logData`, `data-url` (OTel trace data, or raw logs when the
  * transform attributes are given) or from external filters and `fetchCallback`. Configuration is
  * the set of attributes and `<trace-filter>` and `<span-kind-rule>` children, plus `theme`
- * (`light`, `dark`, default follows the page), `wheel-zoom`, `gutter-width`, `kind-colors`,
- * `renderer` (`canvas`, `dom`, or `auto`, the default, which is `dom`), and `view` (the current
- * view). The available views, their order, optional tab labels, initial `active` tab, and
- * per-view options are declared through `<trace-view>` children (with more than one, tabs appear;
- * with none, the primary `waterfall` view is shown).
+ * (`light`, `dark`, default follows the page), `wheel-zoom`, `gutter-width`, `kind-colors`, and
+ * `view` (the current view). The available views, their order, optional tab labels, initial
+ * `active` tab, and per-view options are declared through `<trace-view>` children (with more
+ * than one, tabs appear; with none, the primary `waterfall` view is shown).
  */
 
 import componentCss from 'virtual:component-css';
@@ -50,9 +49,7 @@ import {
   getView,
   listViews,
   registerView,
-  resolveRenderer,
   resolveViews,
-  type RendererKind,
   type TraceView,
   type ViewContext,
   type ViewDefinition,
@@ -72,7 +69,6 @@ import { sequenceDefinition } from '../views/sequence/view.ts';
 import { serviceDefinition } from '../views/service/view.ts';
 import type { WaterfallController } from '../views/waterfall/controller.ts';
 import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
-import { readWaterfallSettings } from '../views/waterfall/settings.ts';
 import { WaterfallView, waterfallDefinition } from '../views/waterfall/view.ts';
 import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, readViews, type TraceVisualizerConfig } from './config.ts';
 import { fetchJson, payloadToIndex } from './data-source.ts';
@@ -108,7 +104,7 @@ const RESERVED_VIEW_ATTRIBUTES = new Set(['type', 'label', 'active']);
 
 /** The attributes the element reacts to. */
 const OBSERVED = [
-  'data-url', 'theme', 'wheel-zoom', 'renderer', 'view',
+  'data-url', 'theme', 'wheel-zoom', 'view',
   'trace-id-field', 'span-group-fields', 'span-name-field', 'service-name-field', 'timestamp-field',
   'end-time-field', 'parent-span-id-field', 'parent-span-lookup-fields', 'span-id-field', 'status-code-field', 'default-span-kind',
   'height', 'span-height', 'span-padding', 'gutter-width', 'show-legend', 'full-width', 'detail-panel-width',
@@ -321,11 +317,6 @@ export class TraceVisualizerElement extends HTMLElement {
     await this.loadFrom(url, config);
   }
 
-  /** The backend of the active view, or the one the waterfall will use once the element is in a document. */
-  get renderer(): RendererKind {
-    return this.active?.view.renderer ?? resolveRenderer(readWaterfallSettings(this.viewOptions(waterfallDefinition.id)).renderer, waterfallDefinition.renderers);
-  }
-
   /**
    * Parts of the active waterfall for tests and the performance harness; not a public API.
    * @internal
@@ -430,7 +421,6 @@ export class TraceVisualizerElement extends HTMLElement {
       case 'theme':
         this.refreshTheme();
         break;
-      case 'renderer':
       case 'wheel-zoom':
         this.active?.view.optionsChanged();
         break;

@@ -95,9 +95,6 @@
       <li><strong>Zoom</strong> / <strong>Pan</strong> / <strong>Collapse all</strong> (input &rarr; painted frame, two rAF): &le; 50 ms at every scale</li>
       <li><strong>Total pipeline</strong> (transform + index + first frame): &le; 150 ms @ 1 K, &le; 1 000 ms @ 50 K</li>
     </ul>
-    <p style="margin-top:0.75rem;font-size:0.85rem;color:#555">
-      Choose the painter with <code>#renderer=canvas</code> or <code>#renderer=dom</code> (default: the element's <code>auto</code>).
-    </p>
   </div>
 
   <div class="controls">
@@ -158,9 +155,6 @@
       total:      'Total pipeline',
     };
 
-    const params = new URLSearchParams(location.hash.slice(1) || location.search);
-    const RENDERER = ['canvas', 'dom'].includes(params.get('renderer')) ? params.get('renderer') : null;
-
     // -----------------------------------------------------------------------
     // Benchmark utilities
     // -----------------------------------------------------------------------
@@ -195,7 +189,6 @@
     function mount(container, traceData) {
       container.replaceChildren();
       const el = document.createElement('trace-visualizer');
-      if (RENDERER) el.setAttribute('renderer', RENDERER);
       container.appendChild(el);
       el.traceData = traceData;
       el.store.flushSync();
@@ -256,7 +249,7 @@
       container.style.height = '480px';
 
       logEl.textContent = '';
-      log(`Benchmark started (renderer: ${RENDERER ?? 'auto'})`);
+      log('Benchmark started');
 
       // Warm the whole pipeline once, untimed.
       status.textContent = 'JIT warmup…';
@@ -316,7 +309,7 @@
         }
         results.mount.push(median(mountSamples));
         results.firstFrame.push(median(frameSamples));
-        log(`  Mount (JS): ${formatResult(results.mount[si])}, first frame: ${formatResult(results.firstFrame[si])} [${el.renderer}]`);
+        log(`  Mount (JS): ${formatResult(results.mount[si])}, first frame: ${formatResult(results.firstFrame[si])}`);
 
         // --- Zoom: one ctrl+wheel step, from the whole trace ---
         const zoomSamples = [];

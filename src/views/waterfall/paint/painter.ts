@@ -1,31 +1,22 @@
 /**
  * The contract of a waterfall painter.
  *
- * A painter turns what the headless model decided (the controller's frame plan) into something on
- * screen. Canvas 2D and the virtualized DOM are two implementations of this one interface, so the
- * element can mount either and swap them while keeping the camera, the scroll position and the
- * selection (all of which live in the controller and the store, never in a painter).
- *
- * A painter owns its drawing surface inside `host` and nothing else: input, scrolling, the
- * tooltip and the detail panel belong to the element.
+ * A painter turns what the headless model decided (the controller's frame plan) into DOM nodes on
+ * screen. A painter owns its drawing layer inside `host` and nothing else: input, scrolling, the
+ * tooltip and the detail panel belong to the view and element.
  */
 
 import type { FrameScheduler } from '../../../kit/scheduler.ts';
 import { Dirty } from '../../../kit/scheduler.ts';
-import type { TextMeter } from '../../../kit/canvas/text-cache.ts';
-import type { RendererKind } from '../../../kit/view.ts';
-import type { ResolvedTheme } from '../../../kit/theme/theme.ts';
+import type { TextMeter } from '../../../kit/text-cache.ts';
 import type { WaterfallController } from '../controller.ts';
 import { WaterfallDirty } from '../model/interaction.ts';
 
-/** The kinds of painter (declared by the view contract, which lets a view name its backends). */
-export type { RendererKind };
-
 /** Counters for the harness: what the painter did. */
 export interface PainterStats {
-  /** Full redraws so far (the canvas scene, or a rewrite of the rows in the DOM painter). */
+  /** Full redraws so far (rewrites of the rows in the DOM painter). */
   scenes: number;
-  /** Cheap redraws so far (the overlay, or only the hover and selection classes). */
+  /** Cheap redraws so far (only the hover and selection classes). */
   overlays: number;
   /** Rows drawn by the last full redraw. */
   rows: number;
@@ -38,8 +29,8 @@ export interface PainterContext {
   readonly host: HTMLElement;
   /** Caches text widths; shared, and cleared by the painter when fonts load. */
   readonly meter: TextMeter;
-  /** The tokens as the browser resolved them. */
-  readonly theme: ResolvedTheme;
+  /** Computed CSS font-family used to measure labels. */
+  readonly fontFamily: string;
   readonly scheduler: FrameScheduler;
   /** The host has (a new) size, in CSS px. Called before the painter draws at that size. */
   readonly onSize: (width: number, height: number) => void;
@@ -47,18 +38,14 @@ export interface PainterContext {
 
 /** A mounted painter. */
 export interface WaterfallPainter {
-  readonly kind: RendererKind;
   readonly stats: PainterStats;
   /** Say what changed, as {@link WaterfallDirty} bits; the painter draws on the next frame. */
   mark(dirty: number): void;
-  /** The theme was resolved again; the painter repaints with it. */
-  setTheme(theme: ResolvedTheme): void;
+  /** The theme or font changed; the painter updates its font metrics and repaints. */
+  setFontFamily(fontFamily: string): void;
   /** Remove everything the painter added to the host and stop its listeners. */
   dispose(): void;
 }
-
-/** Creates a painter. */
-export type PainterFactory = (context: PainterContext) => WaterfallPainter;
 
 /** The {@link WaterfallDirty} bits of the controller as the scheduler's {@link Dirty} bits. */
 export function toSurfaceDirty(bits: number): number {

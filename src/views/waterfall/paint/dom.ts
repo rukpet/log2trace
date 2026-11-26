@@ -1,7 +1,7 @@
 /**
  * Waterfall painter for the DOM.
  *
- * The same frame plan as the Canvas painter, turned into elements. The rows in view live in a
+ * The controller's frame plan, turned into elements. The rows in view live in a
  * small pool of row elements (a row `r` always uses slot `r mod P`, so scrolling only moves the
  * rows that are still in view and rewrites the ones entering), which keeps the DOM at a few
  * hundred nodes however many spans the trace has. What a row shows is cached per slot and written
@@ -14,15 +14,15 @@
  * without a mirror.
  *
  * Input is not handled here: the element's native scroller sits above the layer and its events go
- * through the controller's geometric hit test, exactly as for the canvas.
+ * through the controller's geometric hit test.
  */
 
 import { timeToPx } from '../../../kit/geometry/camera1d.ts';
 import { niceTicks } from '../../../kit/geometry/ticks.ts';
 import { h } from '../../../kit/dom.ts';
 import { Dirty, type FrameHandle } from '../../../kit/scheduler.ts';
-import { cssVariableName, type ResolvedTheme } from '../../../kit/theme/theme.ts';
-import { clearOnFontLoad } from '../../../kit/canvas/text-cache.ts';
+import { cssVariableName } from '../../../kit/theme/theme.ts';
+import { clearOnFontLoad } from '../../../kit/text-cache.ts';
 import { HitPart } from '../model/hit.ts';
 import { chevronX, labelWidth } from '../model/layout.ts';
 import { FramePlan, LabelMode, RowFlag } from '../model/plan.ts';
@@ -109,7 +109,6 @@ function createSlot(styles: DomClasses, kindClasses: readonly string[]): Slot {
 
 /** The DOM painter. Create it with {@link mountDomPainter}. */
 class WaterfallDomPainter implements WaterfallPainter {
-  readonly kind = 'dom' as const;
   readonly stats: PainterStats = { scenes: 0, overlays: 0, rows: 0 };
 
   private readonly context: PainterContext;
@@ -146,7 +145,7 @@ class WaterfallDomPainter implements WaterfallPainter {
     this.body = h('div', { class: this.styles.body, role: 'tree', 'aria-label': 'Spans' }, this.hoverBox);
     this.layer = h('div', { class: this.styles.layer }, this.body, this.ruler, this.divider);
     context.host.prepend(this.layer);
-    this.setFont(context.theme);
+    this.setFont(context.fontFamily);
 
     this.handle = context.scheduler.register({ paint: (dirty) => this.paint(dirty) });
     this.observer = new ResizeObserver((entries) => {
@@ -166,9 +165,9 @@ class WaterfallDomPainter implements WaterfallPainter {
     this.handle.mark(toSurfaceDirty(dirty));
   }
 
-  setTheme(theme: ResolvedTheme): void {
+  setFontFamily(fontFamily: string): void {
     this.context.meter.clear();
-    this.setFont(theme);
+    this.setFont(fontFamily);
     this.handle.mark(Dirty.Theme);
   }
 
@@ -179,9 +178,9 @@ class WaterfallDomPainter implements WaterfallPainter {
     this.layer.remove();
   }
 
-  private setFont(theme: ResolvedTheme): void {
-    this.nameFont = `12px ${theme.fonts.sans}`;
-    this.smallFont = `11px ${theme.fonts.sans}`;
+  private setFont(fontFamily: string): void {
+    this.nameFont = `12px ${fontFamily}`;
+    this.smallFont = `11px ${fontFamily}`;
   }
 
   // ---------------------------------------------------------------------------

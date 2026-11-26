@@ -10,9 +10,6 @@
  * as "not set".
  */
 
-/** How a view that can draw with more than one backend draws. */
-export type RendererKind = 'canvas' | 'dom';
-
 /** The configuration of the element as a view sees it. */
 export interface ViewOptions {
   /** The merged configuration, by key. */
