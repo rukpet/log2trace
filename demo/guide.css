@@ -202,8 +202,24 @@ kbd {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+.page-nav.is-overflow-right {
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
+}
+
+.page-nav.is-overflow-left {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 100%);
+}
+
+.page-nav.is-overflow-left.is-overflow-right {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
 }
 
 .page-nav::-webkit-scrollbar {
@@ -616,6 +632,14 @@ kbd {
   align-items: center;
   gap: 0.45rem;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.wb-toolbar .ctrl-select,
+.wb-toolbar .ctrl-input {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .wb-spacer {
@@ -638,6 +662,8 @@ kbd {
   border: 1px solid var(--g-border);
   border-radius: 4px;
   padding: 0.16rem 0.48rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .wb-stage {
@@ -647,6 +673,19 @@ kbd {
 
 .wb-stage trace-visualizer {
   display: block;
+}
+
+/* ── Focus Visibility ───────────────────────────────────────────────────── */
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--g-accent);
+  outline-offset: 2px;
 }
 
 /* ── Form Controls (Buttons, Selects, Inputs, Chips, Sliders) ───────────── */
@@ -812,6 +851,8 @@ kbd {
 
 .segmented {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   background: var(--g-bg-elevated);
   border: 1px solid var(--g-border-strong);
   border-radius: var(--g-radius-sm);
@@ -830,6 +871,7 @@ kbd {
   padding: 0.24rem 0.58rem;
   border-radius: 4px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.12s ease, color 0.12s ease;
 }
 
@@ -1294,6 +1336,10 @@ kbd {
   .pg-layout {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .pg-main {
+    order: -1;
+  }
 }
 
 @media (max-width: 960px) {
@@ -1356,6 +1402,19 @@ kbd {
   .topbar-link--hide-sm,
   .brand-tag {
     display: none;
+  }
+
+  .wb-toolbar {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .wb-toolbar .ctrl-select {
+    width: 100%;
+  }
+
+  .segmented button {
+    flex: 1 1 auto;
+    text-align: center;
   }
 
   .page-pager {
