@@ -767,7 +767,7 @@ console.log({ spans: index.size, roots: index.roots.length, services: index.tabl
 
       setCodeBlock(
         codeEl,
-        `<trace-visualizer data-url="./data/fintech-logs.json" show-legend default-span-kind="${defaultKind}">\n${htmlLines.join('\n') || '  <!-- All rules disabled: spans inherit default-span-kind -->'}\n</trace-visualizer>`,
+        `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  trace-id-field="trace.id"\n  span-group-fields="service.name,operation"\n  span-name-field="operation"\n  service-name-field="service.name"\n  timestamp-field="ts"\n  status-code-field="code"\n  parent-span-lookup-fields="caller"\n  show-legend\n  default-span-kind="${defaultKind}"\n>\n${htmlLines.join('\n') || '  <!-- All rules disabled: spans inherit default-span-kind -->'}\n</trace-visualizer>`,
         'html',
       );
     }
