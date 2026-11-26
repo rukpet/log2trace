@@ -232,3 +232,23 @@ test('a view without a size draws nothing', () => {
   assert.equal(host.children[0].findAll('row').length, 0);
   assert.equal(painter.stats.scenes, 0);
 });
+
+test('rows carry data-span-id while visible and chevron/bar slots carry data-part', () => {
+  const r = rig(wide(3));
+  const active = r.rows().filter((row) => row.style.display !== 'none');
+  const hidden = r.rows().filter((row) => row.style.display === 'none');
+
+  assert.deepEqual(
+    active.map((row) => row.getAttribute('data-span-id')).sort(),
+    ['root', 's0', 's1', 's2'],
+  );
+  assert.ok(hidden.every((row) => row.getAttribute('data-span-id') === null));
+  assert.equal(active[0].findAll('chevron')[0].getAttribute('data-part'), 'chevron');
+  assert.equal(active[0].findAll('bar')[0].getAttribute('data-part'), 'bar');
+
+  r.store.collapseAll();
+  r.controller.update({ mask: 8, origin: 'api', prev: r.store.state });
+  r.draw(WaterfallDirty.Rows);
+  const afterCollapse = r.rows().filter((row) => row.style.display === 'none');
+  assert.ok(afterCollapse.every((row) => row.getAttribute('data-span-id') === null));
+});

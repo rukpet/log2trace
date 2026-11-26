@@ -90,7 +90,26 @@ function sendJson(res: http.ServerResponse, status: number, payload: unknown): v
   res.end(JSON.stringify(payload));
 }
 
+const REQUIRED_BUNDLES = ['log2trace.js', 'log2trace.min.js'] as const;
+
+async function ensureBundlesExist(): Promise<void> {
+  const missing: string[] = [];
+  for (const file of REQUIRED_BUNDLES) {
+    try {
+      await fs.access(path.join(DIST_DIR, file));
+    } catch {
+      missing.push(`dist/${file}`);
+    }
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing built bundle(s): ${missing.join(', ')}. Run "npm run build:bundle" or "npm run test:e2e" first.`,
+    );
+  }
+}
+
 async function createHarnessServer(): Promise<{ url: string; close: () => Promise<void> }> {
+  await ensureBundlesExist();
   const server = http.createServer((req, res) => {
     void (async () => {
       const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
