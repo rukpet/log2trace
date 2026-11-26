@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>log2trace-ui — Interactive Guide: Events, Programmatic API &amp; States</title>
+  <meta name="description" content="Test programmatic methods (selectSpan, expandAll, collapseAll, setTimeWindow, loadTraceData, loadAndTransform), inspect custom DOM events, and verify empty, loading, and error states.">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    (() => {
+      try {
+        const pref = localStorage.getItem('l2t-guide-theme') || 'auto';
+        const dark = pref === 'dark' || (pref === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.pageTheme = dark ? 'dark' : 'light';
+      } catch {}
+    })();
+  </script>
+  <link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div style="display:flex;align-items:center;gap:0.6rem">
+      <button type="button" class="toc-mobile-btn" id="toc-mobile-btn" aria-expanded="false" aria-controls="sidebar-toc">Contents</button>
+      <a class="brand" href="./index.html">
+        <img src="./favicon.svg" alt="">
+        <span>log2trace-ui</span>
+        <span class="brand-tag">Guide</span>
+      </a>
+    </div>
+
+    <nav class="page-nav" aria-label="Guide sections">
+      <a href="./index.html">Getting Started &amp; Data</a>
+      <a href="./views.html">Views &amp; Theming</a>
+      <a href="./filtering.html">Filtering &amp; Sources</a>
+      <a href="./api.html" aria-current="page">Events &amp; API</a>
+      <a href="./playground.html">Setup Playground</a>
+    </nav>
+
+    <div class="topbar-actions">
+      <div class="theme-Segment" role="group" aria-label="Page theme">
+        <button type="button" data-theme-btn="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+      </div>
+      <a class="topbar-link topbar-link--hide-sm" href="./api/index.html">API Docs</a>
+      <a class="topbar-link topbar-link--hide-sm" href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<div class="guide-shell">
+  <aside class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+    <div class="toc-heading">Interactive API</div>
+    <ul class="toc-list">
+      <li><a href="#api-workbench">1. API &amp; Event Workbench</a></li>
+      <li><a href="#lifecycle-states">2. Lifecycle &amp; Error States</a></li>
+    </ul>
+    <div class="toc-heading">Reference</div>
+    <ul class="toc-list">
+      <li><a href="#methods-reference">3. Properties &amp; Methods</a></li>
+      <li><a href="#events-reference">4. Custom DOM Events</a></li>
+    </ul>
+  </aside>
+
+  <main class="guide-main">
+    <div class="doc-header">
+      <div class="doc-eyebrow">Chapter 04</div>
+      <h1>Events, Programmatic API &amp; States</h1>
+      <p class="doc-lead">
+        Drive <code>&lt;trace-visualizer&gt;</code> imperatively from JavaScript or TypeScript: load remote endpoints,
+        select and reveal spans across collapsed subtrees, scope views to a shared <code>{ t0, t1 }</code> time window,
+        and subscribe to bubbling, composed <code>CustomEvent</code>s.
+      </p>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 1 — Interactive API & Event Workbench
+         ==================================================================== -->
+    <section class="doc-section" id="api-workbench">
+      <h2><span class="sec-num">1</span>Interactive API &amp; Event Workbench</h2>
+      <p class="doc-prose">
+        Use the imperative controls below to invoke public methods on the element, then interact directly with the timeline,
+        tabs, or filter bar to compare user-originated events against programmatic calls. Note that <code>selectSpan()</code>
+        expands ancestors and reveals the span <em>without</em> re-emitting <code>span-selected</code>, preventing listener feedback loops.
+      </p>
+
+      <div class="workbench">
+        <!-- Row 1: Imperative loaders & tree actions -->
+        <div class="wb-toolbar wb-toolbar--dense">
+          <div class="wb-group">
+            <span class="wb-label">Load Data:</span>
+            <button type="button" class="btn btn--primary btn--sm" id="api-load-ai">loadTraceData('ai-search-trace.json')</button>
+            <button type="button" class="btn btn--sm" id="api-load-fintech">loadAndTransform('fintech-logs.json')</button>
+            <button type="button" class="btn btn--sm" id="api-load-incident">loadTraceData('incident-cascade.json')</button>
+          </div>
+
+          <span class="wb-spacer"></span>
+
+          <div class="wb-group">
+            <span class="wb-label">Subtrees:</span>
+            <button type="button" class="btn btn--sm" id="api-collapse-all">collapseAll()</button>
+            <button type="button" class="btn btn--sm" id="api-expand-all">expandAll()</button>
+          </div>
+        </div>
+
+        <!-- Row 2: Selection, View & Shared Time Window -->
+        <div class="wb-toolbar wb-toolbar--dense">
+          <div class="wb-group">
+            <label class="wb-label" for="api-span-select">selectSpan</label>
+            <select class="ctrl-select" id="api-span-select" style="max-width:240px"></select>
+            <label class="ctrl-check"><input type="checkbox" id="api-reveal-cb" checked><span>reveal</span></label>
+            <button type="button" class="btn btn--sm" id="api-btn-select">Select</button>
+          </div>
+
+          <div class="wb-group">
+            <label class="wb-label" for="api-view-select">.view</label>
+            <select class="ctrl-select" id="api-view-select">
+              <option value="waterfall">waterfall</option>
+              <option value="flame">flame</option>
+              <option value="service">service</option>
+              <option value="sequence">sequence</option>
+            </select>
+          </div>
+
+          <span class="wb-spacer"></span>
+
+          <div class="wb-group">
+            <span class="wb-label">setTimeWindow</span>
+            <label class="ctrl-range">
+              <span>t0</span>
+              <input type="range" id="api-win-t0" min="0" max="90" step="5" value="0" style="width:72px">
+              <output id="api-win-t0-out">0%</output>
+            </label>
+            <label class="ctrl-range">
+              <span>t1</span>
+              <input type="range" id="api-win-t1" min="10" max="100" step="5" value="100" style="width:72px">
+              <output id="api-win-t1-out">100%</output>
+            </label>
+            <button type="button" class="btn btn--sm" id="api-win-reset">Clear (null)</button>
+          </div>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-api" show-legend height="440">
+            <trace-filter field="*" label="Search" type="text" source="local" width="240" debounce="200" placeholder="Trigger filter-changed…"></trace-filter>
+            <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local"></trace-filter>
+            <trace-view type="waterfall" active></trace-view>
+            <trace-view type="flame"></trace-view>
+            <trace-view type="service"></trace-view>
+            <trace-view type="sequence"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div id="api-event-console"></div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <div class="code-tabs" role="tablist">
+              <button type="button" class="is-active" id="api-tab-code" role="tab" aria-selected="true">Programmatic Usage</button>
+              <button type="button" id="api-tab-span" role="tab" aria-selected="false">Last Selected Span (JSON)</button>
+            </div>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre" id="api-pre-code"><code data-lang="javascript">const viz = document.querySelector('#viz-api');
+
+// Imperative async loading
+await viz.loadTraceData('./data/ai-search-trace.json');
+await viz.loadAndTransform('./data/fintech-logs.json', FINTECH_LOG_CONFIG);
+
+// Expand ancestors, select a span, and scroll it into view
+viz.selectSpan('rag-llm-fail-s', { reveal: true });
+console.log('Selected IDs:', viz.selection);
+
+// Scope all views (Waterfall, Flame, Service, Sequence) to [t0, t1] ms from trace origin
+viz.setTimeWindow({ t0: 150, t1: 850 });
+viz.setTimeWindow(null); // reset to full trace
+
+// Subscribe to bubbling, composed CustomEvents
+viz.addEventListener('trace-loaded', (e) => console.log(e.detail)); // { spans, roots, traceId }
+viz.addEventListener('span-selected', (e) => console.log(e.detail)); // { span, spanId, spanIds, view }
+viz.addEventListener('filter-changed', (e) => console.log(e.detail)); // { field, source, value, allFilters }
+viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, previous }</code></pre>
+          <pre class="code-pre" id="api-pre-span" hidden><code id="api-code-span" data-lang="javascript">// Click any span in the visualizer above to inspect event.detail.span</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2 — Lifecycle, Empty, Loading & Error States
+         ==================================================================== -->
+    <section class="doc-section" id="lifecycle-states">
+      <h2><span class="sec-num">2</span>Built-in Status, Empty &amp; Error States</h2>
+      <p class="doc-prose">
+        <code>&lt;trace-visualizer&gt;</code> renders accessible status overlays inside its Shadow DOM for every lifecycle phase —
+        requiring no external wrapper UI when data is empty, awaiting required external filters, loading asynchronously,
+        filtered down to zero matches, or failing to fetch.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar">
+          <span class="wb-label">Trigger State:</span>
+          <div class="segmented" role="group" aria-label="Trigger visualizer status state">
+            <button type="button" id="st-empty" class="is-active" aria-pressed="true">1. Empty</button>
+            <button type="button" id="st-required" aria-pressed="false">2. Required Gate</button>
+            <button type="button" id="st-loading" aria-pressed="false">3. Loading Spinner</button>
+            <button type="button" id="st-nomatch" aria-pressed="false">4. Zero Filter Matches</button>
+            <button type="button" id="st-error" aria-pressed="false">5. HTTP 404 Error</button>
+          </div>
+          <span class="wb-spacer"></span>
+          <span class="wb-readout" id="st-caption">Fresh element with zero spans</span>
+        </div>
+
+        <div class="wb-stage" id="st-stage">
+          <trace-visualizer id="viz-states" height="260"></trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>How This State Occurs</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="st-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3 & 4 — API & Event Reference Tables
+         ==================================================================== -->
+    <section class="doc-section" id="methods-reference">
+      <h2><span class="sec-num">3</span>Properties &amp; Methods Reference</h2>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Member</th><th>Signature</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>traceData</code></td>
+              <td><code>set traceData(data: TraceData)</code></td>
+              <td>Indexes and renders a standard OTLP <code>TraceData</code> object synchronously, then emits <code>trace-loaded</code>.</td>
+            </tr>
+            <tr>
+              <td><code>logData</code></td>
+              <td><code>set logData(input: { logs: LogEntry[]; config: TransformConfig })</code></td>
+              <td>Runs <code>transformLogs(logs, config)</code>, indexes the resulting spans, and emits <code>trace-loaded</code>.</td>
+            </tr>
+            <tr>
+              <td><code>config</code></td>
+              <td><code>get / set config: TraceVisualizerConfig</code></td>
+              <td>Merges programmatic config fields on top of HTML attributes (setting a key to <code>undefined</code> falls back to its attribute).</td>
+            </tr>
+            <tr>
+              <td><code>fetchCallback</code></td>
+              <td><code>get / set fetchCallback: FetchCallback | null</code></td>
+              <td>Custom async loader <code>(url, filters) =&gt; Promise&lt;TraceData | LogEntry[]&gt;</code> for external filters.</td>
+            </tr>
+            <tr>
+              <td><code>view</code></td>
+              <td><code>get / set view: string</code></td>
+              <td>Reads or switches the active view tab ID (<code>waterfall</code>, <code>flame</code>, <code>service</code>, <code>sequence</code>, or custom ID).</td>
+            </tr>
+            <tr>
+              <td><code>selection</code></td>
+              <td><code>get selection: readonly SpanId[]</code></td>
+              <td>Currently selected span IDs in the shared store.</td>
+            </tr>
+            <tr>
+              <td><code>selectSpan()</code></td>
+              <td><code>selectSpan(id: SpanId, options?: { reveal?: boolean }): void</code></td>
+              <td>Expands collapsed ancestors, selects the span, and reveals it in the active view (default <code>reveal: true</code>).</td>
+            </tr>
+            <tr>
+              <td><code>expandAll()</code> / <code>collapseAll()</code></td>
+              <td><code>(): void</code></td>
+              <td>Expands every span or collapses every parent span that has children.</td>
+            </tr>
+            <tr>
+              <td><code>setTimeWindow()</code></td>
+              <td><code>setTimeWindow(window: { t0: number; t1: number } | null): void</code></td>
+              <td>Scopes all views to <code>[t0, t1]</code> milliseconds from trace origin, or clears the window with <code>null</code>.</td>
+            </tr>
+            <tr>
+              <td><code>loadTraceData()</code></td>
+              <td><code>loadTraceData(url: string): Promise&lt;void&gt;</code></td>
+              <td>Fetches OTel JSON from <code>url</code>; network/parse errors render in the status overlay without rejecting.</td>
+            </tr>
+            <tr>
+              <td><code>loadAndTransform()</code></td>
+              <td><code>loadAndTransform(url: string, config: TransformConfig): Promise&lt;void&gt;</code></td>
+              <td>Fetches raw JSON logs from <code>url</code>, transforms them with <code>config</code>, and renders the result.</td>
+            </tr>
+            <tr>
+              <td><code>refreshTheme()</code></td>
+              <td><code>refreshTheme(): void</code></td>
+              <td>Re-reads computed <code>--l2t-*</code> CSS custom properties after script-driven style changes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="events-reference">
+      <h2><span class="sec-num">4</span>Custom DOM Events Reference</h2>
+      <p class="doc-prose">
+        All events bubble and are <code>composed: true</code>, so they cross Shadow DOM boundaries cleanly.
+      </p>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Event Name</th><th><code>event.detail</code> Shape</th><th>When Dispatched</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>trace-loaded</code></td>
+              <td><code>{ spans: number; roots: number; traceId: string }</code></td>
+              <td>After data is indexed via <code>data-url</code>, <code>traceData</code>, <code>logData</code>, <code>loadTraceData()</code>, or <code>loadAndTransform()</code>.</td>
+            </tr>
+            <tr>
+              <td><code>span-selected</code></td>
+              <td><code>{ span: Span; spanId: string; spanIds: string[]; view: string }</code></td>
+              <td>When the user selects a span, flame box, service node/edge, or sequence arrow (not emitted by programmatic <code>selectSpan()</code>).</td>
+            </tr>
+            <tr>
+              <td><code>filter-changed</code></td>
+              <td><code>{ field: string; source: FilterSource; value: FilterValue; allFilters: Record&lt;string, FilterValue&gt; }</code></td>
+              <td>Whenever a filter input changes in the filter bar (after debounce for text inputs).</td>
+            </tr>
+            <tr>
+              <td><code>view-changed</code></td>
+              <td><code>{ view: string; previous: string }</code></td>
+              <td>When switching from one mounted view to another via tabs, the <code>view</code> attribute, or the <code>.view</code> setter.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <nav class="page-pager" aria-label="Guide pagination">
+      <a class="pager-link" href="./filtering.html">
+        <span class="pager-dir">&larr; Previous Chapter</span>
+        <span class="pager-title">Filtering &amp; External Sources</span>
+      </a>
+      <a class="pager-link pager-link--next" href="./playground.html">
+        <span class="pager-dir">Next Chapter &rarr;</span>
+        <span class="pager-title">Interactive Setup Playground &amp; Scale Lab</span>
+      </a>
+    </nav>
+
+    <footer class="guide-footer">
+      <span>log2trace-ui Interactive Guide &middot; Built <time>__BUILD_DATE__</time></span>
+      <span>
+        <a href="./api/index.html">API Reference</a> &middot;
+        <a href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+      </span>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+  import './dist/log2trace.min.js';
+  import {
+    initGuideShell,
+    setCodeBlock,
+    createEventConsole,
+    INLINE_STARTER_TRACE,
+    FINTECH_LOG_CONFIG,
+    syncVisualizerThemes,
+  } from './guide.js';
+
+  initGuideShell();
+
+  // ── Section 1: API & Event Workbench ──────────────────────────────────────
+  {
+    const viz = document.getElementById('viz-api');
+    const spanSelect = document.getElementById('api-span-select');
+    const revealCb = document.getElementById('api-reveal-cb');
+    const viewSelect = document.getElementById('api-view-select');
+    const winT0 = document.getElementById('api-win-t0');
+    const winT1 = document.getElementById('api-win-t1');
+    const winT0Out = document.getElementById('api-win-t0-out');
+    const winT1Out = document.getElementById('api-win-t1-out');
+
+    const tabCode = document.getElementById('api-tab-code');
+    const tabSpan = document.getElementById('api-tab-span');
+    const preCode = document.getElementById('api-pre-code');
+    const preSpan = document.getElementById('api-pre-span');
+    const codeSpan = document.getElementById('api-code-span');
+
+    const evConsole = createEventConsole(document.getElementById('api-event-console'), viz);
+
+    function showApiTab(which) {
+      const isCode = which === 'code';
+      tabCode.classList.toggle('is-active', isCode);
+      tabCode.setAttribute('aria-selected', String(isCode));
+      tabSpan.classList.toggle('is-active', !isCode);
+      tabSpan.setAttribute('aria-selected', String(!isCode));
+      preCode.hidden = !isCode;
+      preSpan.hidden = isCode;
+    }
+    tabCode.addEventListener('click', () => showApiTab('code'));
+    tabSpan.addEventListener('click', () => showApiTab('span'));
+
+    function populateSpanDropdown() {
+      const ordered = viz.store.state.data.index.ordered;
+      spanSelect.replaceChildren();
+      for (const s of ordered.slice(0, 60)) {
+        const opt = document.createElement('option');
+        opt.value = s.spanId;
+        opt.textContent = `[${s.serviceName}] ${s.span.name} (${s.durationMs}ms)`;
+        spanSelect.appendChild(opt);
+      }
+    }
+
+    viz.addEventListener('trace-loaded', populateSpanDropdown);
+    viz.addEventListener('view-changed', (e) => {
+      viewSelect.value = e.detail.view;
+    });
+    viz.addEventListener('span-selected', (e) => {
+      spanSelect.value = e.detail.spanId;
+      setCodeBlock(codeSpan, JSON.stringify(e.detail.span, null, 2), 'javascript');
+    });
+
+    document.getElementById('api-load-ai').addEventListener('click', async () => {
+      evConsole.log('api-call', "loadTraceData('./data/ai-search-trace.json')");
+      await viz.loadTraceData('./data/ai-search-trace.json');
+    });
+
+    document.getElementById('api-load-fintech').addEventListener('click', async () => {
+      evConsole.log('api-call', "loadAndTransform('./data/fintech-logs.json', FINTECH_LOG_CONFIG)");
+      await viz.loadAndTransform('./data/fintech-logs.json', FINTECH_LOG_CONFIG);
+    });
+
+    document.getElementById('api-load-incident').addEventListener('click', async () => {
+      evConsole.log('api-call', "loadTraceData('./data/incident-cascade.json')");
+      await viz.loadTraceData('./data/incident-cascade.json');
+    });
+
+    document.getElementById('api-collapse-all').addEventListener('click', () => {
+      viz.collapseAll();
+      evConsole.log('api-call', 'collapseAll()');
+    });
+
+    document.getElementById('api-expand-all').addEventListener('click', () => {
+      viz.expandAll();
+      evConsole.log('api-call', 'expandAll()');
+    });
+
+    document.getElementById('api-btn-select').addEventListener('click', () => {
+      const id = spanSelect.value;
+      if (!id) return;
+      const reveal = revealCb.checked;
+      viz.selectSpan(id, { reveal });
+      evConsole.log('api-call', `selectSpan("${id}", { reveal: ${reveal} }) -> selection=${JSON.stringify(viz.selection)}`);
+    });
+
+    viewSelect.addEventListener('change', () => {
+      viz.view = viewSelect.value;
+    });
+
+    function applyWindow() {
+      let p0 = Number(winT0.value);
+      let p1 = Number(winT1.value);
+      if (p0 >= p1) p1 = Math.min(100, p0 + 5);
+      winT0Out.textContent = `${p0}%`;
+      winT1Out.textContent = `${p1}%`;
+
+      const extent = viz.store.state.data.index.table.extentMs || 1000;
+      const t0 = Math.round((p0 / 100) * extent);
+      const t1 = Math.round((p1 / 100) * extent);
+      viz.setTimeWindow({ t0, t1 });
+      evConsole.log('api-call', `setTimeWindow({ t0: ${t0}, t1: ${t1} })`);
+    }
+
+    winT0.addEventListener('change', applyWindow);
+    winT1.addEventListener('change', applyWindow);
+    winT0.addEventListener('input', () => { winT0Out.textContent = `${winT0.value}%`; });
+    winT1.addEventListener('input', () => { winT1Out.textContent = `${winT1.value}%`; });
+
+    document.getElementById('api-win-reset').addEventListener('click', () => {
+      winT0.value = '0';
+      winT1.value = '100';
+      winT0Out.textContent = '0%';
+      winT1Out.textContent = '100%';
+      viz.setTimeWindow(null);
+      evConsole.log('api-call', 'setTimeWindow(null)');
+    });
+
+    void viz.loadTraceData('./data/ai-search-trace.json');
+  }
+
+  // ── Section 2: Lifecycle & Error States ───────────────────────────────────
+  {
+    const stage = document.getElementById('st-stage');
+    const caption = document.getElementById('st-caption');
+    const codeEl = document.getElementById('st-code');
+    const stateBtns = {
+      empty: document.getElementById('st-empty'),
+      required: document.getElementById('st-required'),
+      loading: document.getElementById('st-loading'),
+      nomatch: document.getElementById('st-nomatch'),
+      error: document.getElementById('st-error'),
+    };
+
+    function mountFreshVisualizer() {
+      const el = document.createElement('trace-visualizer');
+      el.setAttribute('height', '260');
+      stage.replaceChildren(el);
+      syncVisualizerThemes();
+      return el;
+    }
+
+    function showState(kind) {
+      for (const [k, btn] of Object.entries(stateBtns)) {
+        const active = k === kind;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      }
+
+      const el = mountFreshVisualizer();
+
+      if (kind === 'empty') {
+        caption.textContent = 'Empty state — no data-url and zero spans';
+        setCodeBlock(
+          codeEl,
+          `<!-- No data-url or empty { resourceSpans: [] } -->\n<trace-visualizer height="260"></trace-visualizer>`,
+          'html',
+        );
+      } else if (kind === 'required') {
+        const f = document.createElement('trace-filter');
+        f.setAttribute('field', 'traceId');
+        f.setAttribute('label', 'Trace ID');
+        f.setAttribute('type', 'dropdown');
+        f.setAttribute('source', 'external');
+        f.setAttribute('required', '');
+        f.setAttribute('options', '["pay-trc-901","pay-trc-902"]');
+        f.setAttribute('placeholder', 'Required…');
+        el.fetchCallback = async () => INLINE_STARTER_TRACE;
+        el.appendChild(f);
+        caption.textContent = 'Required gate — external filter marked required before selection';
+        setCodeBlock(
+          codeEl,
+          `<trace-visualizer height="260">\n  <trace-filter field="traceId" label="Trace ID" type="dropdown" source="external" required options='["pay-trc-901","pay-trc-902"]'></trace-filter>\n</trace-visualizer>`,
+          'html',
+        );
+      } else if (kind === 'loading') {
+        el.store.setPhase('loading');
+        caption.textContent = 'Loading state — async fetch in flight with accessible status spinner';
+        setCodeBlock(
+          codeEl,
+          `// Shown automatically while data-url, loadTraceData(), or fetchCallback is in flight\nawait viz.loadTraceData('/api/slow-trace.json');`,
+          'javascript',
+        );
+      } else if (kind === 'nomatch') {
+        const f = document.createElement('trace-filter');
+        f.setAttribute('field', 'spanName');
+        f.setAttribute('label', 'Operation');
+        f.setAttribute('type', 'text');
+        f.setAttribute('source', 'local');
+        el.appendChild(f);
+        el.traceData = INLINE_STARTER_TRACE;
+        queueMicrotask(() => {
+          const input = el.shadowRoot?.querySelector('input[data-filter-field="spanName"]');
+          if (input) {
+            input.value = 'nonexistent_operation_xyz';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+        caption.textContent = 'No-match state — local filter narrows visible spans to 0';
+        setCodeBlock(
+          codeEl,
+          `<!-- Displayed when active local filters match 0 spans; Clear button resets immediately -->\n<trace-visualizer>\n  <trace-filter field="spanName" label="Operation" type="text" source="local"></trace-filter>\n</trace-visualizer>`,
+          'html',
+        );
+      } else if (kind === 'error') {
+        void el.loadTraceData('./data/does-not-exist-404.json');
+        caption.textContent = 'Error state — HTTP 404 or invalid JSON rendered cleanly inside view';
+        setCodeBlock(
+          codeEl,
+          `<trace-visualizer data-url="./data/does-not-exist-404.json" height="260"></trace-visualizer>`,
+          'html',
+        );
+      }
+    }
+
+    for (const [k, btn] of Object.entries(stateBtns)) {
+      btn.addEventListener('click', () => showState(k));
+    }
+    showState('empty');
+  }
+
+  syncVisualizerThemes();
+</script>
+</body>
+</html>

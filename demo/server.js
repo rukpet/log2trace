@@ -1,71 +1,110 @@
-// Simple HTTP server for the demo
+// Local HTTP server for the interactive guide and API documentation
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, '..');
 const PORT = 3000;
 
 const contentTypes = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.json': 'application/json',
-  '.css': 'text/css',
-  '.ts': 'text/typescript',
-  '.svg': 'image/svg+xml'
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.ts': 'text/typescript; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
 };
 
-// Resolve build date from dist output timestamp
-const distPath = path.join(__dirname, '..', 'dist', 'log2trace.js');
-let buildDate = 'unknown';
-try {
-  const mtime = fs.statSync(distPath).mtime;
-  buildDate = mtime.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
-} catch {}
+const distPath = path.join(ROOT_DIR, 'dist', 'log2trace.js');
+
+function resolveBuildDate() {
+  try {
+    const mtime = fs.statSync(distPath).mtime;
+    return mtime.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  } catch {
+    return 'dev';
+  }
+}
+
+function resolveRequestPath(rawPathname) {
+  let pathname;
+  try {
+    pathname = decodeURIComponent(rawPathname);
+  } catch {
+    return null;
+  }
+
+  if (pathname === '/' || pathname === '' || pathname === '/guide.html') {
+    return path.join(__dirname, 'index.html');
+  }
+
+  if (pathname === '/api' || pathname === '/api/') {
+    return path.join(ROOT_DIR, 'docs', 'index.html');
+  }
+
+  if (pathname.startsWith('/api/')) {
+    const target = path.resolve(ROOT_DIR, 'docs', pathname.slice('/api/'.length));
+    return target.startsWith(path.join(ROOT_DIR, 'docs') + path.sep) ? target : null;
+  }
+
+  if (pathname === '/docs' || pathname === '/docs/') {
+    return path.join(ROOT_DIR, 'docs', 'index.html');
+  }
+
+  if (pathname.startsWith('/dist/') || pathname.startsWith('/docs/')) {
+    const target = path.resolve(ROOT_DIR, pathname.slice(1));
+    return target.startsWith(ROOT_DIR + path.sep) ? target : null;
+  }
+
+  const target = path.resolve(__dirname, pathname.slice(1));
+  return target === __dirname || target.startsWith(__dirname + path.sep) ? target : null;
+}
 
 const server = http.createServer((req, res) => {
   const pathname = (req.url ?? '/').split(/[?#]/, 1)[0];
-  const filePath = pathname === '/' || pathname === '' ? '/demo.html' : pathname;
+  let actualPath = resolveRequestPath(pathname);
 
-  // Map paths to actual file locations
-  let actualPath;
-  if (filePath.startsWith('/dist/') || filePath.startsWith('/docs/')) {
-    // Serve dist and docs files from parent directory
-    actualPath = path.join(__dirname, '..', filePath);
-  } else {
-    // Serve demo files from current directory
-    actualPath = path.join(__dirname, filePath);
+  if (!actualPath) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('403 - Forbidden');
+    return;
   }
 
+  try {
+    if (fs.existsSync(actualPath) && fs.statSync(actualPath).isDirectory()) {
+      actualPath = path.join(actualPath, 'index.html');
+    }
+  } catch {}
+
   const extname = path.extname(actualPath);
-  const contentType = contentTypes[extname] || 'text/plain';
+  const contentType = contentTypes[extname] || 'text/plain; charset=utf-8';
 
   fs.readFile(actualPath, (err, content) => {
     if (err) {
       if (err.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('404 - File not found');
       } else {
-        res.writeHead(500);
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('500 - Internal server error');
       }
-    } else {
-      let body = content;
-      if (extname === '.html') {
-        body = content.toString().replace(/__BUILD_DATE__/g, buildDate);
-      }
-      res.writeHead(200, {
-        'Content-Type': contentType,
-        'Cross-Origin-Opener-Policy': 'same-origin',
-        'Cross-Origin-Embedder-Policy': 'require-corp',
-      });
-      res.end(body);
+      return;
     }
+
+    let body = content;
+    if (extname === '.html') {
+      body = content.toString().replace(/__BUILD_DATE__/g, resolveBuildDate());
+    }
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(body);
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Demo server running at http://localhost:${PORT}`);
-  console.log(`📊 Open your browser to view the trace visualization`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Guide server running at http://localhost:${PORT}`);
+  console.log(`📖 Open your browser to explore the interactive guide & playground`);
 });
