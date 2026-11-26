@@ -1,0 +1,1405 @@
+[
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "us-east-1"
+    },
+    "operation": "POST /v1/captures",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.000Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Received capture request $149.00 USD",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "token-vault",
+      "region": "us-east-1"
+    },
+    "operation": "detokenize_pan",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.014Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Lookup encrypted PAN token tok_882a",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "token-vault",
+      "region": "us-east-1"
+    },
+    "operation": "detokenize_pan",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.041Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "HSM decrypt completed (key v7)",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "token-vault",
+      "region": "us-east-1"
+    },
+    "operation": "detokenize_pan",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.068Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Returned ephemeral PAN handle",
+      "cardNetwork": "visa",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "us-east-1"
+    },
+    "operation": "evaluate_transaction",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.074Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Start real-time fraud scoring",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "feature-store",
+      "region": "us-east-1"
+    },
+    "operation": "fetch_velocity_30d",
+    "caller": "fraud-scorer",
+    "component": "redis-client",
+    "ts": "2026-11-26T14:20:00.084Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "MGET card velocity counters",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "eu-west-1"
+    },
+    "operation": "POST /v1/captures",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.120Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Received capture request €2,480.00 EUR",
+      "cardNetwork": "amex",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "feature-store",
+      "region": "us-east-1"
+    },
+    "operation": "fetch_velocity_30d",
+    "caller": "fraud-scorer",
+    "component": "redis-client",
+    "ts": "2026-11-26T14:20:00.126Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Cache hit: 4 txns in 30d",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "us-east-1"
+    },
+    "operation": "run_sanctions_check",
+    "caller": "fraud-scorer",
+    "component": "internal-worker",
+    "ts": "2026-11-26T14:20:00.132Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Checking OFAC & PEP watchlists",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "us-east-1"
+    },
+    "operation": "evaluate_transaction",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.133Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Loaded velocity features from Redis",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "token-vault",
+      "region": "eu-west-1"
+    },
+    "operation": "detokenize_pan",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.135Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Lookup encrypted PAN token tok_994c",
+      "cardNetwork": "amex",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "us-east-1"
+    },
+    "operation": "run_sanctions_check",
+    "caller": "fraud-scorer",
+    "component": "internal-worker",
+    "ts": "2026-11-26T14:20:00.178Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Zero matches found",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "token-vault",
+      "region": "eu-west-1"
+    },
+    "operation": "detokenize_pan",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.188Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "HSM decrypt completed",
+      "cardNetwork": "amex",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "us-east-1"
+    },
+    "operation": "evaluate_transaction",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.192Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "XGBoost score=0.04 (ALLOW)",
+      "cardNetwork": "visa",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "eu-west-1"
+    },
+    "operation": "evaluate_transaction",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.194Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Start EU fraud scoring",
+      "cardNetwork": "amex",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.198Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Sending ISO-8583 0200 to VisaNet",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "feature-store",
+      "region": "eu-west-1"
+    },
+    "operation": "fetch_velocity_30d",
+    "caller": "fraud-scorer",
+    "component": "redis-client",
+    "ts": "2026-11-26T14:20:00.204Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "MGET card velocity counters (eu-west-1)",
+      "cardNetwork": "amex",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.210Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "ISO-8583 frame checksum chunk 1/8 verified",
+      "cardNetwork": "visa",
+      "step": 10
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.228Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "ISO-8583 frame checksum chunk 2/8 verified",
+      "cardNetwork": "visa",
+      "step": 11
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "us-east-1"
+    },
+    "operation": "POST /v1/captures",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.230Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Validated HMAC signature",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.246Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "ISO-8583 frame checksum chunk 3/8 verified",
+      "cardNetwork": "visa",
+      "step": 12
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "feature-store",
+      "region": "eu-west-1"
+    },
+    "operation": "fetch_velocity_30d",
+    "caller": "fraud-scorer",
+    "component": "redis-client",
+    "ts": "2026-11-26T14:20:00.256Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Cache hit: 14 txns in 30d",
+      "cardNetwork": "amex",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "eu-west-1"
+    },
+    "operation": "evaluate_transaction",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.257Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Cross-border velocity elevated",
+      "cardNetwork": "amex",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.264Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "ISO-8583 frame checksum chunk 4/8 verified",
+      "cardNetwork": "visa",
+      "step": 13
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.282Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "ISO-8583 frame checksum chunk 5/8 verified",
+      "cardNetwork": "visa",
+      "step": 14
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.283Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "TLS mutual auth verified",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.300Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "ISO-8583 frame checksum chunk 6/8 verified",
+      "cardNetwork": "visa",
+      "step": 15
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.318Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "ISO-8583 frame checksum chunk 7/8 verified",
+      "cardNetwork": "visa",
+      "step": 16
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "eu-west-1"
+    },
+    "operation": "evaluate_transaction",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.320Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "XGBoost score=0.41 (CHALLENGE_3DS)",
+      "cardNetwork": "amex",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "eu-west-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.328Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Sending ISO-8583 0200 to Amex EU",
+      "cardNetwork": "amex",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.336Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "ISO-8583 frame checksum chunk 8/8 verified",
+      "cardNetwork": "visa",
+      "step": 17
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "us-east-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.368Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Received 0210 approval code 00",
+      "cardNetwork": "visa",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "ledger-core",
+      "region": "us-east-1"
+    },
+    "operation": "post_double_entry",
+    "caller": "payment-ingress",
+    "component": "db-client",
+    "ts": "2026-11-26T14:20:00.374Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "BEGIN SERIALIZABLE ledger transaction",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "ap-south-1"
+    },
+    "operation": "POST /v1/refunds",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.380Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Received partial refund $42.50 USD",
+      "cardNetwork": "mastercard",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "ap-south-1"
+    },
+    "operation": "verify_refund_policy",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.394Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Evaluating merchant refund limits",
+      "cardNetwork": "mastercard",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "ledger-core",
+      "region": "us-east-1"
+    },
+    "operation": "post_double_entry",
+    "caller": "payment-ingress",
+    "component": "db-client",
+    "ts": "2026-11-26T14:20:00.401Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Inserted debit/credit journal rows",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "ledger-core",
+      "region": "us-east-1"
+    },
+    "operation": "post_double_entry",
+    "caller": "payment-ingress",
+    "component": "db-client",
+    "ts": "2026-11-26T14:20:00.428Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "COMMIT journal_id=jrn_55019",
+      "cardNetwork": "visa",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "eu-west-1"
+    },
+    "operation": "POST /v1/captures",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.430Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Validated idempotency key",
+      "cardNetwork": "amex",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "settlement-bus",
+      "region": "us-east-1"
+    },
+    "operation": "publish capture.settled",
+    "caller": "payment-ingress",
+    "component": "kafka-producer",
+    "ts": "2026-11-26T14:20:00.432Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Producing event to settlement-events partition 2",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "webhook-dispatcher",
+      "region": "us-east-1"
+    },
+    "operation": "deliver merchant.webhook",
+    "caller": "settlement-bus",
+    "component": "kafka-consumer",
+    "ts": "2026-11-26T14:20:00.442Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Consumed capture.settled offset 91823",
+      "cardNetwork": "visa",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "fraud-scorer",
+      "region": "ap-south-1"
+    },
+    "operation": "verify_refund_policy",
+    "caller": "payment-ingress",
+    "component": "grpc-server",
+    "ts": "2026-11-26T14:20:00.452Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Within 30-day policy window (ALLOW)",
+      "cardNetwork": "mastercard",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "settlement-bus",
+      "region": "us-east-1"
+    },
+    "operation": "publish capture.settled",
+    "caller": "payment-ingress",
+    "component": "kafka-producer",
+    "ts": "2026-11-26T14:20:00.454Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Broker ack=all received",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "ap-south-1"
+    },
+    "operation": "iso8583_refund",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.458Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Sending Mastercard refund advice 0220",
+      "cardNetwork": "mastercard",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "us-east-1"
+    },
+    "operation": "POST /v1/captures",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.460Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Returning 200 OK captured",
+      "cardNetwork": "visa",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "eu-west-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.507Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Waiting for issuer 3DS ACS response",
+      "cardNetwork": "amex",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-901"
+    },
+    "service": {
+      "name": "webhook-dispatcher",
+      "region": "us-east-1"
+    },
+    "operation": "deliver merchant.webhook",
+    "caller": "settlement-bus",
+    "component": "kafka-consumer",
+    "ts": "2026-11-26T14:20:00.510Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "POST https://merchant.example/hooks/pay -> 202",
+      "cardNetwork": "visa",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "ap-south-1"
+    },
+    "operation": "iso8583_refund",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.528Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Acquirer acknowledged batch slot #14",
+      "cardNetwork": "mastercard",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "ap-south-1"
+    },
+    "operation": "POST /v1/refunds",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.535Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Verified original capture jrn_55019",
+      "cardNetwork": "mastercard",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "ap-south-1"
+    },
+    "operation": "iso8583_refund",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.598Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Received response code 00",
+      "cardNetwork": "mastercard",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "ledger-core",
+      "region": "ap-south-1"
+    },
+    "operation": "post_reversal_entry",
+    "caller": "payment-ingress",
+    "component": "db-client",
+    "ts": "2026-11-26T14:20:00.604Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "BEGIN reversal journal entry",
+      "cardNetwork": "mastercard",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "ledger-core",
+      "region": "ap-south-1"
+    },
+    "operation": "post_reversal_entry",
+    "caller": "payment-ingress",
+    "component": "db-client",
+    "ts": "2026-11-26T14:20:00.630Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Credited cardholder suspense account",
+      "cardNetwork": "mastercard",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "ledger-core",
+      "region": "ap-south-1"
+    },
+    "operation": "post_reversal_entry",
+    "caller": "payment-ingress",
+    "component": "db-client",
+    "ts": "2026-11-26T14:20:00.656Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "COMMIT reversal_id=rev_1084",
+      "cardNetwork": "mastercard",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "settlement-bus",
+      "region": "ap-south-1"
+    },
+    "operation": "publish refund.issued",
+    "caller": "payment-ingress",
+    "component": "kafka-producer",
+    "ts": "2026-11-26T14:20:00.660Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Producing refund.issued to settlement-events partition 5",
+      "cardNetwork": "mastercard",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "webhook-dispatcher",
+      "region": "ap-south-1"
+    },
+    "operation": "deliver refund.webhook",
+    "caller": "settlement-bus",
+    "component": "kafka-consumer",
+    "ts": "2026-11-26T14:20:00.672Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Consumed refund.issued offset 91829",
+      "cardNetwork": "mastercard",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "settlement-bus",
+      "region": "ap-south-1"
+    },
+    "operation": "publish refund.issued",
+    "caller": "payment-ingress",
+    "component": "kafka-producer",
+    "ts": "2026-11-26T14:20:00.682Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Broker ack=all received",
+      "cardNetwork": "mastercard",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "acquirer-bridge",
+      "region": "eu-west-1"
+    },
+    "operation": "iso8583_capture",
+    "caller": "payment-ingress",
+    "component": "http-client",
+    "ts": "2026-11-26T14:20:00.685Z",
+    "severity": "ERROR",
+    "http": {
+      "status": 504
+    },
+    "code": 504,
+    "payload": {
+      "message": "Timeout waiting for issuer after 350ms",
+      "cardNetwork": "amex",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "ap-south-1"
+    },
+    "operation": "POST /v1/refunds",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.690Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Refund accepted 200 OK",
+      "cardNetwork": "mastercard",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "ledger-core",
+      "region": "eu-west-1"
+    },
+    "operation": "record_failed_attempt",
+    "caller": "payment-ingress",
+    "component": "db-client",
+    "ts": "2026-11-26T14:20:00.692Z",
+    "severity": "INFO",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Recording declined attempt for audit",
+      "cardNetwork": "amex",
+      "step": 1
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "ledger-core",
+      "region": "eu-west-1"
+    },
+    "operation": "record_failed_attempt",
+    "caller": "payment-ingress",
+    "component": "db-client",
+    "ts": "2026-11-26T14:20:00.730Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "Inserted payment_attempts status=TIMEOUT",
+      "cardNetwork": "amex",
+      "step": 2
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-902"
+    },
+    "service": {
+      "name": "payment-ingress",
+      "region": "eu-west-1"
+    },
+    "operation": "POST /v1/captures",
+    "caller": null,
+    "component": "http-server",
+    "ts": "2026-11-26T14:20:00.740Z",
+    "severity": "ERROR",
+    "http": {
+      "status": 502
+    },
+    "code": 502,
+    "payload": {
+      "message": "Capture failed: 502 Issuer gateway timeout",
+      "cardNetwork": "amex",
+      "step": 3
+    }
+  },
+  {
+    "trace": {
+      "id": "pay-trc-903"
+    },
+    "service": {
+      "name": "webhook-dispatcher",
+      "region": "ap-south-1"
+    },
+    "operation": "deliver refund.webhook",
+    "caller": "settlement-bus",
+    "component": "kafka-consumer",
+    "ts": "2026-11-26T14:20:00.748Z",
+    "severity": "DEBUG",
+    "http": {
+      "status": 200
+    },
+    "code": 0,
+    "payload": {
+      "message": "POST https://merchant.example/hooks/refund -> 200",
+      "cardNetwork": "mastercard",
+      "step": 2
+    }
+  }
+]

@@ -5,7 +5,7 @@
 
 Zero-dependency Web Component that renders OpenTelemetry traces with built-in log-to-trace transformation.
 
-[**Interactive Guide**](https://rukpet.github.io/log2trace/guide.html) &middot;
+[**Interactive Guide**](https://rukpet.github.io/log2trace/) &middot;
 [**API Reference**](https://rukpet.github.io/log2trace/api/)
 
 ---

@@ -1,0 +1,599 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "edge-proxy"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "edge-proxy.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-01",
+              "name": "POST /v2/sessions/refresh",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800000000000",
+              "endTimeUnixNano": "1795702800184000000",
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "/v2/sessions/refresh"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "net.protocol.version",
+                  "value": {
+                    "stringValue": "2.0"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1795702800001500000",
+                  "name": "tls.handshake.resumed",
+                  "attributes": [
+                    {
+                      "key": "cipher",
+                      "value": {
+                        "stringValue": "TLS_AES_256_GCM_SHA384"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-02",
+              "parentSpanId": "ea-01",
+              "name": "waf.inspect_headers",
+              "kind": 1,
+              "startTimeUnixNano": "1795702800002000000",
+              "endTimeUnixNano": "1795702800011000000",
+              "attributes": [
+                {
+                  "key": "waf.ruleset",
+                  "value": {
+                    "stringValue": "owasp-crs-4.2"
+                  }
+                },
+                {
+                  "key": "waf.action",
+                  "value": {
+                    "stringValue": "allow"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-03",
+              "parentSpanId": "ea-01",
+              "name": "AuthService/RefreshToken",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800013000000",
+              "endTimeUnixNano": "1795702800176000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "rpc.service",
+                  "value": {
+                    "stringValue": "auth.v2.AuthService"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "session-api"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "session-api.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-04",
+              "parentSpanId": "ea-03",
+              "name": "AuthService/RefreshToken",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800016000000",
+              "endTimeUnixNano": "1795702800172000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "tenant.id",
+                  "value": {
+                    "stringValue": "acme-corp"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-05",
+              "parentSpanId": "ea-04",
+              "name": "jwt.verify_ed25519",
+              "kind": 1,
+              "startTimeUnixNano": "1795702800018000000",
+              "endTimeUnixNano": "1795702800027000000",
+              "attributes": [
+                {
+                  "key": "jwt.kid",
+                  "value": {
+                    "stringValue": "key-2026-11"
+                  }
+                },
+                {
+                  "key": "jwt.alg",
+                  "value": {
+                    "stringValue": "EdDSA"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-06",
+              "parentSpanId": "ea-04",
+              "name": "GET session:usr_88412",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800029000000",
+              "endTimeUnixNano": "1795702800043000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "redis"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "sessions-cluster"
+                  }
+                },
+                {
+                  "key": "cache.hit",
+                  "value": {
+                    "boolValue": true
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1795702800041000000",
+                  "name": "cache.hit",
+                  "attributes": [
+                    {
+                      "key": "ttl_sec",
+                      "value": {
+                        "intValue": "1420"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-07",
+              "parentSpanId": "ea-04",
+              "name": "PolicyEngine/EvaluateRoles",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800045000000",
+              "endTimeUnixNano": "1795702800118000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-11",
+              "parentSpanId": "ea-04",
+              "name": "SETEX session:usr_88412",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800121000000",
+              "endTimeUnixNano": "1795702800139000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "redis"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "sessions-cluster"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-12",
+              "parentSpanId": "ea-04",
+              "name": "publish auth.session.refreshed",
+              "kind": 4,
+              "startTimeUnixNano": "1795702800142000000",
+              "endTimeUnixNano": "1795702800168000000",
+              "attributes": [
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "kafka"
+                  }
+                },
+                {
+                  "key": "messaging.destination.name",
+                  "value": {
+                    "stringValue": "auth-audit-events"
+                  }
+                },
+                {
+                  "key": "messaging.kafka.partition",
+                  "value": {
+                    "intValue": "4"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "policy-engine"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "policy-engine.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-08",
+              "parentSpanId": "ea-07",
+              "name": "PolicyEngine/EvaluateRoles",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800048000000",
+              "endTimeUnixNano": "1795702800114000000",
+              "attributes": [
+                {
+                  "key": "policy.bundle",
+                  "value": {
+                    "stringValue": "rbac-2026.11.20"
+                  }
+                },
+                {
+                  "key": "subject.roles",
+                  "value": {
+                    "stringValue": "admin,billing"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-09",
+              "parentSpanId": "ea-08",
+              "name": "SELECT entitlements FROM grants",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800053000000",
+              "endTimeUnixNano": "1795702800098000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "postgresql"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "identity_ro"
+                  }
+                },
+                {
+                  "key": "db.rows_returned",
+                  "value": {
+                    "intValue": "12"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1795702800056000000",
+                  "name": "pool.connection.acquired",
+                  "attributes": [
+                    {
+                      "key": "wait_ms",
+                      "value": {
+                        "intValue": "3"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "timeUnixNano": "1795702800096000000",
+                  "name": "query.completed",
+                  "attributes": [
+                    {
+                      "key": "rows",
+                      "value": {
+                        "intValue": "12"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-10",
+              "parentSpanId": "ea-08",
+              "name": "rego.eval_constraints",
+              "kind": 1,
+              "startTimeUnixNano": "1795702800100000000",
+              "endTimeUnixNano": "1795702800112000000",
+              "attributes": [
+                {
+                  "key": "rego.rules_evaluated",
+                  "value": {
+                    "intValue": "34"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "audit-writer"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "audit-writer.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-13",
+              "parentSpanId": "ea-12",
+              "name": "consume auth.session.refreshed",
+              "kind": 5,
+              "startTimeUnixNano": "1795702800149000000",
+              "endTimeUnixNano": "1795702800179000000",
+              "attributes": [
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "kafka"
+                  }
+                },
+                {
+                  "key": "messaging.consumer.group",
+                  "value": {
+                    "stringValue": "audit-sink-v3"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "9f2a4c8e1b0d73a54c9e2f10a8b7c6d5",
+              "spanId": "ea-14",
+              "parentSpanId": "ea-13",
+              "name": "INSERT INTO audit_trail",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800155000000",
+              "endTimeUnixNano": "1795702800177000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "clickhouse"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "security_logs"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

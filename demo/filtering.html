@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>log2trace-ui — Interactive Guide: Filtering &amp; External Data Sources</title>
+  <meta name="description" content="Configure client-side local filters, wildcard search, span vs. log event targets on structured fintech logs, auto-populated dropdowns, multiselects, datetime ranges, and server-side external filters with fetchCallback.">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    (() => {
+      try {
+        const pref = localStorage.getItem('l2t-guide-theme') || 'auto';
+        const dark = pref === 'dark' || (pref === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.pageTheme = dark ? 'dark' : 'light';
+      } catch {}
+    })();
+  </script>
+  <link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div style="display:flex;align-items:center;gap:0.6rem">
+      <button type="button" class="toc-mobile-btn" id="toc-mobile-btn" aria-expanded="false" aria-controls="sidebar-toc">Contents</button>
+      <a class="brand" href="./index.html">
+        <img src="./favicon.svg" alt="">
+        <span>log2trace-ui</span>
+        <span class="brand-tag">Guide</span>
+      </a>
+    </div>
+
+    <nav class="page-nav" aria-label="Guide sections">
+      <a href="./index.html">Getting Started &amp; Data</a>
+      <a href="./views.html">Views &amp; Theming</a>
+      <a href="./filtering.html" aria-current="page">Filtering &amp; Sources</a>
+      <a href="./api.html">Events &amp; API</a>
+      <a href="./playground.html">Setup Playground</a>
+    </nav>
+
+    <div class="topbar-actions">
+      <div class="theme-Segment" role="group" aria-label="Page theme">
+        <button type="button" data-theme-btn="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+      </div>
+      <a class="topbar-link topbar-link--hide-sm" href="./api/index.html">API Docs</a>
+      <a class="topbar-link topbar-link--hide-sm" href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<div class="guide-shell">
+  <aside class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+    <div class="toc-heading">Client-Side Filtering</div>
+    <ul class="toc-list">
+      <li><a href="#local-filters">1. Local Filter Controls</a></li>
+      <li><a href="#span-vs-log-target">2. Span vs. Log Event Target</a></li>
+    </ul>
+    <div class="toc-heading">Server-Side Data</div>
+    <ul class="toc-list">
+      <li><a href="#external-filters">3. External Filters &amp; fetchCallback</a></li>
+    </ul>
+    <div class="toc-heading">Reference</div>
+    <ul class="toc-list">
+      <li><a href="#filter-reference">&lt;trace-filter&gt; Attributes</a></li>
+    </ul>
+  </aside>
+
+  <main class="guide-main">
+    <div class="doc-header">
+      <div class="doc-eyebrow">Chapter 03</div>
+      <h1>Filtering &amp; External Data Sources</h1>
+      <p class="doc-lead">
+        Add declarative <code>&lt;trace-filter&gt;</code> children to build an interactive filter bar above the views.
+        Combine instant client-side predicates (<code>source="local"</code>) across span attributes and raw log events
+        with server-driven query parameters or custom async loaders (<code>source="external"</code>).
+      </p>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 1 — Local Filter Controls
+         ==================================================================== -->
+    <section class="doc-section" id="local-filters">
+      <h2><span class="sec-num">1</span>Local Filter Controls (<code>source="local"</code>)</h2>
+      <p class="doc-prose">
+        Local filters compile into a single client-side predicate with AND semantics and write a <code>SpanMask</code> into the shared store —
+        Waterfall highlights matching rows, while Flame Graph, Service Map, and Sequence Diagram dim elements with zero matching spans.
+        Press <kbd>Ctrl</kbd>/<kbd>&#8984;</kbd>+<kbd>F</kbd> inside the visualizer to focus the search input, and <kbd>Escape</kbd> to return to the timeline.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar wb-toolbar--dense">
+          <span class="wb-label">Toggle Controls:</span>
+          <label class="ctrl-check"><input type="checkbox" id="lf-wildcard" checked><span>Wildcard <code>field="*"</code></span></label>
+          <label class="ctrl-check"><input type="checkbox" id="lf-op" checked><span>Text <code>spanName</code></span></label>
+          <label class="ctrl-check"><input type="checkbox" id="lf-svc" checked><span>Auto Dropdown <code>serviceName</code></span></label>
+          <label class="ctrl-check"><input type="checkbox" id="lf-kind" checked><span>Static Dropdown <code>spanKind</code></span></label>
+          <label class="ctrl-check"><input type="checkbox" id="lf-multi" checked><span>Multiselect <code>serviceName</code></span></label>
+          <label class="ctrl-check"><input type="checkbox" id="lf-err" checked><span>Checkbox <code>hasError</code></span></label>
+          <label class="ctrl-check"><input type="checkbox" id="lf-time"><span>Datetime <code>startTime</code></span></label>
+
+          <span class="wb-spacer"></span>
+          <div class="wb-group">
+            <label class="wb-label" for="lf-dataset">Dataset</label>
+            <select class="ctrl-select" id="lf-dataset">
+              <option value="ai" selected>AI Hybrid RAG (43 spans, 9 services, 429 error)</option>
+              <option value="incident">Warehouse Retry Storm (19 spans, 503/504 cascade)</option>
+              <option value="fintech">Card Settlement Logs (21 spans, 3 traces)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-local-filters" show-legend height="470">
+            <trace-view type="waterfall" active></trace-view>
+            <trace-view type="flame"></trace-view>
+            <trace-view type="service"></trace-view>
+            <trace-view type="sequence"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div id="lf-event-console"></div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML — Active &lt;trace-filter source="local"&gt; Children</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="lf-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2 — Span Target vs. Log Event Target
+         ==================================================================== -->
+    <section class="doc-section" id="span-vs-log-target">
+      <h2><span class="sec-num">2</span>Span Target vs. Log Event Target (<code>target="log"</code>)</h2>
+      <p class="doc-prose">
+        When <code>transformLogs()</code> groups multiple log lines into one span, each raw log record is kept as an OTel <code>Event</code> on that span.
+        Setting <code>target="span"</code> (default) matches span-level attributes, whereas <code>target="log"</code> inspects every underlying event —
+        a span passes when <em>at least one</em> of its log events matches.
+      </p>
+
+      <div class="callout">
+        <strong>Try it on <code>fintech-logs.json</code>:</strong> Pick <strong>Card Network = amex</strong>, <strong>Region = eu-west-1</strong>,
+        or <strong>Severity = ERROR</strong> to isolate the declined European Amex capture, or type <code>ISO-8583</code> into <strong>Payload Message (log)</strong>.
+      </div>
+
+      <div class="workbench">
+        <div class="wb-stage">
+          <trace-visualizer id="viz-log-target" show-legend height="430">
+            <trace-filter field="spanName" label="Operation (span)" type="text" source="local" target="span" width="190" debounce="250" placeholder="e.g. capture…"></trace-filter>
+            <trace-filter field="payload.message" label="Payload Message (log)" type="text" source="local" target="log" width="210" debounce="250" placeholder="e.g. ISO-8583, HSM…"></trace-filter>
+            <trace-filter field="payload.cardNetwork" label="Card Network (log)" type="dropdown" source="local" target="log"
+              options='["visa","amex","mastercard"]'
+              placeholder="All networks"></trace-filter>
+            <trace-filter field="service.region" label="Region (log)" type="dropdown" source="local" target="log"
+              options='["us-east-1","eu-west-1","ap-south-1"]'
+              placeholder="All regions"></trace-filter>
+            <trace-filter field="severity" label="Severity (log)" type="dropdown" source="local" target="log"
+              options='["INFO","DEBUG","ERROR"]'
+              placeholder="Any severity"></trace-filter>
+            <trace-view type="waterfall" active></trace-view>
+            <trace-view type="flame"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML — Combining target="span" and target="log" Filters</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code data-lang="html">&lt;trace-visualizer data-url="./data/fintech-logs.json" ... show-legend&gt;
+  &lt;!-- Span-level match (default target="span") --&gt;
+  &lt;trace-filter field="spanName" label="Operation (span)" type="text" source="local" target="span"&gt;&lt;/trace-filter&gt;
+
+  &lt;!-- Event-level matches: pass when ANY raw log record inside the span matches --&gt;
+  &lt;trace-filter field="payload.message" label="Payload Message (log)" type="text" source="local" target="log"&gt;&lt;/trace-filter&gt;
+  &lt;trace-filter field="payload.cardNetwork" label="Card Network (log)" type="dropdown" source="local" target="log"
+    options='["visa","amex","mastercard"]' placeholder="All networks"&gt;&lt;/trace-filter&gt;
+  &lt;trace-filter field="service.region" label="Region (log)" type="dropdown" source="local" target="log"
+    options='["us-east-1","eu-west-1","ap-south-1"]' placeholder="All regions"&gt;&lt;/trace-filter&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3 — External Filters & Custom fetchCallback
+         ==================================================================== -->
+    <section class="doc-section" id="external-filters">
+      <h2><span class="sec-num">3</span>External Filters &amp; <code>fetchCallback</code></h2>
+      <p class="doc-prose">
+        Filters with <code>source="external"</code> push query parameters to your backend instead of filtering already-loaded spans.
+        Assign <code>el.fetchCallback = async (url, filters) =&gt; ...</code> to query your own API, database gateway, or log search endpoint
+        and return either <code>TraceData</code> or raw <code>LogEntry[]</code>.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar">
+          <label class="ctrl-check" title="When unchecked, shows a Search button instead of fetching on every change">
+            <input type="checkbox" id="ext-autofetch">
+            <span><code>auto-fetch="true"</code></span>
+          </label>
+
+          <label class="ctrl-check" title="Gates initial fetch until Trace ID is selected">
+            <input type="checkbox" id="ext-required" checked>
+            <span><code>required</code> on Trace ID</span>
+          </label>
+
+          <div class="wb-group">
+            <label class="wb-label" for="ext-latency">Mock Server Latency</label>
+            <select class="ctrl-select" id="ext-latency">
+              <option value="150">150 ms</option>
+              <option value="550" selected>550 ms (observe spinner)</option>
+              <option value="1200">1200 ms</option>
+            </select>
+          </div>
+
+          <span class="wb-spacer"></span>
+          <span class="wb-readout" id="ext-req-readout">Waiting for required Trace ID…</span>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-external"
+            auto-fetch="false"
+            show-legend
+            height="390"
+            trace-id-field="trace.id"
+            span-group-fields="service.name,operation"
+            span-name-field="operation"
+            service-name-field="service.name"
+            timestamp-field="ts"
+            status-code-field="code"
+            parent-span-lookup-fields="caller">
+            <span-kind-rule kind="Server" match-field="component" match-value="http-server"></span-kind-rule>
+            <span-kind-rule kind="Server" match-field="component" match-value="grpc-server"></span-kind-rule>
+            <span-kind-rule kind="Client" match-field="component" match-value="http-client"></span-kind-rule>
+            <span-kind-rule kind="Client" match-field="component" match-value="db-client"></span-kind-rule>
+            <span-kind-rule kind="Client" match-field="component" match-value="redis-client"></span-kind-rule>
+            <span-kind-rule kind="Producer" match-field="component" match-value="kafka-producer"></span-kind-rule>
+            <span-kind-rule kind="Consumer" match-field="component" match-value="kafka-consumer"></span-kind-rule>
+            <span-kind-rule kind="Internal" match-field="component" match-value="internal-worker"></span-kind-rule>
+
+            <trace-filter id="ext-req-carrier" field="traceId" label="Trace ID" type="dropdown"
+              source="external" required
+              options='[{"value":"pay-trc-901","label":"pay-trc-901 (Visa Capture OK)"},{"value":"pay-trc-902","label":"pay-trc-902 (Amex 504 Timeout)"},{"value":"pay-trc-903","label":"pay-trc-903 (Mastercard Refund)"},{"value":"all","label":"All 3 Payment Traces"}]'
+              placeholder="Select a trace…"></trace-filter>
+
+            <trace-filter field="region" label="Cloud Region" type="multiselect"
+              source="external"
+              options='["us-east-1","eu-west-1","ap-south-1"]'
+              width="190"></trace-filter>
+
+            <trace-filter field="hasError" label="Errors Only (local)" type="checkbox" source="local"></trace-filter>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML + JavaScript — External Filters with fetchCallback</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="ext-code" data-lang="javascript"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4 — Filter Attribute Reference
+         ==================================================================== -->
+    <section class="doc-section" id="filter-reference">
+      <h2><span class="sec-num">4</span><code>&lt;trace-filter&gt;</code> Attribute Reference</h2>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Attribute</th><th>Values / Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>field</code></td>
+              <td><code>string</code> (required)</td>
+              <td><code>"*"</code> (all fields &amp; events), <code>"spanName"</code>, <code>"serviceName"</code>, <code>"spanKind"</code>, <code>"hasError"</code>, <code>"startTime"</code>, any span attribute key, or dot-path into log events when <code>target="log"</code>.</td>
+            </tr>
+            <tr>
+              <td><code>label</code></td>
+              <td><code>string</code> (required)</td>
+              <td>Human-readable label displayed alongside the input control.</td>
+            </tr>
+            <tr>
+              <td><code>type</code></td>
+              <td><code>text</code> | <code>dropdown</code> | <code>multiselect</code> | <code>checkbox</code> | <code>datetime-range</code></td>
+              <td>UI control rendered in the filter bar and value shape emitted in <code>filter-changed</code>.</td>
+            </tr>
+            <tr>
+              <td><code>source</code></td>
+              <td><code>local</code> | <code>external</code></td>
+              <td><code>local</code> filters in-memory spans immediately; <code>external</code> forwards parameters to <code>data-url</code> or <code>fetchCallback</code>.</td>
+            </tr>
+            <tr>
+              <td><code>target</code></td>
+              <td><code>span</code> (default) | <code>log</code></td>
+              <td>For local filters: inspect span attributes (<code>span</code>) or underlying OTel log events (<code>log</code>).</td>
+            </tr>
+            <tr>
+              <td><code>options-source</code> / <code>options</code></td>
+              <td><code>auto</code> | <code>static</code> + JSON array</td>
+              <td><code>options-source="auto"</code> populates unique values from loaded data; <code>options</code> accepts JSON <code>["a","b"]</code> or <code>[{"value":"2","label":"Server"}]</code>.</td>
+            </tr>
+            <tr>
+              <td><code>required</code></td>
+              <td>boolean attribute</td>
+              <td>On external filters, blocks fetching until the user provides a non-empty value.</td>
+            </tr>
+            <tr>
+              <td><code>debounce</code> / <code>width</code> / <code>auto-range</code></td>
+              <td><code>number</code> (ms) / <code>number</code> (px) / boolean</td>
+              <td><code>debounce</code> delays text filter emission (default <code>400</code> ms); <code>width</code> sets control width; <code>auto-range</code> pre-fills min/max bounds on <code>datetime-range</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <nav class="page-pager" aria-label="Guide pagination">
+      <a class="pager-link" href="./views.html">
+        <span class="pager-dir">&larr; Previous Chapter</span>
+        <span class="pager-title">Visual Setups, Views &amp; Theming</span>
+      </a>
+      <a class="pager-link pager-link--next" href="./api.html">
+        <span class="pager-dir">Next Chapter &rarr;</span>
+        <span class="pager-title">Events, Programmatic API &amp; States</span>
+      </a>
+    </nav>
+
+    <footer class="guide-footer">
+      <span>log2trace-ui Interactive Guide &middot; Built <time>__BUILD_DATE__</time></span>
+      <span>
+        <a href="./api/index.html">API Reference</a> &middot;
+        <a href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+      </span>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+  import './dist/log2trace.min.js';
+  import {
+    initGuideShell,
+    setCodeBlock,
+    createEventConsole,
+    loadAiSearchTrace,
+    loadIncidentCascade,
+    loadFintechLogs,
+    FINTECH_LOG_CONFIG,
+    syncVisualizerThemes,
+  } from './guide.js';
+
+  initGuideShell();
+
+  // ── Section 1: Local Filter Controls ──────────────────────────────────────
+  {
+    const viz = document.getElementById('viz-local-filters');
+    const dsSel = document.getElementById('lf-dataset');
+    const codeEl = document.getElementById('lf-code');
+
+    createEventConsole(document.getElementById('lf-event-console'), viz);
+
+    const toggles = {
+      wildcard: document.getElementById('lf-wildcard'),
+      op: document.getElementById('lf-op'),
+      svc: document.getElementById('lf-svc'),
+      kind: document.getElementById('lf-kind'),
+      multi: document.getElementById('lf-multi'),
+      err: document.getElementById('lf-err'),
+      time: document.getElementById('lf-time'),
+    };
+
+    const SPECS = [
+      { key: 'wildcard', attrs: { field: '*', label: 'Search', type: 'text', source: 'local', width: '230', debounce: '250', placeholder: 'Search all fields & events…' } },
+      { key: 'op', attrs: { field: 'spanName', label: 'Operation', type: 'text', source: 'local', width: '190', debounce: '250', placeholder: 'Substring…' } },
+      { key: 'svc', attrs: { field: 'serviceName', label: 'Service', type: 'dropdown', source: 'local', 'options-source': 'auto', placeholder: 'All services' } },
+      {
+        key: 'kind',
+        attrs: {
+          field: 'spanKind',
+          label: 'Kind',
+          type: 'dropdown',
+          source: 'local',
+          options: '[{"value":"1","label":"Internal"},{"value":"2","label":"Server"},{"value":"3","label":"Client"},{"value":"4","label":"Producer"},{"value":"5","label":"Consumer"}]',
+          placeholder: 'All kinds',
+        },
+      },
+      { key: 'multi', attrs: { field: 'serviceName', label: 'Services (Multi)', type: 'multiselect', source: 'local', 'options-source': 'auto', width: '190' } },
+      { key: 'err', attrs: { field: 'hasError', label: 'Errors Only', type: 'checkbox', source: 'local' } },
+      { key: 'time', attrs: { field: 'startTime', label: 'Time Range', type: 'datetime-range', source: 'local', 'auto-range': '' } },
+    ];
+
+    function syncFilterChildren() {
+      for (const f of [...viz.querySelectorAll('trace-filter')]) f.remove();
+      const lines = [];
+      for (const spec of SPECS) {
+        if (!toggles[spec.key].checked) continue;
+        const el = document.createElement('trace-filter');
+        const attrPairs = [];
+        for (const [k, v] of Object.entries(spec.attrs)) {
+          el.setAttribute(k, v);
+          if (v === '') attrPairs.push(k);
+          else if (v.startsWith('[')) attrPairs.push(`${k}='${v}'`);
+          else attrPairs.push(`${k}="${v}"`);
+        }
+        viz.appendChild(el);
+        lines.push(`  <trace-filter ${attrPairs.join(' ')}></trace-filter>`);
+      }
+
+      setCodeBlock(
+        codeEl,
+        `<trace-visualizer data-url="./data/ai-search-trace.json" show-legend>\n${lines.join('\n') || '  <!-- Enable one or more filter controls above -->'}\n</trace-visualizer>`,
+        'html',
+      );
+    }
+
+    async function syncFilterData() {
+      const v = dsSel.value;
+      if (v === 'ai') viz.traceData = await loadAiSearchTrace();
+      else if (v === 'incident') viz.traceData = await loadIncidentCascade();
+      else viz.logData = { logs: await loadFintechLogs(), config: FINTECH_LOG_CONFIG };
+    }
+
+    for (const cb of Object.values(toggles)) cb.addEventListener('change', syncFilterChildren);
+    dsSel.addEventListener('change', () => void syncFilterData());
+
+    syncFilterChildren();
+    void syncFilterData();
+  }
+
+  // ── Section 2: Span vs Log Target ─────────────────────────────────────────
+  loadFintechLogs().then((logs) => {
+    document.getElementById('viz-log-target').logData = { logs, config: FINTECH_LOG_CONFIG };
+  });
+
+  // ── Section 3: External Filters & fetchCallback ───────────────────────────
+  {
+    const viz = document.getElementById('viz-external');
+    const reqCarrier = document.getElementById('ext-req-carrier');
+    const autoFetchCb = document.getElementById('ext-autofetch');
+    const requiredCb = document.getElementById('ext-required');
+    const latencySel = document.getElementById('ext-latency');
+    const reqReadout = document.getElementById('ext-req-readout');
+    const codeEl = document.getElementById('ext-code');
+
+    let calls = 0;
+
+    viz.fetchCallback = async (_url, filters) => {
+      calls++;
+      const delay = Number(latencySel.value) || 500;
+      const qs = new URLSearchParams();
+      for (const [k, v] of Object.entries(filters)) {
+        if (Array.isArray(v)) v.forEach((item) => qs.append(k, item));
+        else qs.set(k, v);
+      }
+      reqReadout.textContent = `Req #${calls}: ?${qs.toString() || 'all'} (${delay} ms)…`;
+
+      const [allLogs] = await Promise.all([
+        loadFintechLogs(),
+        new Promise((r) => setTimeout(r, delay)),
+      ]);
+
+      const traceId = Array.isArray(filters.traceId) ? filters.traceId[0] : filters.traceId;
+      const regions = Array.isArray(filters.region)
+        ? filters.region
+        : filters.region ? [filters.region] : [];
+
+      const matched = allLogs.filter((log) => {
+        if (traceId && traceId !== 'all' && log.trace?.id !== traceId) return false;
+        if (regions.length > 0 && !regions.includes(log.service?.region)) return false;
+        return true;
+      });
+
+      reqReadout.textContent = `Req #${calls}: returned ${matched.length} log records (?${qs.toString() || 'all'})`;
+      return matched;
+    };
+
+    function updateExternalConfig() {
+      const autoFetch = autoFetchCb.checked;
+      const req = requiredCb.checked;
+
+      viz.setAttribute('auto-fetch', String(autoFetch));
+      if (req) reqCarrier.setAttribute('required', '');
+      else reqCarrier.removeAttribute('required');
+
+      setCodeBlock(
+        codeEl,
+        `// HTML: <trace-visualizer id="viz" auto-fetch="${autoFetch}" trace-id-field="trace.id" ...>\n//   <trace-filter field="traceId" type="dropdown" source="external"${req ? ' required' : ''} options='["pay-trc-901","pay-trc-902","pay-trc-903"]'></trace-filter>\n//   <trace-filter field="region" type="multiselect" source="external" options='["us-east-1","eu-west-1","ap-south-1"]'></trace-filter>\n// </trace-visualizer>\n\nconst viz = document.querySelector('#viz');\nviz.fetchCallback = async (url, filters) => {\n  await new Promise((r) => setTimeout(r, ${latencySel.value}));\n  const logs = await (await fetch('./data/fintech-logs.json')).json();\n  const regions = Array.isArray(filters.region) ? filters.region : [];\n  return logs.filter((l) => (!filters.traceId || l.trace.id === filters.traceId) && (!regions.length || regions.includes(l.service.region)));\n};`,
+        'javascript',
+      );
+    }
+
+    autoFetchCb.addEventListener('change', updateExternalConfig);
+    requiredCb.addEventListener('change', updateExternalConfig);
+    latencySel.addEventListener('change', updateExternalConfig);
+    updateExternalConfig();
+  }
+
+  syncVisualizerThemes();
+</script>
+</body>
+</html>

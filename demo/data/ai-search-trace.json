@@ -1,0 +1,1713 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "web-bff"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "web-bff.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-00",
+              "name": "POST /api/v3/assistant/query",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800000000000",
+              "endTimeUnixNano": "1795702801420000000",
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "/api/v3/assistant/query"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "user.tier",
+                  "value": {
+                    "stringValue": "enterprise"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1795702800003000000",
+                  "name": "request.accepted",
+                  "attributes": [
+                    {
+                      "key": "prompt_chars",
+                      "value": {
+                        "intValue": "284"
+                      }
+                    },
+                    {
+                      "key": "locale",
+                      "value": {
+                        "stringValue": "en-US"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-01",
+              "parentSpanId": "rag-00",
+              "name": "rate_limit.check_bucket",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800004000000",
+              "endTimeUnixNano": "1795702800018000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "redis"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "ratelimit-edge"
+                  }
+                },
+                {
+                  "key": "ratelimit.remaining",
+                  "value": {
+                    "intValue": "148"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-02",
+              "parentSpanId": "rag-00",
+              "name": "Orchestrator/RunHybridRAG",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800020000000",
+              "endTimeUnixNano": "1795702801408000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "rpc.service",
+                  "value": {
+                    "stringValue": "rag.Orchestrator"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "query-orchestrator"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "query-orchestrator.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-03",
+              "parentSpanId": "rag-02",
+              "name": "Orchestrator/RunHybridRAG",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800024000000",
+              "endTimeUnixNano": "1795702801402000000",
+              "attributes": [
+                {
+                  "key": "rag.pipeline",
+                  "value": {
+                    "stringValue": "hybrid-v4"
+                  }
+                },
+                {
+                  "key": "rag.top_k",
+                  "value": {
+                    "intValue": "24"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-04",
+              "parentSpanId": "rag-03",
+              "name": "query.rewrite_and_expand",
+              "kind": 1,
+              "startTimeUnixNano": "1795702800027000000",
+              "endTimeUnixNano": "1795702800064000000",
+              "attributes": [
+                {
+                  "key": "query.subqueries",
+                  "value": {
+                    "intValue": "3"
+                  }
+                },
+                {
+                  "key": "query.language",
+                  "value": {
+                    "stringValue": "en"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-05",
+              "parentSpanId": "rag-03",
+              "name": "Embedder/EncodeQuery",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800068000000",
+              "endTimeUnixNano": "1795702800162000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "ml.model",
+                  "value": {
+                    "stringValue": "bge-large-en-v2"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-c1",
+              "parentSpanId": "rag-03",
+              "name": "VectorSearch/QueryShard",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800168000000",
+              "endTimeUnixNano": "1795702800215000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-01"
+                  }
+                },
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "vector-search"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-c2",
+              "parentSpanId": "rag-03",
+              "name": "VectorSearch/QueryShard",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800219000000",
+              "endTimeUnixNano": "1795702800275000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-02"
+                  }
+                },
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "vector-search"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-c3",
+              "parentSpanId": "rag-03",
+              "name": "VectorSearch/QueryShard",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800279000000",
+              "endTimeUnixNano": "1795702800317000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-03"
+                  }
+                },
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "vector-search"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-c4",
+              "parentSpanId": "rag-03",
+              "name": "VectorSearch/QueryShard",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800321000000",
+              "endTimeUnixNano": "1795702800368000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-04"
+                  }
+                },
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "vector-search"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-c5",
+              "parentSpanId": "rag-03",
+              "name": "VectorSearch/QueryShard",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800372000000",
+              "endTimeUnixNano": "1795702800428000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-05"
+                  }
+                },
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "vector-search"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-bm-1",
+              "parentSpanId": "rag-03",
+              "name": "LexicalSearch/BM25Query",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800070000000",
+              "endTimeUnixNano": "1795702800295000000",
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "peer.service",
+                  "value": {
+                    "stringValue": "lexical-search"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-rrf",
+              "parentSpanId": "rag-03",
+              "name": "fusion.reciprocal_rank",
+              "kind": 1,
+              "startTimeUnixNano": "1795702800434000000",
+              "endTimeUnixNano": "1795702800456000000",
+              "attributes": [
+                {
+                  "key": "fusion.candidates_in",
+                  "value": {
+                    "intValue": "120"
+                  }
+                },
+                {
+                  "key": "fusion.candidates_out",
+                  "value": {
+                    "intValue": "30"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-rk-1",
+              "parentSpanId": "rag-03",
+              "name": "Reranker/CrossEncode",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800458000000",
+              "endTimeUnixNano": "1795702800610000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                },
+                {
+                  "key": "ml.model",
+                  "value": {
+                    "stringValue": "cross-encoder-v3"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-hyd-1",
+              "parentSpanId": "rag-03",
+              "name": "SELECT chunk_body FROM doc_chunks",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800614000000",
+              "endTimeUnixNano": "1795702800657000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "postgresql"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "corpus_store"
+                  }
+                },
+                {
+                  "key": "batch.partition",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-hyd-2",
+              "parentSpanId": "rag-03",
+              "name": "SELECT chunk_body FROM doc_chunks",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800620000000",
+              "endTimeUnixNano": "1795702800666000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "postgresql"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "corpus_store"
+                  }
+                },
+                {
+                  "key": "batch.partition",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-hyd-3",
+              "parentSpanId": "rag-03",
+              "name": "SELECT chunk_body FROM doc_chunks",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800626000000",
+              "endTimeUnixNano": "1795702800675000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "postgresql"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "corpus_store"
+                  }
+                },
+                {
+                  "key": "batch.partition",
+                  "value": {
+                    "intValue": "3"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-gr-1",
+              "parentSpanId": "rag-03",
+              "name": "Guardrails/ScanPrompt",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800682000000",
+              "endTimeUnixNano": "1795702800728000000",
+              "attributes": [
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "grpc"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-llm-fail-c",
+              "parentSpanId": "rag-03",
+              "name": "LLMGateway/Generate",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800732000000",
+              "endTimeUnixNano": "1795702800847000000",
+              "attributes": [
+                {
+                  "key": "gen_ai.system",
+                  "value": {
+                    "stringValue": "vertex-primary"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gemini-2.5-pro"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "429"
+                  }
+                }
+              ],
+              "status": {
+                "code": 2,
+                "message": "429 Too Many Requests from primary region"
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-llm-ok-c",
+              "parentSpanId": "rag-03",
+              "name": "LLMGateway/Generate",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800854000000",
+              "endTimeUnixNano": "1795702801345000000",
+              "attributes": [
+                {
+                  "key": "gen_ai.system",
+                  "value": {
+                    "stringValue": "vertex-failover"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gemini-2.5-pro"
+                  }
+                },
+                {
+                  "key": "attempt",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-bill-pub",
+              "parentSpanId": "rag-03",
+              "name": "publish usage.tokens.consumed",
+              "kind": 4,
+              "startTimeUnixNano": "1795702801350000000",
+              "endTimeUnixNano": "1795702801378000000",
+              "attributes": [
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "kafka"
+                  }
+                },
+                {
+                  "key": "messaging.destination.name",
+                  "value": {
+                    "stringValue": "ai-usage-metering"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embed-worker"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "embed-worker.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-06",
+              "parentSpanId": "rag-05",
+              "name": "Embedder/EncodeQuery",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800071000000",
+              "endTimeUnixNano": "1795702800158000000",
+              "attributes": [
+                {
+                  "key": "gpu.device",
+                  "value": {
+                    "stringValue": "nvidia-l4-02"
+                  }
+                },
+                {
+                  "key": "batch.size",
+                  "value": {
+                    "intValue": "4"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1795702800078000000",
+                  "name": "tokenizer.done",
+                  "attributes": [
+                    {
+                      "key": "tokens",
+                      "value": {
+                        "intValue": "64"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "timeUnixNano": "1795702800152000000",
+                  "name": "cuda.kernel.complete",
+                  "attributes": [
+                    {
+                      "key": "dims",
+                      "value": {
+                        "intValue": "1024"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-07",
+              "parentSpanId": "rag-06",
+              "name": "onnx.forward_pass",
+              "kind": 1,
+              "startTimeUnixNano": "1795702800080000000",
+              "endTimeUnixNano": "1795702800151000000",
+              "attributes": [
+                {
+                  "key": "onnx.provider",
+                  "value": {
+                    "stringValue": "TensorRT"
+                  }
+                },
+                {
+                  "key": "fp16",
+                  "value": {
+                    "boolValue": true
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "vector-search"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "vector-search.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-s1",
+              "parentSpanId": "rag-vec-c1",
+              "name": "VectorSearch/QueryShard",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800170000000",
+              "endTimeUnixNano": "1795702800213000000",
+              "attributes": [
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-01"
+                  }
+                },
+                {
+                  "key": "index.ef_search",
+                  "value": {
+                    "intValue": "128"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-db1",
+              "parentSpanId": "rag-vec-s1",
+              "name": "hnsw.ann_probe",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800173000000",
+              "endTimeUnixNano": "1795702800209000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "qdrant"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "docs_embeddings"
+                  }
+                },
+                {
+                  "key": "candidates",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-s2",
+              "parentSpanId": "rag-vec-c2",
+              "name": "VectorSearch/QueryShard",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800221000000",
+              "endTimeUnixNano": "1795702800273000000",
+              "attributes": [
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-02"
+                  }
+                },
+                {
+                  "key": "index.ef_search",
+                  "value": {
+                    "intValue": "128"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-db2",
+              "parentSpanId": "rag-vec-s2",
+              "name": "hnsw.ann_probe",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800224000000",
+              "endTimeUnixNano": "1795702800269000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "qdrant"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "docs_embeddings"
+                  }
+                },
+                {
+                  "key": "candidates",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-s3",
+              "parentSpanId": "rag-vec-c3",
+              "name": "VectorSearch/QueryShard",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800281000000",
+              "endTimeUnixNano": "1795702800315000000",
+              "attributes": [
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-03"
+                  }
+                },
+                {
+                  "key": "index.ef_search",
+                  "value": {
+                    "intValue": "128"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-db3",
+              "parentSpanId": "rag-vec-s3",
+              "name": "hnsw.ann_probe",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800284000000",
+              "endTimeUnixNano": "1795702800311000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "qdrant"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "docs_embeddings"
+                  }
+                },
+                {
+                  "key": "candidates",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-s4",
+              "parentSpanId": "rag-vec-c4",
+              "name": "VectorSearch/QueryShard",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800323000000",
+              "endTimeUnixNano": "1795702800366000000",
+              "attributes": [
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-04"
+                  }
+                },
+                {
+                  "key": "index.ef_search",
+                  "value": {
+                    "intValue": "128"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-db4",
+              "parentSpanId": "rag-vec-s4",
+              "name": "hnsw.ann_probe",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800326000000",
+              "endTimeUnixNano": "1795702800362000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "qdrant"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "docs_embeddings"
+                  }
+                },
+                {
+                  "key": "candidates",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-s5",
+              "parentSpanId": "rag-vec-c5",
+              "name": "VectorSearch/QueryShard",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800374000000",
+              "endTimeUnixNano": "1795702800426000000",
+              "attributes": [
+                {
+                  "key": "shard.id",
+                  "value": {
+                    "stringValue": "shard-05"
+                  }
+                },
+                {
+                  "key": "index.ef_search",
+                  "value": {
+                    "intValue": "128"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-vec-db5",
+              "parentSpanId": "rag-vec-s5",
+              "name": "hnsw.ann_probe",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800377000000",
+              "endTimeUnixNano": "1795702800422000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "qdrant"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "docs_embeddings"
+                  }
+                },
+                {
+                  "key": "candidates",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "lexical-search"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "lexical-search.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-bm-2",
+              "parentSpanId": "rag-bm-1",
+              "name": "LexicalSearch/BM25Query",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800074000000",
+              "endTimeUnixNano": "1795702800289000000",
+              "attributes": [
+                {
+                  "key": "search.analyzer",
+                  "value": {
+                    "stringValue": "english_stemmed"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-bm-3",
+              "parentSpanId": "rag-bm-2",
+              "name": "POST /docs_v4/_search",
+              "kind": 3,
+              "startTimeUnixNano": "1795702800080000000",
+              "endTimeUnixNano": "1795702800268000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "elasticsearch"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "knowledge_base"
+                  }
+                },
+                {
+                  "key": "hits.total",
+                  "value": {
+                    "intValue": "142"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-bm-4",
+              "parentSpanId": "rag-bm-2",
+              "name": "highlight.extract_snippets",
+              "kind": 1,
+              "startTimeUnixNano": "1795702800270000000",
+              "endTimeUnixNano": "1795702800286000000",
+              "attributes": [
+                {
+                  "key": "snippets.count",
+                  "value": {
+                    "intValue": "24"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "reranker-svc"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "reranker-svc.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-rk-2",
+              "parentSpanId": "rag-rk-1",
+              "name": "Reranker/CrossEncode",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800462000000",
+              "endTimeUnixNano": "1795702800606000000",
+              "attributes": [
+                {
+                  "key": "pairs.count",
+                  "value": {
+                    "intValue": "30"
+                  }
+                },
+                {
+                  "key": "gpu.device",
+                  "value": {
+                    "stringValue": "nvidia-l4-01"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "guardrails-svc"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "guardrails-svc.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-gr-2",
+              "parentSpanId": "rag-gr-1",
+              "name": "Guardrails/ScanPrompt",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800685000000",
+              "endTimeUnixNano": "1795702800725000000",
+              "attributes": [
+                {
+                  "key": "pii.redacted",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "injection.score",
+                  "value": {
+                    "doubleValue": 0.02
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "llm-gateway"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "llm-gateway.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-llm-fail-s",
+              "parentSpanId": "rag-llm-fail-c",
+              "name": "LLMGateway/Generate",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800736000000",
+              "endTimeUnixNano": "1795702800842000000",
+              "attributes": [
+                {
+                  "key": "provider.pool",
+                  "value": {
+                    "stringValue": "primary-us-east"
+                  }
+                },
+                {
+                  "key": "attempt",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1795702800838000000",
+                  "name": "exception",
+                  "attributes": [
+                    {
+                      "key": "exception.type",
+                      "value": {
+                        "stringValue": "RateLimitError"
+                      }
+                    },
+                    {
+                      "key": "retry_after_ms",
+                      "value": {
+                        "intValue": "200"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 2,
+                "message": "Upstream quota exhausted (us-east-1)"
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-llm-ok-s",
+              "parentSpanId": "rag-llm-ok-c",
+              "name": "LLMGateway/Generate",
+              "kind": 2,
+              "startTimeUnixNano": "1795702800858000000",
+              "endTimeUnixNano": "1795702801340000000",
+              "attributes": [
+                {
+                  "key": "provider.pool",
+                  "value": {
+                    "stringValue": "failover-eu-west"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "3420"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "418"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "1795702800937000000",
+                  "name": "stream.first_token",
+                  "attributes": [
+                    {
+                      "key": "ttft_ms",
+                      "value": {
+                        "intValue": "79"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "timeUnixNano": "1795702801102000000",
+                  "name": "stream.chunk",
+                  "attributes": [
+                    {
+                      "key": "tokens_so_far",
+                      "value": {
+                        "intValue": "140"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "timeUnixNano": "1795702801272000000",
+                  "name": "stream.chunk",
+                  "attributes": [
+                    {
+                      "key": "tokens_so_far",
+                      "value": {
+                        "intValue": "310"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "timeUnixNano": "1795702801332000000",
+                  "name": "stream.completed",
+                  "attributes": [
+                    {
+                      "key": "finish_reason",
+                      "value": {
+                        "stringValue": "stop"
+                      }
+                    },
+                    {
+                      "key": "total_tokens",
+                      "value": {
+                        "intValue": "418"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-llm-cite",
+              "parentSpanId": "rag-llm-ok-s",
+              "name": "citations.verify_grounding",
+              "kind": 1,
+              "startTimeUnixNano": "1795702801265000000",
+              "endTimeUnixNano": "1795702801334000000",
+              "attributes": [
+                {
+                  "key": "citations.verified",
+                  "value": {
+                    "intValue": "6"
+                  }
+                },
+                {
+                  "key": "hallucination.flags",
+                  "value": {
+                    "intValue": "0"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "billing-meter"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "3.4.0"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "cloud.region",
+            "value": {
+              "stringValue": "us-east-1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "billing-meter.tracer",
+            "version": "2.1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-bill-con",
+              "parentSpanId": "rag-bill-pub",
+              "name": "consume usage.tokens.consumed",
+              "kind": 5,
+              "startTimeUnixNano": "1795702801360000000",
+              "endTimeUnixNano": "1795702801412000000",
+              "attributes": [
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "kafka"
+                  }
+                },
+                {
+                  "key": "tenant.id",
+                  "value": {
+                    "stringValue": "acme-corp"
+                  }
+                },
+                {
+                  "key": "tokens.billed",
+                  "value": {
+                    "intValue": "3838"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "4a7c9e21f803d6b52219e84c7701ab3e",
+              "spanId": "rag-bill-db",
+              "parentSpanId": "rag-bill-con",
+              "name": "UPSERT token_ledger",
+              "kind": 3,
+              "startTimeUnixNano": "1795702801372000000",
+              "endTimeUnixNano": "1795702801408000000",
+              "attributes": [
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "postgresql"
+                  }
+                },
+                {
+                  "key": "db.name",
+                  "value": {
+                    "stringValue": "billing_ledger"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

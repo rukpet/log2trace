@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>log2trace-ui — Interactive Guide: Visual Setups, Views &amp; Theming</title>
+  <meta name="description" content="Compare distinct visual setups (Compact Widget, NOC Dark Incident Room, Spacious Editorial, Full 4-View Suite), explore Waterfall, Flame, Service Map, Sequence options, CSS tokens, and custom views.">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    (() => {
+      try {
+        const pref = localStorage.getItem('l2t-guide-theme') || 'auto';
+        const dark = pref === 'dark' || (pref === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.pageTheme = dark ? 'dark' : 'light';
+      } catch {}
+    })();
+  </script>
+  <link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div style="display:flex;align-items:center;gap:0.6rem">
+      <button type="button" class="toc-mobile-btn" id="toc-mobile-btn" aria-expanded="false" aria-controls="sidebar-toc">Contents</button>
+      <a class="brand" href="./index.html">
+        <img src="./favicon.svg" alt="">
+        <span>log2trace-ui</span>
+        <span class="brand-tag">Guide</span>
+      </a>
+    </div>
+
+    <nav class="page-nav" aria-label="Guide sections">
+      <a href="./index.html">Getting Started &amp; Data</a>
+      <a href="./views.html" aria-current="page">Views &amp; Theming</a>
+      <a href="./filtering.html">Filtering &amp; Sources</a>
+      <a href="./api.html">Events &amp; API</a>
+      <a href="./playground.html">Setup Playground</a>
+    </nav>
+
+    <div class="topbar-actions">
+      <div class="theme-Segment" role="group" aria-label="Page theme">
+        <button type="button" data-theme-btn="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+      </div>
+      <a class="topbar-link topbar-link--hide-sm" href="./api/index.html">API Docs</a>
+      <a class="topbar-link topbar-link--hide-sm" href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<div class="guide-shell">
+  <aside class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+    <div class="toc-heading">Visual &amp; View Setups</div>
+    <ul class="toc-list">
+      <li><a href="#visual-archetypes">1. Visual Setup Archetypes</a></li>
+      <li><a href="#waterfall-layout">2. Waterfall Sizing &amp; Keys</a></li>
+      <li><a href="#flame-service">3. Flame Graph &amp; Service Map</a></li>
+      <li><a href="#sequence-view">4. Sequence Diagram Options</a></li>
+    </ul>
+    <div class="toc-heading">Appearance &amp; Extensibility</div>
+    <ul class="toc-list">
+      <li><a href="#theming-tokens">5. Themes &amp; CSS Tokens</a></li>
+      <li><a href="#token-reference">Design Token Reference</a></li>
+      <li><a href="#custom-views">6. Custom Views (registerView)</a></li>
+    </ul>
+  </aside>
+
+  <main class="guide-main">
+    <div class="doc-header">
+      <div class="doc-eyebrow">Chapter 02</div>
+      <h1>Visual Setups, Views &amp; Theming</h1>
+      <p class="doc-lead">
+        Adapt <code>&lt;trace-visualizer&gt;</code> to any embedding context — from a dense 280&nbsp;px PR-check widget
+        or obsidian incident-command console to a spacious 4-view observability workspace — using declarative
+        <code>&lt;trace-view&gt;</code> children, geometry attributes, and <code>--l2t-*</code> CSS design tokens.
+      </p>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 1 — Distinct Visual Setup Archetypes
+         ==================================================================== -->
+    <section class="doc-section" id="visual-archetypes">
+      <h2><span class="sec-num">1</span>Visual Setup Archetypes</h2>
+      <p class="doc-prose">
+        Switch between four production-ready visual &amp; data-complexity configurations below. Notice how row density,
+        theme tokens, span-kind palettes, tab composition, and dataset shape work together — and copy the exact markup for any setup.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar wb-toolbar--dense">
+          <div class="segmented" role="group" aria-label="Visual setup archetypes">
+            <button type="button" id="arch-suite" class="is-active" aria-pressed="true">4-View AI RAG Suite</button>
+            <button type="button" id="arch-compact" aria-pressed="false">Compact Embedded Card</button>
+            <button type="button" id="arch-noc" aria-pressed="false">NOC Dark Incident Room</button>
+            <button type="button" id="arch-editorial" aria-pressed="false">Spacious Editorial</button>
+          </div>
+          <span class="wb-spacer"></span>
+          <span class="wb-readout" id="arch-meta">43 spans · 9 services · 4 tabs</span>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-archetype" show-legend height="450">
+            <trace-view type="waterfall" active></trace-view>
+            <trace-view type="flame" label="Hotspots"></trace-view>
+            <trace-view type="service"></trace-view>
+            <trace-view type="sequence" fold="3"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span id="arch-code-label">HTML — Full 4-View Observability Suite</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="arch-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2 — Waterfall Sizing, Layout & Keyboard Navigation
+         ==================================================================== -->
+    <section class="doc-section" id="waterfall-layout">
+      <h2><span class="sec-num">2</span>Waterfall Geometry, Sizing &amp; Keyboard Navigation</h2>
+      <p class="doc-prose">
+        Tune row density with <code>span-height</code> and <code>span-padding</code>, adjust the label column with
+        <code>gutter-width</code>, size the inspector with <code>detail-panel-width</code>, or enable plain-wheel zooming with <code>wheel-zoom</code>.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar wb-toolbar--dense">
+          <label class="ctrl-range">
+            <span>height</span>
+            <input type="range" id="wf-height" min="260" max="580" step="20" value="380">
+            <output id="wf-height-out">380px</output>
+          </label>
+
+          <label class="ctrl-range">
+            <span>span-height</span>
+            <input type="range" id="wf-span-h" min="18" max="44" step="2" value="28">
+            <output id="wf-span-h-out">28px</output>
+          </label>
+
+          <label class="ctrl-range">
+            <span>span-padding</span>
+            <input type="range" id="wf-span-pad" min="2" max="12" step="1" value="5">
+            <output id="wf-span-pad-out">5px</output>
+          </label>
+
+          <label class="ctrl-range">
+            <span>gutter-width</span>
+            <input type="range" id="wf-gutter" min="160" max="360" step="10" value="230">
+            <output id="wf-gutter-out">230px</output>
+          </label>
+
+          <div class="wb-group">
+            <label class="wb-label" for="wf-panel-w">detail-panel-width</label>
+            <select class="ctrl-select" id="wf-panel-w">
+              <option value="32%">32%</option>
+              <option value="40%" selected>40%</option>
+              <option value="48%">48%</option>
+            </select>
+          </div>
+
+          <label class="ctrl-check">
+            <input type="checkbox" id="wf-legend" checked>
+            <span>show-legend</span>
+          </label>
+
+          <label class="ctrl-check">
+            <input type="checkbox" id="wf-wheel-zoom">
+            <span>wheel-zoom</span>
+          </label>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-wf" height="380" span-height="28" span-padding="5" gutter-width="230" detail-panel-width="40%" show-legend></trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML — Waterfall Layout &amp; Sizing Attributes</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="wf-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+
+      <h3>Waterfall Keyboard &amp; Pointer Controls</h3>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Input</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Select previous or next visible span row</td></tr>
+            <tr><td><kbd>Shift</kbd> + <kbd>&larr;</kbd> / <kbd>&rarr;</kbd></td><td>Collapse or expand the selected span's subtree</td></tr>
+            <tr><td><kbd>&larr;</kbd> / <kbd>&rarr;</kbd></td><td>Pan timeline camera left or right</td></tr>
+            <tr><td><kbd>+</kbd> / <kbd>-</kbd> / <kbd>0</kbd> (<kbd>Home</kbd>)</td><td>Zoom in, zoom out, or reset zoom to 100%</td></tr>
+            <tr><td><kbd>PageUp</kbd> / <kbd>PageDown</kbd></td><td>Scroll vertically by one viewport page</td></tr>
+            <tr><td><kbd>Enter</kbd> / <kbd>Space</kbd></td><td>Move keyboard focus into the open detail panel for the selected span</td></tr>
+            <tr><td><kbd>Escape</kbd></td><td>Return focus from detail panel/filter to timeline, or clear selection and close detail panel</td></tr>
+            <tr><td><kbd>Ctrl</kbd>/<kbd>&#8984;</kbd> + <kbd>F</kbd></td><td>Focus the first filter control when a filter bar is configured</td></tr>
+            <tr><td>Wheel / <kbd>Ctrl</kbd>+Wheel / Drag</td><td>Wheel scrolls rows; <kbd>Ctrl</kbd>/<kbd>&#8984;</kbd>+Wheel (or pinch) zooms at cursor; drag pans; double-click resets zoom</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3 — Flame Graph & Service Dependency Map
+         ==================================================================== -->
+    <section class="doc-section" id="flame-service">
+      <h2><span class="sec-num">3</span>Flame Graph &amp; Service Dependency Map</h2>
+      <p class="doc-prose">
+        <strong>Flame Graph</strong> (<code>type="flame"</code>) folds repeated call paths — such as the 5 vector-shard probes and 3 Postgres chunk fetches
+        in our AI Hybrid RAG trace — into cumulative hotspot boxes. <strong>Service Map</strong> (<code>type="service"</code>) renders a
+        directed topology of all 9 microservices and their inferred external peers (Qdrant, Elasticsearch, Redis, Postgres, Kafka) with live latency and error rates.
+      </p>
+
+      <div class="callout">
+        <strong>Try synchronized exploration:</strong> Double-click any Flame box (or press <kbd>F</kbd>) to zoom that call path to full width
+        (<kbd>Escape</kbd> steps out). Switch to Service Map to pan/zoom the 2D DAG and click a service node or edge — selection stays synchronized across tabs.
+      </div>
+
+      <div class="workbench">
+        <div class="wb-toolbar">
+          <div class="wb-group">
+            <span class="wb-label">Open View</span>
+            <div class="segmented" role="group" aria-label="Switch between Flame and Service">
+              <button type="button" id="fs-btn-flame" class="is-active" aria-pressed="true">Flame Graph</button>
+              <button type="button" id="fs-btn-service" aria-pressed="false">Service Map</button>
+              <button type="button" id="fs-btn-waterfall" aria-pressed="false">Waterfall</button>
+            </div>
+          </div>
+
+          <div class="wb-group">
+            <label class="wb-label" for="fs-dataset">Complexity Profile</label>
+            <select class="ctrl-select" id="fs-dataset">
+              <option value="ai" selected>AI Hybrid RAG (43 spans, 9 services + 5 external peers)</option>
+              <option value="fintech">Card Settlement Logs (21 spans, 8 services, 3 traces)</option>
+              <option value="incident">Warehouse Retry Storm (19 spans, error cascade + DLQ)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-fs" show-legend height="440">
+            <trace-view type="flame" active></trace-view>
+            <trace-view type="service"></trace-view>
+            <trace-view type="waterfall"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML — Flame Graph &amp; Service Topology Tabs</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code data-lang="html">&lt;trace-visualizer data-url="./data/ai-search-trace.json" show-legend&gt;
+  &lt;trace-view type="flame" active&gt;&lt;/trace-view&gt;
+  &lt;trace-view type="service"&gt;&lt;/trace-view&gt;
+  &lt;trace-view type="waterfall"&gt;&lt;/trace-view&gt;
+&lt;/trace-visualizer&gt;</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4 — Sequence Diagram & Per-View Options
+         ==================================================================== -->
+    <section class="doc-section" id="sequence-view">
+      <h2><span class="sec-num">4</span>Sequence Diagram &amp; Per-View Options</h2>
+      <p class="doc-prose">
+        <code>&lt;trace-view type="sequence"&gt;</code> draws causal participant lifelines, synchronous request/return arrows,
+        asynchronous Kafka pub/sub hops, and automatic loop folding. Below, the AI Hybrid RAG trace runs 5 consecutive
+        <code>VectorSearch/QueryShard</code> calls (folded into <code>loop &times;5</code> when <code>fold="3"</code>) and fails over after a 429 rate-limit error.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar wb-toolbar--dense">
+          <div class="wb-group">
+            <label class="wb-label" for="seq-internal">internal</label>
+            <select class="ctrl-select" id="seq-internal">
+              <option value="auto" selected>auto</option>
+              <option value="show">show (all self-calls)</option>
+              <option value="hide">hide (cross-service only)</option>
+            </select>
+          </div>
+
+          <div class="wb-group">
+            <label class="wb-label" for="seq-returns">returns</label>
+            <select class="ctrl-select" id="seq-returns">
+              <option value="all" selected>all</option>
+              <option value="errors">errors (failed calls only)</option>
+              <option value="none">none</option>
+            </select>
+          </div>
+
+          <div class="wb-group">
+            <label class="wb-label" for="seq-fold">fold (loops)</label>
+            <select class="ctrl-select" id="seq-fold">
+              <option value="0">0 (disabled — show all 5 shard calls)</option>
+              <option value="2">2 (&ge;2 consecutive calls)</option>
+              <option value="3" selected>3 (&ge;3 consecutive calls &rarr; loop &times;5)</option>
+              <option value="6">6 (&ge;6 consecutive calls)</option>
+            </select>
+          </div>
+
+          <label class="ctrl-range">
+            <span>row-height</span>
+            <input type="range" id="seq-row-h" min="18" max="44" step="2" value="28">
+            <output id="seq-row-h-out">28px</output>
+          </label>
+
+          <label class="ctrl-check">
+            <input type="checkbox" id="seq-wheel-zoom">
+            <span>wheel-zoom</span>
+          </label>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-seq" show-legend height="440">
+            <trace-view id="seq-carrier" type="sequence" active internal="auto" returns="all" fold="3" row-height="28"></trace-view>
+            <trace-view type="waterfall"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML — Per-View Attributes on &lt;trace-view type="sequence"&gt;</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="seq-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 5 — Themes, Kind Colors & CSS Custom Properties
+         ==================================================================== -->
+    <section class="doc-section" id="theming-tokens">
+      <h2><span class="sec-num">5</span>Themes, Span-Kind Colors &amp; CSS Tokens</h2>
+      <p class="doc-prose">
+        By default, <code>&lt;trace-visualizer&gt;</code> follows <code>prefers-color-scheme</code>. Pin it with
+        <code>theme="light"</code> or <code>theme="dark"</code>, override span-kind colors via <code>kind-colors</code>,
+        or customize any surface, grid, border, accent, or font using CSS custom properties (<code>--l2t-color-*</code> and <code>--l2t-font-*</code>).
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar wb-toolbar--dense">
+          <div class="wb-group">
+            <label class="wb-label" for="th-preset">Palette Preset</label>
+            <select class="ctrl-select" id="th-preset">
+              <option value="default">Default Light</option>
+              <option value="ocean">Oceanic Teal (Light)</option>
+              <option value="editorial">Warm Paper (Light)</option>
+              <option value="midnight" selected>NOC Obsidian (Dark)</option>
+              <option value="contrast">High-Contrast Terminal (Dark)</option>
+            </select>
+          </div>
+
+          <div class="wb-group">
+            <label class="wb-label" for="th-mode">theme attr</label>
+            <select class="ctrl-select" id="th-mode">
+              <option value="light">light</option>
+              <option value="dark" selected>dark</option>
+              <option value="">(auto)</option>
+            </select>
+          </div>
+
+          <label class="ctrl-color"><span>Background</span><input type="color" id="th-c-bg" value="#0b0f17"></label>
+          <label class="ctrl-color"><span>Accent</span><input type="color" id="th-c-accent" value="#38bdf8"></label>
+          <label class="ctrl-color"><span>Server</span><input type="color" id="th-k-server" value="#34d399"></label>
+          <label class="ctrl-color"><span>Client</span><input type="color" id="th-k-client" value="#fbbf24"></label>
+          <label class="ctrl-color"><span>Internal</span><input type="color" id="th-k-internal" value="#60a5fa"></label>
+
+          <button type="button" class="btn btn--sm" id="th-reset">Reset</button>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-theme" data-pin-theme="true" theme="dark" show-legend height="390">
+            <trace-view type="waterfall" active></trace-view>
+            <trace-view type="flame"></trace-view>
+            <trace-view type="service"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>CSS + HTML — Custom Tokens &amp; kind-colors</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="th-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+
+      <h3 id="token-reference">CSS Custom Property Reference</h3>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Custom Property</th><th>Light Default</th><th>Dark Default</th><th>Usage</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>--l2t-color-background</code></td><td><code>#ffffff</code></td><td><code>#1b1d23</code></td><td>Primary stage &amp; viewport background</td></tr>
+            <tr><td><code>--l2t-color-surface</code></td><td><code>#f6f7f9</code></td><td><code>#23262e</code></td><td>Toolbar, tabs, filter bar, and detail panel surface</td></tr>
+            <tr><td><code>--l2t-color-border</code> / <code>--l2t-color-grid</code></td><td><code>#dddddd</code> / <code>#ececec</code></td><td><code>#3a3e49</code> / <code>#2c3039</code></td><td>Hairline dividers and timeline ruler gridlines</td></tr>
+            <tr><td><code>--l2t-color-text</code> / <code>--l2t-color-textMuted</code></td><td><code>#333333</code> / <code>#666666</code></td><td><code>#e4e6eb</code> / <code>#9aa0ac</code></td><td>Primary labels and secondary timestamps/metadata</td></tr>
+            <tr><td><code>--l2t-color-accent</code></td><td><code>#007bff</code></td><td><code>#4da3ff</code></td><td>Active tab indicator, focus ring, and primary interactive controls</td></tr>
+            <tr><td><code>--l2t-color-error</code></td><td><code>#c62828</code></td><td><code>#ff6b6b</code></td><td>Failed span markers, error badges, and error status messages</td></tr>
+            <tr><td><code>--l2t-color-kindServer</code> … <code>kindConsumer</code></td><td colspan="2">Set automatically or via <code>kind-colors</code></td><td><code>kindUnspecified</code>, <code>kindInternal</code>, <code>kindServer</code>, <code>kindClient</code>, <code>kindProducer</code>, <code>kindConsumer</code></td></tr>
+            <tr><td><code>--l2t-font-sans</code> / <code>--l2t-font-mono</code></td><td colspan="2">System UI / Monospace</td><td>UI chrome font stack and numeric/code font stack</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 6 — Registering Custom Views
+         ==================================================================== -->
+    <section class="doc-section" id="custom-views">
+      <h2><span class="sec-num">6</span>Extending with <code>registerView()</code></h2>
+      <p class="doc-prose">
+        Register custom views implementing <code>TraceView</code> via <code>registerView({ id, label, capabilities, create })</code>
+        and declare them alongside built-in views as <code>&lt;trace-view type="your-id"&gt;</code>. Below is a live
+        <strong>Slowest Spans</strong> leaderboard over the 43-span AI Hybrid RAG trace sharing filter and selection state with Waterfall and Flame Graph.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-stage">
+          <trace-visualizer id="viz-custom" show-legend height="400">
+            <trace-filter field="*" label="Search" type="text" source="local" placeholder="Filter spans across custom &amp; built-in views…" width="300"></trace-filter>
+            <trace-view type="hot-spans" label="Slowest Spans (Custom)" active></trace-view>
+            <trace-view type="waterfall"></trace-view>
+            <trace-view type="flame"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>JavaScript — Registering a Custom Synchronized View</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code data-lang="javascript">import { registerView, formatDuration, spanKindName } from 'log2trace-ui';
+
+registerView({
+  id: 'hot-spans',
+  label: 'Slowest Spans',
+  capabilities: { legend: false },
+  create() {
+    let root = null;
+    let ctx = null;
+
+    function render() {
+      if (!root || !ctx) return;
+      const { data, selection, matched } = ctx.store.state;
+      const rows = [...data.index.ordered]
+        .filter((s) => matched === null || matched.has(s.spanId))
+        .sort((a, b) => b.durationMs - a.durationMs);
+      // Render rows and write selection back via:
+      // ctx.store.setSelection([span.spanId], { origin: ctx.origin, primary: span.spanId });
+    }
+
+    return {
+      mount(surface, viewCtx) {
+        ctx = viewCtx;
+        root = document.createElement('div');
+        surface.appendChild(root);
+        render();
+      },
+      update() { render(); },
+      optionsChanged() {},
+      themeChanged() { render(); },
+      commands: () => [],
+      getState: () => null,
+      setState() {},
+      unmount() { root?.remove(); root = null; ctx = null; },
+    };
+  },
+});</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <nav class="page-pager" aria-label="Guide pagination">
+      <a class="pager-link" href="./index.html">
+        <span class="pager-dir">&larr; Previous Chapter</span>
+        <span class="pager-title">Getting Started &amp; Data</span>
+      </a>
+      <a class="pager-link pager-link--next" href="./filtering.html">
+        <span class="pager-dir">Next Chapter &rarr;</span>
+        <span class="pager-title">Filtering &amp; External Sources</span>
+      </a>
+    </nav>
+
+    <footer class="guide-footer">
+      <span>log2trace-ui Interactive Guide &middot; Built <time>__BUILD_DATE__</time></span>
+      <span>
+        <a href="./api/index.html">API Reference</a> &middot;
+        <a href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+      </span>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+  import { registerView, formatDuration, spanKindName } from './dist/log2trace.min.js';
+  import {
+    initGuideShell,
+    setCodeBlock,
+    loadEdgeAuthTrace,
+    loadAiSearchTrace,
+    loadIncidentCascade,
+    loadFintechLogs,
+    FINTECH_LOG_CONFIG,
+    syncVisualizerThemes,
+  } from './guide.js';
+
+  registerView({
+    id: 'hot-spans',
+    label: 'Slowest Spans',
+    capabilities: { legend: false },
+    create() {
+      let container = null;
+      let ctx = null;
+      let savedScroll = 0;
+
+      function render() {
+        if (!container || !ctx) return;
+        const { data, selection, matched } = ctx.store.state;
+        const spans = [...data.index.ordered]
+          .filter((s) => matched === null || matched.has(s.spanId))
+          .sort((a, b) => b.durationMs - a.durationMs)
+          .slice(0, 50);
+
+        const maxDur = Math.max(1, spans[0]?.durationMs ?? 1);
+        const table = document.createElement('table');
+        table.style.cssText = 'width:100%;border-collapse:collapse;font:12.5px/1.45 var(--l2t-font-sans);color:var(--l2t-color-text)';
+        table.innerHTML = `
+          <thead>
+            <tr style="background:var(--l2t-color-surface);border-bottom:1px solid var(--l2t-color-border);text-align:left">
+              <th style="padding:8px 12px">Operation</th>
+              <th style="padding:8px 12px">Service</th>
+              <th style="padding:8px 12px">Kind</th>
+              <th style="padding:8px 12px;width:32%">Duration Share</th>
+              <th style="padding:8px 12px;text-align:right">Duration</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        `;
+        const tbody = table.querySelector('tbody');
+        for (const s of spans) {
+          const isSelected = selection.ids.has(s.spanId);
+          const isErr = s.span.status?.code === 2;
+          const pct = Math.max(2, Math.round((s.durationMs / maxDur) * 100));
+          const tr = document.createElement('tr');
+          tr.style.cssText = `cursor:pointer;border-bottom:1px solid var(--l2t-color-grid);background:${isSelected ? 'var(--l2t-color-selection)' : 'transparent'}`;
+          tr.innerHTML = `
+            <td style="padding:6px 12px;font-weight:${isSelected ? '600' : '500'};color:${isErr ? 'var(--l2t-color-error)' : 'inherit'}"></td>
+            <td style="padding:6px 12px;color:var(--l2t-color-textMuted)"></td>
+            <td style="padding:6px 12px;color:var(--l2t-color-textMuted)"></td>
+            <td style="padding:6px 12px">
+              <div style="height:8px;border-radius:4px;background:var(--l2t-color-surface);overflow:hidden">
+                <div style="height:100%;width:${pct}%;background:${isErr ? 'var(--l2t-color-error)' : 'var(--l2t-color-accent)'}"></div>
+              </div>
+            </td>
+            <td style="padding:6px 12px;text-align:right;font-family:var(--l2t-font-mono)"></td>
+          `;
+          const cells = tr.children;
+          cells[0].textContent = (isErr ? '✕ ' : '') + s.span.name;
+          cells[1].textContent = s.serviceName;
+          cells[2].textContent = spanKindName(s.span.kind) || 'Unspecified';
+          cells[4].textContent = formatDuration(s.durationMs);
+          tr.addEventListener('click', () => {
+            ctx.store.setSelection([s.spanId], { origin: ctx.origin, primary: s.spanId });
+          });
+          tbody.appendChild(tr);
+        }
+        container.replaceChildren(table);
+        container.scrollTop = savedScroll;
+      }
+
+      return {
+        mount(surface, viewCtx) {
+          ctx = viewCtx;
+          container = document.createElement('div');
+          container.style.cssText = 'height:100%;overflow:auto;background:var(--l2t-color-background)';
+          container.addEventListener('scroll', () => {
+            if (container) savedScroll = container.scrollTop;
+          });
+          surface.appendChild(container);
+          render();
+        },
+        update() { render(); },
+        optionsChanged() {},
+        themeChanged() { render(); },
+        commands: () => [
+          {
+            id: 'select-slowest',
+            label: 'Select Top Hotspot',
+            run() {
+              if (!ctx) return;
+              const top = [...ctx.store.state.data.index.ordered].sort((a, b) => b.durationMs - a.durationMs)[0];
+              if (top) ctx.store.setSelection([top.spanId], { origin: ctx.origin, primary: top.spanId });
+            },
+          },
+        ],
+        getState: () => ({ scrollTop: savedScroll }),
+        setState(s) {
+          if (s && typeof s === 'object' && typeof s.scrollTop === 'number') {
+            savedScroll = s.scrollTop;
+            if (container) container.scrollTop = savedScroll;
+          }
+        },
+        unmount() {
+          container?.remove();
+          container = null;
+          ctx = null;
+        },
+      };
+    },
+  });
+
+  initGuideShell();
+
+  // ── Section 1: Visual Setup Archetypes ────────────────────────────────────
+  {
+    const viz = document.getElementById('viz-archetype');
+    const metaEl = document.getElementById('arch-meta');
+    const codeLabel = document.getElementById('arch-code-label');
+    const codeEl = document.getElementById('arch-code');
+    const btns = {
+      suite: document.getElementById('arch-suite'),
+      compact: document.getElementById('arch-compact'),
+      noc: document.getElementById('arch-noc'),
+      editorial: document.getElementById('arch-editorial'),
+    };
+
+    function clearInlineTheme() {
+      viz.removeAttribute('data-pin-theme');
+      viz.removeAttribute('theme');
+      viz.removeAttribute('kind-colors');
+      viz.style.removeProperty('--l2t-color-background');
+      viz.style.removeProperty('--l2t-color-surface');
+      viz.style.removeProperty('--l2t-color-accent');
+    }
+
+    async function applyArchetype(key) {
+      for (const [k, btn] of Object.entries(btns)) {
+        const active = k === key;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      }
+
+      clearInlineTheme();
+      for (const c of [...viz.querySelectorAll('trace-view')]) c.remove();
+
+      if (key === 'suite') {
+        viz.setAttribute('height', '450');
+        viz.setAttribute('span-height', '28');
+        viz.setAttribute('span-padding', '4');
+        viz.setAttribute('gutter-width', '240');
+        viz.setAttribute('show-legend', '');
+        viz.removeAttribute('wheel-zoom');
+        syncVisualizerThemes();
+        for (const [idx, spec] of [
+          { type: 'waterfall', active: true },
+          { type: 'flame', label: 'Hotspots' },
+          { type: 'service' },
+          { type: 'sequence', fold: '3' },
+        ].entries()) {
+          const v = document.createElement('trace-view');
+          v.setAttribute('type', spec.type);
+          if (spec.label) v.setAttribute('label', spec.label);
+          if (spec.fold) v.setAttribute('fold', spec.fold);
+          if (spec.active || idx === 0) v.setAttribute('active', '');
+          viz.appendChild(v);
+        }
+        viz.traceData = await loadAiSearchTrace();
+        metaEl.textContent = '43 spans · 9 services · 4 tabs · default density';
+        codeLabel.textContent = 'HTML — Full 4-View Observability Suite (AI RAG Trace)';
+        setCodeBlock(
+          codeEl,
+          `<trace-visualizer data-url="./data/ai-search-trace.json" height="450" show-legend>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame" label="Hotspots"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" fold="3"></trace-view>\n</trace-visualizer>`,
+          'html',
+        );
+      } else if (key === 'compact') {
+        viz.setAttribute('height', '290');
+        viz.setAttribute('span-height', '20');
+        viz.setAttribute('span-padding', '2');
+        viz.setAttribute('gutter-width', '185');
+        viz.removeAttribute('show-legend');
+        viz.removeAttribute('wheel-zoom');
+        syncVisualizerThemes();
+        viz.traceData = await loadEdgeAuthTrace();
+        metaEl.textContent = '14 spans · 20px rows · 290px tall · single view (no tabs)';
+        codeLabel.textContent = 'HTML — Compact Embedded Widget (PR Check / Sidebar Card)';
+        setCodeBlock(
+          codeEl,
+          `<!-- Omit <trace-view> children for a clean, single-view embedded waterfall -->\n<trace-visualizer\n  data-url="./data/edge-auth-trace.json"\n  height="290"\n  span-height="20"\n  span-padding="2"\n  gutter-width="185"\n></trace-visualizer>`,
+          'html',
+        );
+      } else if (key === 'noc') {
+        const kc = { Server: '#34d399', Client: '#fbbf24', Internal: '#60a5fa', Producer: '#22d3ee', Consumer: '#fb7185' };
+        viz.setAttribute('data-pin-theme', 'true');
+        viz.setAttribute('theme', 'dark');
+        viz.setAttribute('height', '410');
+        viz.setAttribute('span-height', '26');
+        viz.setAttribute('span-padding', '4');
+        viz.setAttribute('gutter-width', '250');
+        viz.setAttribute('show-legend', '');
+        viz.setAttribute('wheel-zoom', '');
+        viz.setAttribute('kind-colors', JSON.stringify(kc));
+        viz.style.setProperty('--l2t-color-background', '#0b0f17');
+        viz.style.setProperty('--l2t-color-surface', '#131a26');
+        viz.style.setProperty('--l2t-color-accent', '#38bdf8');
+        viz.refreshTheme();
+        for (const [idx, type] of ['waterfall', 'service', 'sequence'].entries()) {
+          const v = document.createElement('trace-view');
+          v.setAttribute('type', type);
+          if (type === 'sequence') v.setAttribute('returns', 'errors');
+          if (idx === 0) v.setAttribute('active', '');
+          viz.appendChild(v);
+        }
+        viz.traceData = await loadIncidentCascade();
+        metaEl.textContent = '19 spans · pinned dark obsidian · wheel-zoom · error cascade';
+        codeLabel.textContent = 'HTML — NOC Dark Incident Room Setup';
+        setCodeBlock(
+          codeEl,
+          `<trace-visualizer\n  data-url="./data/incident-cascade.json"\n  theme="dark"\n  height="410"\n  show-legend\n  wheel-zoom\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#0b0f17; --l2t-color-surface:#131a26; --l2t-color-accent:#38bdf8"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" returns="errors"></trace-view>\n</trace-visualizer>`,
+          'html',
+        );
+      } else if (key === 'editorial') {
+        const kc = { Server: '#0f766e', Client: '#d97706', Internal: '#334155', Producer: '#0284c7', Consumer: '#be123c' };
+        viz.setAttribute('data-pin-theme', 'true');
+        viz.setAttribute('theme', 'light');
+        viz.setAttribute('height', '460');
+        viz.setAttribute('span-height', '36');
+        viz.setAttribute('span-padding', '7');
+        viz.setAttribute('gutter-width', '265');
+        viz.setAttribute('show-legend', '');
+        viz.removeAttribute('wheel-zoom');
+        viz.setAttribute('kind-colors', JSON.stringify(kc));
+        viz.style.setProperty('--l2t-color-background', '#fcfaf5');
+        viz.style.setProperty('--l2t-color-surface', '#f3efe6');
+        viz.style.setProperty('--l2t-color-accent', '#b45309');
+        viz.refreshTheme();
+        for (const [idx, type] of ['waterfall', 'flame', 'service'].entries()) {
+          const v = document.createElement('trace-view');
+          v.setAttribute('type', type);
+          if (idx === 0) v.setAttribute('active', '');
+          viz.appendChild(v);
+        }
+        viz.logData = { logs: await loadFintechLogs(), config: FINTECH_LOG_CONFIG };
+        metaEl.textContent = '21 spans · 36px spacious rows · warm paper palette · fintech logs';
+        codeLabel.textContent = 'HTML — Spacious Editorial / Postmortem Report Setup';
+        setCodeBlock(
+          codeEl,
+          `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  theme="light"\n  height="460"\n  span-height="36"\n  span-padding="7"\n  gutter-width="265"\n  show-legend\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#fcfaf5; --l2t-color-surface:#f3efe6; --l2t-color-accent:#b45309"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n</trace-visualizer>`,
+          'html',
+        );
+      }
+    }
+
+    for (const [k, btn] of Object.entries(btns)) {
+      btn.addEventListener('click', () => void applyArchetype(k));
+    }
+    void applyArchetype('suite');
+  }
+
+  // ── Section 2: Waterfall Sizing & Layout ──────────────────────────────────
+  {
+    const viz = document.getElementById('viz-wf');
+    const hInput = document.getElementById('wf-height');
+    const shInput = document.getElementById('wf-span-h');
+    const padInput = document.getElementById('wf-span-pad');
+    const gutInput = document.getElementById('wf-gutter');
+    const panelSel = document.getElementById('wf-panel-w');
+    const legendCb = document.getElementById('wf-legend');
+    const wheelCb = document.getElementById('wf-wheel-zoom');
+    const codeEl = document.getElementById('wf-code');
+
+    function updateWf() {
+      document.getElementById('wf-height-out').textContent = `${hInput.value}px`;
+      document.getElementById('wf-span-h-out').textContent = `${shInput.value}px`;
+      document.getElementById('wf-span-pad-out').textContent = `${padInput.value}px`;
+      document.getElementById('wf-gutter-out').textContent = `${gutInput.value}px`;
+
+      viz.setAttribute('height', hInput.value);
+      viz.setAttribute('span-height', shInput.value);
+      viz.setAttribute('span-padding', padInput.value);
+      viz.setAttribute('gutter-width', gutInput.value);
+      viz.setAttribute('detail-panel-width', panelSel.value);
+      viz.toggleAttribute('show-legend', legendCb.checked);
+      viz.toggleAttribute('wheel-zoom', wheelCb.checked);
+
+      const flags = [
+        ...(legendCb.checked ? ['  show-legend'] : []),
+        ...(wheelCb.checked ? ['  wheel-zoom'] : []),
+      ];
+      setCodeBlock(
+        codeEl,
+        `<trace-visualizer\n  data-url="./data/edge-auth-trace.json"\n  height="${hInput.value}"\n  span-height="${shInput.value}"\n  span-padding="${padInput.value}"\n  gutter-width="${gutInput.value}"\n  detail-panel-width="${panelSel.value}"${flags.length ? '\n' + flags.join('\n') : ''}\n></trace-visualizer>`,
+        'html',
+      );
+    }
+
+    for (const el of [hInput, shInput, padInput, gutInput, panelSel, legendCb, wheelCb]) {
+      el.addEventListener('input', updateWf);
+      el.addEventListener('change', updateWf);
+    }
+
+    loadEdgeAuthTrace().then((data) => { viz.traceData = data; });
+    updateWf();
+  }
+
+  // ── Section 3: Flame & Service Map ────────────────────────────────────────
+  {
+    const viz = document.getElementById('viz-fs');
+    const btns = {
+      flame: document.getElementById('fs-btn-flame'),
+      service: document.getElementById('fs-btn-service'),
+      waterfall: document.getElementById('fs-btn-waterfall'),
+    };
+    const dsSel = document.getElementById('fs-dataset');
+
+    function syncActiveBtn(activeId) {
+      for (const [id, btn] of Object.entries(btns)) {
+        const on = id === activeId;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-pressed', String(on));
+      }
+    }
+
+    for (const [id, btn] of Object.entries(btns)) {
+      btn.addEventListener('click', () => {
+        viz.view = id;
+        syncActiveBtn(id);
+      });
+    }
+    viz.addEventListener('view-changed', (e) => syncActiveBtn(e.detail.view));
+
+    async function loadFsData() {
+      const v = dsSel.value;
+      if (v === 'ai') viz.traceData = await loadAiSearchTrace();
+      else if (v === 'fintech') viz.logData = { logs: await loadFintechLogs(), config: FINTECH_LOG_CONFIG };
+      else viz.traceData = await loadIncidentCascade();
+    }
+
+    dsSel.addEventListener('change', () => void loadFsData());
+    void loadFsData();
+  }
+
+  // ── Section 4: Sequence Diagram Options ───────────────────────────────────
+  {
+    const viz = document.getElementById('viz-seq');
+    const carrier = document.getElementById('seq-carrier');
+    const internalSel = document.getElementById('seq-internal');
+    const returnsSel = document.getElementById('seq-returns');
+    const foldSel = document.getElementById('seq-fold');
+    const rowH = document.getElementById('seq-row-h');
+    const wheelCb = document.getElementById('seq-wheel-zoom');
+    const codeEl = document.getElementById('seq-code');
+
+    loadAiSearchTrace().then((data) => { viz.traceData = data; });
+
+    function updateSeq() {
+      document.getElementById('seq-row-h-out').textContent = `${rowH.value}px`;
+      carrier.setAttribute('internal', internalSel.value);
+      carrier.setAttribute('returns', returnsSel.value);
+      carrier.setAttribute('fold', foldSel.value);
+      carrier.setAttribute('row-height', rowH.value);
+      if (wheelCb.checked) carrier.setAttribute('wheel-zoom', '');
+      else carrier.removeAttribute('wheel-zoom');
+
+      const wz = wheelCb.checked ? ' wheel-zoom' : '';
+      setCodeBlock(
+        codeEl,
+        `<trace-visualizer data-url="./data/ai-search-trace.json" show-legend>\n  <trace-view\n    type="sequence"\n    active\n    internal="${internalSel.value}"\n    returns="${returnsSel.value}"\n    fold="${foldSel.value}"\n    row-height="${rowH.value}"${wz}\n  ></trace-view>\n  <trace-view type="waterfall"></trace-view>\n</trace-visualizer>`,
+        'html',
+      );
+    }
+
+    for (const el of [internalSel, returnsSel, foldSel, rowH, wheelCb]) {
+      el.addEventListener('input', updateSeq);
+      el.addEventListener('change', updateSeq);
+    }
+    updateSeq();
+  }
+
+  // ── Section 5: Themes, Kind Colors & CSS Custom Properties ────────────────
+  {
+    const viz = document.getElementById('viz-theme');
+    const presetSel = document.getElementById('th-preset');
+    const modeSel = document.getElementById('th-mode');
+    const cBg = document.getElementById('th-c-bg');
+    const cAccent = document.getElementById('th-c-accent');
+    const kServer = document.getElementById('th-k-server');
+    const kClient = document.getElementById('th-k-client');
+    const kInternal = document.getElementById('th-k-internal');
+    const resetBtn = document.getElementById('th-reset');
+    const codeEl = document.getElementById('th-code');
+
+    const PRESETS = {
+      default: { theme: 'light', bg: '#ffffff', surface: '#f6f7f9', accent: '#007bff', server: '#2ecc71', client: '#f39c12', internal: '#4a90e2' },
+      ocean: { theme: 'light', bg: '#f4fbfb', surface: '#e6f4f4', accent: '#0d9488', server: '#0d9488', client: '#0284c7', internal: '#475569' },
+      editorial: { theme: 'light', bg: '#fcfaf5', surface: '#f3efe6', accent: '#b45309', server: '#0f766e', client: '#d97706', internal: '#334155' },
+      midnight: { theme: 'dark', bg: '#0b0f17', surface: '#131a26', accent: '#38bdf8', server: '#34d399', client: '#fbbf24', internal: '#60a5fa' },
+      contrast: { theme: 'dark', bg: '#090b0e', surface: '#12161c', accent: '#22d3ee', server: '#4ade80', client: '#fb923c', internal: '#93c5fd' },
+    };
+
+    loadIncidentCascade().then((data) => { viz.traceData = data; });
+
+    function applyThemeControls() {
+      if (modeSel.value) viz.setAttribute('theme', modeSel.value);
+      else viz.removeAttribute('theme');
+
+      viz.style.setProperty('--l2t-color-background', cBg.value);
+      viz.style.setProperty('--l2t-color-accent', cAccent.value);
+
+      const kindColors = {
+        Server: kServer.value,
+        Client: kClient.value,
+        Internal: kInternal.value,
+      };
+      viz.setAttribute('kind-colors', JSON.stringify(kindColors));
+      viz.refreshTheme();
+
+      const themeAttr = modeSel.value ? ` theme="${modeSel.value}"` : '';
+      setCodeBlock(
+        codeEl,
+        `<style>\n  #my-trace {\n    --l2t-color-background: ${cBg.value};\n    --l2t-color-accent: ${cAccent.value};\n  }\n</style>\n\n<trace-visualizer\n  id="my-trace"${themeAttr}\n  data-url="./data/incident-cascade.json"\n  show-legend\n  kind-colors='${JSON.stringify(kindColors)}'\n></trace-visualizer>`,
+        'html',
+      );
+    }
+
+    function selectPreset(key) {
+      const p = PRESETS[key] ?? PRESETS.midnight;
+      modeSel.value = p.theme;
+      cBg.value = p.bg;
+      cAccent.value = p.accent;
+      kServer.value = p.server;
+      kClient.value = p.client;
+      kInternal.value = p.internal;
+      viz.style.setProperty('--l2t-color-surface', p.surface);
+      applyThemeControls();
+    }
+
+    presetSel.addEventListener('change', () => selectPreset(presetSel.value));
+    resetBtn.addEventListener('click', () => {
+      presetSel.value = 'default';
+      viz.style.removeProperty('--l2t-color-surface');
+      selectPreset('default');
+    });
+    for (const el of [modeSel, cBg, cAccent, kServer, kClient, kInternal]) {
+      el.addEventListener('input', applyThemeControls);
+      el.addEventListener('change', applyThemeControls);
+    }
+    selectPreset('midnight');
+  }
+
+  // ── Section 6: Custom View Data ───────────────────────────────────────────
+  {
+    const vizCustom = document.getElementById('viz-custom');
+    const hotCarrier = vizCustom.querySelector('trace-view[type="hot-spans"]');
+    if (hotCarrier) {
+      vizCustom.prepend(hotCarrier);
+      vizCustom.view = 'hot-spans';
+    }
+    loadAiSearchTrace().then((data) => {
+      vizCustom.traceData = data;
+    });
+  }
+
+  syncVisualizerThemes();
+</script>
+</body>
+</html>

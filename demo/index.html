@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>log2trace-ui — Interactive Guide: Getting Started &amp; Data Transformation</title>
+  <meta name="description" content="Interactive guide for log2trace-ui: install the zero-dependency Web Component, render OpenTelemetry traces across complexity tiers, transform structured JSON logs into spans, and classify span kinds.">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    (() => {
+      try {
+        const pref = localStorage.getItem('l2t-guide-theme') || 'auto';
+        const dark = pref === 'dark' || (pref === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.pageTheme = dark ? 'dark' : 'light';
+      } catch {}
+    })();
+  </script>
+  <link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div style="display:flex;align-items:center;gap:0.6rem">
+      <button type="button" class="toc-mobile-btn" id="toc-mobile-btn" aria-expanded="false" aria-controls="sidebar-toc">Contents</button>
+      <a class="brand" href="./index.html">
+        <img src="./favicon.svg" alt="">
+        <span>log2trace-ui</span>
+        <span class="brand-tag">Guide</span>
+      </a>
+    </div>
+
+    <nav class="page-nav" aria-label="Guide sections">
+      <a href="./index.html" aria-current="page">Getting Started &amp; Data</a>
+      <a href="./views.html">Views &amp; Theming</a>
+      <a href="./filtering.html">Filtering &amp; Sources</a>
+      <a href="./api.html">Events &amp; API</a>
+      <a href="./playground.html">Setup Playground</a>
+    </nav>
+
+    <div class="topbar-actions">
+      <div class="theme-Segment" role="group" aria-label="Page theme">
+        <button type="button" data-theme-btn="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+      </div>
+      <a class="topbar-link topbar-link--hide-sm" href="./api/index.html">API Docs</a>
+      <a class="topbar-link topbar-link--hide-sm" href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<div class="guide-shell">
+  <aside class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+    <div class="toc-heading">Getting Started</div>
+    <ul class="toc-list">
+      <li><a href="#overview">Overview &amp; Installation</a></li>
+      <li><a href="#otel-traces">1. OpenTelemetry Traces</a></li>
+    </ul>
+    <div class="toc-heading">Log Transformation</div>
+    <ul class="toc-list">
+      <li><a href="#log-transform">2. Raw Logs to Traces</a></li>
+      <li><a href="#transform-fields">Transform Field Reference</a></li>
+      <li><a href="#span-kind-rules">3. Span-Kind Classification</a></li>
+    </ul>
+    <div class="toc-heading">Headless Engine</div>
+    <ul class="toc-list">
+      <li><a href="#headless-core">4. Headless Core Pipeline</a></li>
+    </ul>
+  </aside>
+
+  <main class="guide-main">
+    <div class="doc-header" id="overview">
+      <div class="doc-eyebrow">Interactive Documentation</div>
+      <h1>Getting Started &amp; Data Transformation</h1>
+      <p class="doc-lead">
+        <code>log2trace-ui</code> is a zero-dependency Web Component that renders OpenTelemetry traces and transforms
+        arbitrary structured JSON logs into interactive waterfalls, flame graphs, service maps, and sequence diagrams — entirely client-side.
+      </p>
+
+      <div class="two-col" style="margin-top:1.5rem;margin-bottom:0.9rem">
+        <div class="code-panel" style="margin:0">
+          <div class="code-bar">
+            <span>CDN / Script Tag (No Build Step)</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code data-lang="html">&lt;script type="module" src="https://unpkg.com/log2trace-ui/dist/log2trace.min.js"&gt;&lt;/script&gt;
+&lt;trace-visualizer data-url="./data/edge-auth-trace.json"&gt;&lt;/trace-visualizer&gt;</code></pre>
+        </div>
+
+        <div class="code-panel" style="margin:0">
+          <div class="code-bar">
+            <span>npm + ES Module Import</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code data-lang="javascript">// npm install log2trace-ui
+import 'log2trace-ui'; // registers custom elements
+import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:1rem;margin-bottom:1.25rem">
+        <strong>Four declarative custom elements:</strong>
+        Importing the bundle registers <code>&lt;trace-visualizer&gt;</code> alongside three lightweight configuration carriers:
+        <code>&lt;trace-view&gt;</code> (views &amp; per-view options),
+        <code>&lt;trace-filter&gt;</code> (local &amp; external filter inputs), and
+        <code>&lt;span-kind-rule&gt;</code> (log-to-span kind classification).
+      </div>
+
+      <div class="guide-cards">
+        <a class="guide-card" href="./views.html">
+          <span class="guide-card-step">02 / Views &amp; Theming</span>
+          <span class="guide-card-title">Visual Setups &amp; Design Tokens</span>
+          <span class="guide-card-desc">Compare Compact, NOC Dark, Spacious, and 4-View suites, Sequence options, CSS tokens, and custom views.</span>
+        </a>
+        <a class="guide-card" href="./filtering.html">
+          <span class="guide-card-step">03 / Filtering &amp; Sources</span>
+          <span class="guide-card-title">Local &amp; External Filters</span>
+          <span class="guide-card-desc">Wildcard search, span vs. log event targets on Fintech logs, auto dropdowns, and server fetch callbacks.</span>
+        </a>
+        <a class="guide-card" href="./api.html">
+          <span class="guide-card-step">04 / Events &amp; API</span>
+          <span class="guide-card-title">Programmatic Control</span>
+          <span class="guide-card-desc">Imperative selection, time-window scrubbing, live event streams, and empty/loading/error states.</span>
+        </a>
+        <a class="guide-card" href="./playground.html">
+          <span class="guide-card-step">05 / Setup Playground</span>
+          <span class="guide-card-title">Interactive Sandbox &amp; 50K Scale</span>
+          <span class="guide-card-desc">Switch visual &amp; complexity presets, drop your own JSON file, test 50,000 spans, and export code.</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 1 — Native OpenTelemetry Traces (Complexity Tiers)
+         ==================================================================== -->
+    <section class="doc-section" id="otel-traces">
+      <h2><span class="sec-num">1</span>Native OpenTelemetry Traces</h2>
+      <p class="doc-prose">
+        Point <code>data-url</code> at any standard <a href="https://opentelemetry.io/docs/specs/otlp/" target="_blank" rel="noopener">OTLP JSON</a>
+        endpoint (<code>{ resourceSpans: [...] }</code>) or assign it directly to <code>.traceData</code>. Switch across complexity tiers below —
+        from a compact 14-span edge auth request to a 43-span parallel AI RAG pipeline with 429 failover and a 2.8&nbsp;s incident retry storm.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar">
+          <div class="wb-group">
+            <span class="wb-label">Delivery</span>
+            <div class="segmented" role="group" aria-label="OTel delivery mode">
+              <button type="button" id="otel-mode-url" class="is-active" aria-pressed="true">HTML data-url</button>
+              <button type="button" id="otel-mode-prop" aria-pressed="false">JS .traceData</button>
+            </div>
+          </div>
+
+          <div class="wb-group">
+            <label class="wb-label" for="otel-dataset-select">Complexity Tier</label>
+            <select class="ctrl-select" id="otel-dataset-select">
+              <option value="edge">Tier 1: Edge Session Auth (14 spans, 4 services, 184 ms)</option>
+              <option value="ai">Tier 3: AI Hybrid RAG + Failover (43 spans, 9 services, 1.42 s)</option>
+              <option value="incident">Tier 4: Retry Storm &amp; Circuit Breaker (19 spans, 2.84 s)</option>
+              <option value="inline">Minimal Inline Object (3 spans, 86 ms)</option>
+            </select>
+          </div>
+
+          <label class="ctrl-check">
+            <input type="checkbox" id="otel-all-views" checked>
+            <span>All 4 views</span>
+          </label>
+
+          <label class="ctrl-check">
+            <input type="checkbox" id="otel-show-legend" checked>
+            <span>Show legend</span>
+          </label>
+
+          <span class="wb-spacer"></span>
+          <span class="wb-readout" id="otel-stats-readout">Loading…</span>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-otel" data-url="./data/edge-auth-trace.json" show-legend height="440">
+            <trace-view type="waterfall" active></trace-view>
+            <trace-view type="flame"></trace-view>
+            <trace-view type="service"></trace-view>
+            <trace-view type="sequence"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div id="otel-event-console"></div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span id="otel-code-label">HTML — Declarative OTel Trace</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="otel-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2 — Log-to-Trace Transformation (Fintech Settlement Logs)
+         ==================================================================== -->
+    <section class="doc-section" id="log-transform">
+      <h2><span class="sec-num">2</span>Transforming Raw Logs into Traces</h2>
+      <p class="doc-prose">
+        Pass raw JSON logs in your native schema (shown below with a 3-trace <strong>Card Settlement &amp; Fraud Pipeline</strong> dataset
+        in <code>./data/fintech-logs.json</code>). Dot-paths such as <code>trace.id</code> and <code>service.name</code> map log fields to OTel spans,
+        while every underlying log entry is preserved as a span event in the detail inspector.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar">
+          <div class="wb-group">
+            <span class="wb-label">API Style</span>
+            <div class="segmented" role="group" aria-label="Log configuration style">
+              <button type="button" id="log-style-attr" class="is-active" aria-pressed="true">HTML Attributes</button>
+              <button type="button" id="log-style-js" aria-pressed="false">JS .logData</button>
+            </div>
+          </div>
+
+          <label class="ctrl-check" title="Cluster logs sharing service.name + operation into composite spans">
+            <input type="checkbox" id="log-opt-group" checked>
+            <span>Group spans (<code>spanGroupFields</code>)</span>
+          </label>
+
+          <label class="ctrl-check" title="Infer parent-child hierarchy via parentSpanLookupFields">
+            <input type="checkbox" id="log-opt-hierarchy" checked>
+            <span>Resolve hierarchy (<code>caller</code>)</span>
+          </label>
+
+          <label class="ctrl-check" title="Mark non-zero status codes as OTel Error spans">
+            <input type="checkbox" id="log-opt-status" checked>
+            <span>Map error codes (<code>code</code>)</span>
+          </label>
+
+          <span class="wb-spacer"></span>
+          <span class="wb-readout" id="log-stats-readout">Loading…</span>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-logs" show-legend height="450">
+            <trace-view type="waterfall" active></trace-view>
+            <trace-view type="flame"></trace-view>
+            <trace-view type="service"></trace-view>
+            <trace-view type="sequence"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <div class="code-tabs" role="tablist">
+              <button type="button" class="is-active" id="log-tab-setup" role="tab" aria-selected="true">Setup Code</button>
+              <button type="button" id="log-tab-sample" role="tab" aria-selected="false">Sample Input Log Record</button>
+            </div>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre" id="log-pre-setup"><code id="log-code-setup" data-lang="html"></code></pre>
+          <pre class="code-pre" id="log-pre-sample" hidden><code id="log-code-sample" data-lang="javascript"></code></pre>
+        </div>
+      </div>
+
+      <h3 id="transform-fields">Transform Field Mapping Reference</h3>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>HTML Attribute</th>
+              <th>JS Config Key</th>
+              <th>Required</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>trace-id-field</code></td>
+              <td><code>traceIdField</code></td>
+              <td><strong>Yes</strong></td>
+              <td>Dot-path to the correlation / trace ID that clusters logs into traces (e.g. <code>trace.id</code>).</td>
+            </tr>
+            <tr>
+              <td><code>span-name-field</code></td>
+              <td><code>spanNameField</code></td>
+              <td><strong>Yes</strong></td>
+              <td>Dot-path used as the operation name displayed on the span bar (e.g. <code>operation</code>).</td>
+            </tr>
+            <tr>
+              <td><code>service-name-field</code></td>
+              <td><code>serviceNameField</code></td>
+              <td><strong>Yes</strong></td>
+              <td>Dot-path identifying the service / resource (<code>service.name</code>) of the span.</td>
+            </tr>
+            <tr>
+              <td><code>timestamp-field</code></td>
+              <td><code>timestampField</code></td>
+              <td><strong>Yes</strong></td>
+              <td>Dot-path to an ISO 8601 timestamp string or epoch-millisecond number.</td>
+            </tr>
+            <tr>
+              <td><code>span-group-fields</code></td>
+              <td><code>spanGroupFields</code></td>
+              <td>Optional</td>
+              <td>Comma-separated dot-paths (or <code>string[]</code>) grouping multiple logs into one span; start/end derive from min/max timestamps. When omitted, each log becomes its own span.</td>
+            </tr>
+            <tr>
+              <td><code>end-time-field</code></td>
+              <td><code>endTimeField</code></td>
+              <td>Optional</td>
+              <td>Explicit span end timestamp dot-path when a single log carries both start and end times.</td>
+            </tr>
+            <tr>
+              <td><code>parent-span-id-field</code></td>
+              <td><code>parentSpanIdField</code></td>
+              <td>Optional</td>
+              <td>Direct parent span ID field when logs already record caller span IDs.</td>
+            </tr>
+            <tr>
+              <td><code>parent-span-lookup-fields</code></td>
+              <td><code>parentSpanLookupFields</code></td>
+              <td>Optional</td>
+              <td>Positional lookup against <code>spanGroupFields</code> (e.g. <code>caller</code> matches parent <code>service.name</code>) to reconstruct call hierarchies without explicit parent span IDs.</td>
+            </tr>
+            <tr>
+              <td><code>span-id-field</code></td>
+              <td><code>spanIdField</code></td>
+              <td>Optional</td>
+              <td>Unique log record ID used in one-log-per-span mode.</td>
+            </tr>
+            <tr>
+              <td><code>status-code-field</code></td>
+              <td><code>statusCodeField</code></td>
+              <td>Optional</td>
+              <td>Error indicator field; non-zero or truthy values mark the resulting span with OTel <code>Error</code> status (code <code>2</code>).</td>
+            </tr>
+            <tr>
+              <td><code>default-span-kind</code></td>
+              <td><code>defaultSpanKind</code></td>
+              <td>Optional</td>
+              <td>Fallback <code>SpanKind</code> when no <code>&lt;span-kind-rule&gt;</code> matches (<code>Unspecified</code>, <code>Internal</code>, <code>Server</code>, <code>Client</code>, <code>Producer</code>, <code>Consumer</code>).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3 — Span-Kind Classification Rules
+         ==================================================================== -->
+    <section class="doc-section" id="span-kind-rules">
+      <h2><span class="sec-num">3</span>Span-Kind Classification Rules</h2>
+      <p class="doc-prose">
+        <code>&lt;span-kind-rule&gt;</code> children inspect raw log fields during transformation and assign OpenTelemetry
+        <code>SpanKind</code> values, driving bar colors and RPC semantics across all four views.
+        Toggle the rules below on the Card Settlement log dataset to watch spans reclassify in real time.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar">
+          <label class="ctrl-check">
+            <input type="checkbox" id="rule-server" checked>
+            <span><code>http-server</code> / <code>grpc-server</code> &rarr; Server</span>
+          </label>
+          <label class="ctrl-check">
+            <input type="checkbox" id="rule-client" checked>
+            <span><code>http-client</code> / <code>db-client</code> / <code>redis-client</code> &rarr; Client</span>
+          </label>
+          <label class="ctrl-check">
+            <input type="checkbox" id="rule-kafka" checked>
+            <span><code>kafka-producer</code> / <code>kafka-consumer</code> &rarr; Producer / Consumer</span>
+          </label>
+          <label class="ctrl-check">
+            <input type="checkbox" id="rule-multi" checked>
+            <span><code>{"component":"internal-worker","service.region":"us-east-1"}</code> &rarr; Internal</span>
+          </label>
+
+          <span class="wb-spacer"></span>
+
+          <div class="wb-group">
+            <label class="wb-label" for="rule-default-kind">default-span-kind</label>
+            <select class="ctrl-select" id="rule-default-kind">
+              <option value="Unspecified" selected>Unspecified</option>
+              <option value="Internal">Internal</option>
+              <option value="Server">Server</option>
+              <option value="Client">Client</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-rules" show-legend height="380">
+            <trace-view type="waterfall" active></trace-view>
+            <trace-view type="service"></trace-view>
+            <trace-view type="sequence"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML — Declarative &lt;span-kind-rule&gt; Children</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="rules-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4 — Headless Core Pipeline
+         ==================================================================== -->
+    <section class="doc-section" id="headless-core">
+      <h2><span class="sec-num">4</span>Headless Core Pipeline (<code>log2trace-ui/core</code>)</h2>
+      <p class="doc-prose">
+        Run log transformation, typed-array span indexing, or filter compilation inside a Web Worker, Node.js backend,
+        or CLI without any DOM dependency by importing from <code>log2trace-ui/core</code>.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar">
+          <div class="wb-group">
+            <label class="wb-label" for="core-input-select">Dataset</label>
+            <select class="ctrl-select" id="core-input-select">
+              <option value="fintech">fintech-logs.json (61 logs &rarr; 21 spans across 3 traces)</option>
+              <option value="ai">ai-search-trace.json (43 OTel spans &rarr; SpanIndex)</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn--primary" id="btn-run-core">Run Headless Pipeline</button>
+          <span class="wb-spacer"></span>
+          <span class="wb-readout" id="core-metrics-readout">Click Run to inspect output</span>
+        </div>
+
+        <div class="code-panel" style="border-top:0">
+          <div class="code-bar">
+            <div class="code-tabs" role="tablist">
+              <button type="button" class="is-active" id="core-tab-usage" role="tab" aria-selected="true">JavaScript Usage</button>
+              <button type="button" id="core-tab-output" role="tab" aria-selected="false">Generated TraceData JSON</button>
+            </div>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre" id="core-pre-usage"><code data-lang="javascript">import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';
+
+// 1. Convert structured JSON logs into standard OTLP TraceData
+const traceData = transformLogs(fintechLogs, {
+  traceIdField: 'trace.id',
+  spanGroupFields: ['service.name', 'operation'],
+  spanNameField: 'operation',
+  serviceNameField: 'service.name',
+  timestampField: 'ts',
+  statusCodeField: 'code',
+  parentSpanLookupFields: ['caller'],
+});
+
+// 2. Build the columnar typed-array SpanIndex for O(n) filtering &amp; projection
+const index = buildSpanIndex(traceData);
+console.log({ spans: index.size, roots: index.roots.length, services: index.table.services });</code></pre>
+          <pre class="code-pre" id="core-pre-output" hidden><code id="core-code-output" data-lang="javascript">// Click "Run Headless Pipeline" above to inspect the generated OTLP TraceData</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <nav class="page-pager" aria-label="Guide pagination">
+      <a class="pager-link pager-link--next" href="./views.html">
+        <span class="pager-dir">Next Chapter &rarr;</span>
+        <span class="pager-title">Views, Visual Setups &amp; Theming</span>
+      </a>
+    </nav>
+
+    <footer class="guide-footer">
+      <span>log2trace-ui Interactive Guide &middot; Built <time>__BUILD_DATE__</time></span>
+      <span>
+        <a href="./api/index.html">API Reference</a> &middot;
+        <a href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+      </span>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+  import { transformLogs, buildSpanIndex } from './dist/log2trace.min.js';
+  import {
+    initGuideShell,
+    setCodeBlock,
+    createEventConsole,
+    loadEdgeAuthTrace,
+    loadAiSearchTrace,
+    loadIncidentCascade,
+    loadFintechLogs,
+    FINTECH_LOG_CONFIG,
+    FINTECH_LOG_RULES,
+    INLINE_STARTER_TRACE,
+    syncVisualizerThemes,
+  } from './guide.js';
+
+  initGuideShell();
+
+  // ── Section 1: Native OTel Traces ─────────────────────────────────────────
+  {
+    const viz = document.getElementById('viz-otel');
+    const btnUrl = document.getElementById('otel-mode-url');
+    const btnProp = document.getElementById('otel-mode-prop');
+    const datasetSel = document.getElementById('otel-dataset-select');
+    const allViewsCb = document.getElementById('otel-all-views');
+    const legendCb = document.getElementById('otel-show-legend');
+    const statsEl = document.getElementById('otel-stats-readout');
+    const codeEl = document.getElementById('otel-code');
+    const codeLabel = document.getElementById('otel-code-label');
+
+    createEventConsole(document.getElementById('otel-event-console'), viz);
+
+    viz.addEventListener('trace-loaded', (e) => {
+      const svcs = viz.store.state.data.index.table.services.length;
+      statsEl.textContent = `${e.detail.spans} spans · ${svcs} services · ${e.detail.roots} root`;
+    });
+
+    const URL_MAP = {
+      edge: './data/edge-auth-trace.json',
+      ai: './data/ai-search-trace.json',
+      incident: './data/incident-cascade.json',
+    };
+
+    let deliveryMode = 'url';
+
+    async function updateOtelDemo() {
+      const ds = datasetSel.value;
+      if (ds === 'inline' && deliveryMode === 'url') deliveryMode = 'prop';
+
+      btnUrl.classList.toggle('is-active', deliveryMode === 'url');
+      btnUrl.setAttribute('aria-pressed', String(deliveryMode === 'url'));
+      btnProp.classList.toggle('is-active', deliveryMode === 'prop');
+      btnProp.setAttribute('aria-pressed', String(deliveryMode === 'prop'));
+
+      viz.toggleAttribute('show-legend', legendCb.checked);
+
+      for (const child of [...viz.querySelectorAll('trace-view')]) child.remove();
+      if (allViewsCb.checked) {
+        for (const [idx, type] of ['waterfall', 'flame', 'service', 'sequence'].entries()) {
+          const v = document.createElement('trace-view');
+          v.setAttribute('type', type);
+          if (idx === 0) v.setAttribute('active', '');
+          viz.appendChild(v);
+        }
+      }
+
+      if (deliveryMode === 'url' && URL_MAP[ds]) {
+        viz.removeAttribute('data-url');
+        viz.setAttribute('data-url', URL_MAP[ds]);
+      } else {
+        viz.removeAttribute('data-url');
+        const data = ds === 'edge'
+          ? await loadEdgeAuthTrace()
+          : ds === 'ai'
+            ? await loadAiSearchTrace()
+            : ds === 'incident'
+              ? await loadIncidentCascade()
+              : INLINE_STARTER_TRACE;
+        viz.traceData = data;
+      }
+
+      const viewsMarkup = allViewsCb.checked
+        ? `\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence"></trace-view>\n`
+        : '';
+      const legendAttr = legendCb.checked ? ' show-legend' : '';
+
+      if (deliveryMode === 'url' && URL_MAP[ds]) {
+        codeLabel.textContent = `HTML — Declarative OTel Trace (${URL_MAP[ds]})`;
+        setCodeBlock(
+          codeEl,
+          `<trace-visualizer data-url="${URL_MAP[ds]}"${legendAttr}>${viewsMarkup}</trace-visualizer>\n\n<script type="module" src="./dist/log2trace.min.js"><\/script>`,
+          'html',
+        );
+      } else {
+        codeLabel.textContent = 'JavaScript — Direct .traceData Property Assignment';
+        const dataExpr = URL_MAP[ds]
+          ? `await (await fetch('${URL_MAP[ds]}')).json()`
+          : JSON.stringify(INLINE_STARTER_TRACE, null, 2);
+        setCodeBlock(
+          codeEl,
+          `import 'log2trace-ui';\n\nconst el = document.querySelector('#viz-otel');\nel.traceData = ${dataExpr};`,
+          'javascript',
+        );
+      }
+    }
+
+    btnUrl.addEventListener('click', () => {
+      deliveryMode = 'url';
+      if (datasetSel.value === 'inline') datasetSel.value = 'edge';
+      void updateOtelDemo();
+    });
+    btnProp.addEventListener('click', () => {
+      deliveryMode = 'prop';
+      void updateOtelDemo();
+    });
+    datasetSel.addEventListener('change', () => void updateOtelDemo());
+    allViewsCb.addEventListener('change', () => void updateOtelDemo());
+    legendCb.addEventListener('change', () => void updateOtelDemo());
+
+    void updateOtelDemo();
+  }
+
+  // ── Section 2: Raw Logs to Traces (Fintech Settlement) ────────────────────
+  {
+    const viz = document.getElementById('viz-logs');
+    const btnAttr = document.getElementById('log-style-attr');
+    const btnJs = document.getElementById('log-style-js');
+    const groupCb = document.getElementById('log-opt-group');
+    const hierCb = document.getElementById('log-opt-hierarchy');
+    const statusCb = document.getElementById('log-opt-status');
+    const statsEl = document.getElementById('log-stats-readout');
+
+    const tabSetup = document.getElementById('log-tab-setup');
+    const tabSample = document.getElementById('log-tab-sample');
+    const preSetup = document.getElementById('log-pre-setup');
+    const preSample = document.getElementById('log-pre-sample');
+    const codeSetup = document.getElementById('log-code-setup');
+    const codeSample = document.getElementById('log-code-sample');
+
+    let styleMode = 'attr';
+    let loadedLogCount = 0;
+
+    viz.addEventListener('trace-loaded', (e) => {
+      statsEl.textContent = `${loadedLogCount} logs → ${e.detail.spans} spans (${e.detail.roots} root${e.detail.roots === 1 ? '' : 's'})`;
+    });
+
+    function switchLogCodeTab(which) {
+      const isSetup = which === 'setup';
+      tabSetup.classList.toggle('is-active', isSetup);
+      tabSetup.setAttribute('aria-selected', String(isSetup));
+      tabSample.classList.toggle('is-active', !isSetup);
+      tabSample.setAttribute('aria-selected', String(!isSetup));
+      preSetup.hidden = !isSetup;
+      preSample.hidden = isSetup;
+    }
+    tabSetup.addEventListener('click', () => switchLogCodeTab('setup'));
+    tabSample.addEventListener('click', () => switchLogCodeTab('sample'));
+
+    async function updateLogTransformDemo() {
+      const logs = await loadFintechLogs();
+      loadedLogCount = logs.length;
+
+      const cfg = {
+        traceIdField: FINTECH_LOG_CONFIG.traceIdField,
+        spanNameField: FINTECH_LOG_CONFIG.spanNameField,
+        serviceNameField: FINTECH_LOG_CONFIG.serviceNameField,
+        timestampField: FINTECH_LOG_CONFIG.timestampField,
+        ...(groupCb.checked ? { spanGroupFields: FINTECH_LOG_CONFIG.spanGroupFields } : {}),
+        ...(hierCb.checked && groupCb.checked ? { parentSpanLookupFields: FINTECH_LOG_CONFIG.parentSpanLookupFields } : {}),
+        ...(statusCb.checked ? { statusCodeField: FINTECH_LOG_CONFIG.statusCodeField } : {}),
+        spanKindRules: FINTECH_LOG_RULES,
+      };
+
+      viz.logData = { logs, config: cfg };
+      setCodeBlock(codeSample, JSON.stringify(logs[0], null, 2), 'javascript');
+
+      if (styleMode === 'attr') {
+        const attrs = [
+          `  data-url="./data/fintech-logs.json"`,
+          `  trace-id-field="${cfg.traceIdField}"`,
+          ...(cfg.spanGroupFields ? [`  span-group-fields="${cfg.spanGroupFields.join(',')}"`] : []),
+          `  span-name-field="${cfg.spanNameField}"`,
+          `  service-name-field="${cfg.serviceNameField}"`,
+          `  timestamp-field="${cfg.timestampField}"`,
+          ...(cfg.statusCodeField ? [`  status-code-field="${cfg.statusCodeField}"`] : []),
+          ...(cfg.parentSpanLookupFields ? [`  parent-span-lookup-fields="${cfg.parentSpanLookupFields.join(',')}"`] : []),
+          `  show-legend`,
+        ];
+        setCodeBlock(
+          codeSetup,
+          `<trace-visualizer\n${attrs.join('\n')}\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence"></trace-view>\n  <span-kind-rule kind="Server" match-field="component" match-value="http-server"></span-kind-rule>\n  <span-kind-rule kind="Client" match-field="component" match-value="http-client"></span-kind-rule>\n  <span-kind-rule kind="Producer" match-field="component" match-value="kafka-producer"></span-kind-rule>\n</trace-visualizer>`,
+          'html',
+        );
+      } else {
+        const previewCfg = { ...cfg, spanKindRules: FINTECH_LOG_RULES.slice(0, 3) };
+        setCodeBlock(
+          codeSetup,
+          `const el = document.querySelector('#viz-logs');\n\nel.logData = {\n  logs: await (await fetch('./data/fintech-logs.json')).json(),\n  config: ${JSON.stringify(previewCfg, null, 2).replace(/\n/g, '\n  ')},\n};`,
+          'javascript',
+        );
+      }
+    }
+
+    btnAttr.addEventListener('click', () => {
+      styleMode = 'attr';
+      btnAttr.classList.add('is-active');
+      btnAttr.setAttribute('aria-pressed', 'true');
+      btnJs.classList.remove('is-active');
+      btnJs.setAttribute('aria-pressed', 'false');
+      void updateLogTransformDemo();
+    });
+    btnJs.addEventListener('click', () => {
+      styleMode = 'js';
+      btnJs.classList.add('is-active');
+      btnJs.setAttribute('aria-pressed', 'true');
+      btnAttr.classList.remove('is-active');
+      btnAttr.setAttribute('aria-pressed', 'false');
+      void updateLogTransformDemo();
+    });
+    for (const ctrl of [groupCb, hierCb, statusCb]) {
+      ctrl.addEventListener('change', () => {
+        hierCb.disabled = !groupCb.checked;
+        void updateLogTransformDemo();
+      });
+    }
+
+    void updateLogTransformDemo();
+  }
+
+  // ── Section 3: Span-Kind Classification Rules ────────────────────────────
+  {
+    const viz = document.getElementById('viz-rules');
+    const cbServer = document.getElementById('rule-server');
+    const cbClient = document.getElementById('rule-client');
+    const cbKafka = document.getElementById('rule-kafka');
+    const cbMulti = document.getElementById('rule-multi');
+    const defaultSel = document.getElementById('rule-default-kind');
+    const codeEl = document.getElementById('rules-code');
+
+    async function updateRulesDemo() {
+      const logs = await loadFintechLogs();
+      const rules = [];
+      const htmlLines = [];
+
+      if (cbServer.checked) {
+        rules.push({ match: { component: 'http-server' }, kind: 'Server' });
+        rules.push({ match: { component: 'grpc-server' }, kind: 'Server' });
+        htmlLines.push(
+          `  <span-kind-rule kind="Server" match-field="component" match-value="http-server"></span-kind-rule>`,
+          `  <span-kind-rule kind="Server" match-field="component" match-value="grpc-server"></span-kind-rule>`,
+        );
+      }
+      if (cbClient.checked) {
+        rules.push({ match: { component: 'http-client' }, kind: 'Client' });
+        rules.push({ match: { component: 'db-client' }, kind: 'Client' });
+        rules.push({ match: { component: 'redis-client' }, kind: 'Client' });
+        htmlLines.push(
+          `  <span-kind-rule kind="Client" match-field="component" match-value="http-client"></span-kind-rule>`,
+          `  <span-kind-rule kind="Client" match-field="component" match-value="db-client"></span-kind-rule>`,
+          `  <span-kind-rule kind="Client" match-field="component" match-value="redis-client"></span-kind-rule>`,
+        );
+      }
+      if (cbKafka.checked) {
+        rules.push({ match: { component: 'kafka-producer' }, kind: 'Producer' });
+        rules.push({ match: { component: 'kafka-consumer' }, kind: 'Consumer' });
+        htmlLines.push(
+          `  <span-kind-rule kind="Producer" match-field="component" match-value="kafka-producer"></span-kind-rule>`,
+          `  <span-kind-rule kind="Consumer" match-field="component" match-value="kafka-consumer"></span-kind-rule>`,
+        );
+      }
+      if (cbMulti.checked) {
+        rules.push({ match: { component: 'internal-worker', 'service.region': 'us-east-1' }, kind: 'Internal' });
+        htmlLines.push(
+          `  <!-- Multi-field AND rule -->`,
+          `  <span-kind-rule kind="Internal" match='{"component":"internal-worker","service.region":"us-east-1"}'></span-kind-rule>`,
+        );
+      }
+
+      const defaultKind = defaultSel.value;
+      viz.setAttribute('default-span-kind', defaultKind);
+      viz.logData = {
+        logs,
+        config: {
+          ...FINTECH_LOG_CONFIG,
+          defaultSpanKind: defaultKind,
+          spanKindRules: rules,
+        },
+      };
+
+      setCodeBlock(
+        codeEl,
+        `<trace-visualizer data-url="./data/fintech-logs.json" show-legend default-span-kind="${defaultKind}">\n${htmlLines.join('\n') || '  <!-- All rules disabled: spans inherit default-span-kind -->'}\n</trace-visualizer>`,
+        'html',
+      );
+    }
+
+    for (const el of [cbServer, cbClient, cbKafka, cbMulti, defaultSel]) {
+      el.addEventListener('change', () => void updateRulesDemo());
+    }
+    void updateRulesDemo();
+  }
+
+  // ── Section 4: Headless Core Pipeline ────────────────────────────────────
+  {
+    const sel = document.getElementById('core-input-select');
+    const runBtn = document.getElementById('btn-run-core');
+    const metricsEl = document.getElementById('core-metrics-readout');
+    const tabUsage = document.getElementById('core-tab-usage');
+    const tabOutput = document.getElementById('core-tab-output');
+    const preUsage = document.getElementById('core-pre-usage');
+    const preOutput = document.getElementById('core-pre-output');
+    const codeOutput = document.getElementById('core-code-output');
+
+    function showCoreTab(which) {
+      const isUsage = which === 'usage';
+      tabUsage.classList.toggle('is-active', isUsage);
+      tabUsage.setAttribute('aria-selected', String(isUsage));
+      tabOutput.classList.toggle('is-active', !isUsage);
+      tabOutput.setAttribute('aria-selected', String(!isUsage));
+      preUsage.hidden = !isUsage;
+      preOutput.hidden = isUsage;
+    }
+
+    tabUsage.addEventListener('click', () => showCoreTab('usage'));
+    tabOutput.addEventListener('click', () => showCoreTab('output'));
+
+    runBtn.addEventListener('click', async () => {
+      let traceData;
+      let transformMs = 0;
+      if (sel.value === 'fintech') {
+        const logs = await loadFintechLogs();
+        const t0 = performance.now();
+        traceData = transformLogs(logs, FINTECH_LOG_CONFIG);
+        transformMs = performance.now() - t0;
+      } else {
+        traceData = await loadAiSearchTrace();
+      }
+      const t1 = performance.now();
+      const index = buildSpanIndex(traceData);
+      const indexMs = performance.now() - t1;
+
+      metricsEl.textContent = sel.value === 'fintech'
+        ? `transform: ${transformMs.toFixed(2)} ms · index: ${indexMs.toFixed(2)} ms · ${index.size} spans / ${index.table.services.length} services`
+        : `index: ${indexMs.toFixed(2)} ms · ${index.size} spans / ${index.table.services.length} services`;
+
+      const jsonText = JSON.stringify(traceData, null, 2);
+      const preview = jsonText.length > 6000
+        ? `${jsonText.slice(0, 6000)}\n// … truncated (${jsonText.length.toLocaleString()} bytes total)`
+        : jsonText;
+      setCodeBlock(codeOutput, preview, 'javascript');
+      showCoreTab('output');
+    });
+  }
+
+  syncVisualizerThemes();
+</script>
+</body>
+</html>

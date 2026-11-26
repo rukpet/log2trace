@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>log2trace-ui — Setup Playground &amp; 50K Scale Lab</title>
+  <meta name="description" content="Interactive setup configurator and scale lab for log2trace-ui: switch visual and data-complexity presets, test Edge Auth, Fintech Logs, AI Hybrid RAG, Incident Cascade, custom JSON uploads, or 50,000 spans, and export HTML/JS code.">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    (() => {
+      try {
+        const pref = localStorage.getItem('l2t-guide-theme') || 'auto';
+        const dark = pref === 'dark' || (pref === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.pageTheme = dark ? 'dark' : 'light';
+      } catch {}
+    })();
+  </script>
+  <link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div style="display:flex;align-items:center;gap:0.6rem">
+      <a class="brand" href="./index.html">
+        <img src="./favicon.svg" alt="">
+        <span>log2trace-ui</span>
+        <span class="brand-tag">Guide</span>
+      </a>
+    </div>
+
+    <nav class="page-nav" aria-label="Guide sections">
+      <a href="./index.html">Getting Started &amp; Data</a>
+      <a href="./views.html">Views &amp; Theming</a>
+      <a href="./filtering.html">Filtering &amp; Sources</a>
+      <a href="./api.html">Events &amp; API</a>
+      <a href="./playground.html" aria-current="page">Setup Playground</a>
+    </nav>
+
+    <div class="topbar-actions">
+      <div class="theme-Segment" role="group" aria-label="Page theme">
+        <button type="button" data-theme-btn="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+      </div>
+      <a class="topbar-link topbar-link--hide-sm" href="./api/index.html">API Docs</a>
+      <a class="topbar-link topbar-link--hide-sm" href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<div class="guide-shell guide-shell--wide">
+  <main class="guide-main">
+    <div class="doc-header" style="margin-bottom:1.15rem;padding-bottom:1rem">
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0.75rem">
+        <div>
+          <div class="doc-eyebrow">Chapter 05 &middot; Interactive Sandbox</div>
+          <h1>Setup Playground &amp; Scale Lab</h1>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button type="button" class="btn btn--sm" id="pg-copy-url">Copy Shareable URL</button>
+          <button type="button" class="btn btn--sm" id="pg-reset-all">Reset Defaults</button>
+        </div>
+      </div>
+      <p class="doc-lead" style="margin-top:0.4rem;font-size:0.93rem">
+        Start from a visual &amp; data-complexity preset below or customize every attribute, child carrier, view option, filter, and JSON source — then copy ready-to-embed HTML &amp; JavaScript.
+      </p>
+
+      <!-- One-click Visual & Complexity Setup Presets -->
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;margin-top:0.85rem">
+        <span class="wb-label" style="margin-right:0.2rem">Setup Presets:</span>
+        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite">AI RAG 4-View Suite</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="fintech-logs">Fintech Logs + Rules</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="compact-starter">Compact Embedded Card</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="noc-incident">NOC Dark Incident Room</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="editorial">Spacious Editorial</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="scale-50k">50,000 Spans Stress Test</button>
+      </div>
+    </div>
+
+    <div class="pg-layout">
+      <!-- ================================================================
+           LEFT CONFIGURATION RAIL
+           ================================================================ -->
+      <aside class="pg-sidebar" aria-label="Playground configuration">
+
+        <!-- 1. Data Source & Scale -->
+        <details class="pg-group" open>
+          <summary>1. Dataset &amp; Scale Generator</summary>
+          <div class="pg-group-body">
+            <div class="pg-field">
+              <label for="pg-source">Data Source</label>
+              <select class="ctrl-select" id="pg-source">
+                <option value="ai" selected>Tier 3: AI Hybrid RAG (43 spans, 9 services)</option>
+                <option value="fintech">Tier 2: Fintech Logs (61 raw logs &rarr; 21 spans)</option>
+                <option value="edge">Tier 1: Edge Session Auth (14 spans, 4 services)</option>
+                <option value="incident">Tier 4: Warehouse Retry Storm (19 spans, errors)</option>
+                <option value="synthetic">Tier 5: Synthetic Scale (250 – 50,000 spans)</option>
+                <option value="custom">Custom JSON (Upload File or Paste)</option>
+              </select>
+            </div>
+
+            <!-- Synthetic generator options -->
+            <div id="pg-synthetic-panel" class="pg-subpanel" hidden>
+              <div class="pg-grid-2">
+                <div class="pg-field">
+                  <label for="pg-syn-n">Spans (n)</label>
+                  <select class="ctrl-select" id="pg-syn-n">
+                    <option value="250">250</option>
+                    <option value="1000">1,000</option>
+                    <option value="5000">5,000</option>
+                    <option value="10000" selected>10,000</option>
+                    <option value="25000">25,000</option>
+                    <option value="50000">50,000</option>
+                  </select>
+                </div>
+                <div class="pg-field">
+                  <label for="pg-syn-seed">RNG Seed</label>
+                  <input type="number" class="ctrl-input" id="pg-syn-seed" value="1" min="1" max="9999">
+                </div>
+              </div>
+              <div class="pg-grid-2">
+                <div class="pg-field">
+                  <label for="pg-syn-ev">Events / Span</label>
+                  <select class="ctrl-select" id="pg-syn-ev">
+                    <option value="0">0 events</option>
+                    <option value="2" selected>~2 events</option>
+                    <option value="5">~5 events</option>
+                  </select>
+                </div>
+                <div class="pg-field">
+                  <label for="pg-syn-mode">Shape</label>
+                  <select class="ctrl-select" id="pg-syn-mode">
+                    <option value="tree" selected>Deep Tree (OTel)</option>
+                    <option value="flat">Flat Logs &rarr; Transform</option>
+                  </select>
+                </div>
+              </div>
+              <label class="ctrl-check">
+                <input type="checkbox" id="pg-syn-ns" checked>
+                <span>Nanosecond precision timestamps</span>
+              </label>
+              <button type="button" class="btn btn--primary btn--sm" id="pg-syn-regen">Generate &amp; Mount</button>
+            </div>
+
+            <!-- Custom JSON upload / paste panel -->
+            <div id="pg-custom-panel" class="pg-subpanel" hidden>
+              <label class="dropzone" id="pg-dropzone" for="pg-file-input">
+                Drop a <code>.json</code> file here or <strong>click to browse</strong><br>
+                <span style="font-size:0.72rem;color:var(--g-text-muted)">Accepts OTLP <code>{ resourceSpans }</code> or raw <code>[...]</code> log arrays</span>
+              </label>
+              <input type="file" id="pg-file-input" accept=".json,application/json" hidden>
+              <textarea class="ctrl-textarea" id="pg-custom-json" rows="5" placeholder='Paste OTLP JSON {"resourceSpans":[...]} or raw log array [{"traceId":"...","service":"..."}]'></textarea>
+              <button type="button" class="btn btn--primary btn--sm" id="pg-custom-apply">Parse &amp; Render JSON</button>
+              <div id="pg-custom-msg" style="font-size:0.75rem;color:var(--g-text-muted)"></div>
+            </div>
+
+            <!-- Log transform field mapping editor (shown for fintech-logs.json & custom log arrays) -->
+            <div id="pg-transform-panel" class="pg-subpanel" hidden style="padding-top:0.4rem;border-top:1px solid var(--g-border-subtle)">
+              <div style="font-size:0.74rem;font-weight:700;color:var(--g-text-muted);text-transform:uppercase;letter-spacing:0.05em">Log Field Mapping</div>
+              <datalist id="pg-log-fields-list"></datalist>
+              <div class="pg-grid-2">
+                <div class="pg-field">
+                  <label for="pg-tf-trace">trace-id-field</label>
+                  <input type="text" class="ctrl-input" id="pg-tf-trace" list="pg-log-fields-list" value="trace.id">
+                </div>
+                <div class="pg-field">
+                  <label for="pg-tf-name">span-name-field</label>
+                  <input type="text" class="ctrl-input" id="pg-tf-name" list="pg-log-fields-list" value="operation">
+                </div>
+              </div>
+              <div class="pg-grid-2">
+                <div class="pg-field">
+                  <label for="pg-tf-svc">service-name-field</label>
+                  <input type="text" class="ctrl-input" id="pg-tf-svc" list="pg-log-fields-list" value="service.name">
+                </div>
+                <div class="pg-field">
+                  <label for="pg-tf-ts">timestamp-field</label>
+                  <input type="text" class="ctrl-input" id="pg-tf-ts" list="pg-log-fields-list" value="ts">
+                </div>
+              </div>
+              <div class="pg-field">
+                <label for="pg-tf-group">span-group-fields (CSV)</label>
+                <input type="text" class="ctrl-input" id="pg-tf-group" value="service.name,operation">
+              </div>
+              <div class="pg-grid-2">
+                <div class="pg-field">
+                  <label for="pg-tf-parent">parent-span-lookup</label>
+                  <input type="text" class="ctrl-input" id="pg-tf-parent" list="pg-log-fields-list" value="caller">
+                </div>
+                <div class="pg-field">
+                  <label for="pg-tf-status">status-code-field</label>
+                  <input type="text" class="ctrl-input" id="pg-tf-status" list="pg-log-fields-list" value="code">
+                </div>
+              </div>
+              <div class="pg-grid-2">
+                <div class="pg-field">
+                  <label for="pg-tf-end">end-time-field</label>
+                  <input type="text" class="ctrl-input" id="pg-tf-end" list="pg-log-fields-list" placeholder="(optional)">
+                </div>
+                <div class="pg-field">
+                  <label for="pg-tf-defkind">default-span-kind</label>
+                  <select class="ctrl-select" id="pg-tf-defkind">
+                    <option value="">Unspecified</option>
+                    <option value="Internal">Internal</option>
+                    <option value="Server">Server</option>
+                    <option value="Client">Client</option>
+                  </select>
+                </div>
+              </div>
+              <label class="ctrl-check" id="pg-preset-rules-wrap">
+                <input type="checkbox" id="pg-tf-rules" checked>
+                <span>Apply 8 preset <code>&lt;span-kind-rule&gt;</code>s</span>
+              </label>
+              <button type="button" class="btn btn--sm" id="pg-tf-apply">Re-run Transform</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- 2. Views & Per-View Options -->
+        <details class="pg-group" open>
+          <summary>2. Views &amp; Per-View Options</summary>
+          <div class="pg-group-body">
+            <div style="display:flex;flex-wrap:wrap;gap:0.45rem 0.85rem">
+              <label class="ctrl-check"><input type="checkbox" data-pg-view="waterfall" checked><span>Waterfall</span></label>
+              <label class="ctrl-check"><input type="checkbox" data-pg-view="flame" checked><span>Flame</span></label>
+              <label class="ctrl-check"><input type="checkbox" data-pg-view="service" checked><span>Service</span></label>
+              <label class="ctrl-check"><input type="checkbox" data-pg-view="sequence" checked><span>Sequence</span></label>
+            </div>
+
+            <div class="pg-grid-2">
+              <div class="pg-field">
+                <label for="pg-span-h">span-height (px)</label>
+                <input type="number" class="ctrl-input" id="pg-span-h" value="28" min="16" max="52">
+              </div>
+              <div class="pg-field">
+                <label for="pg-span-pad">span-padding (px)</label>
+                <input type="number" class="ctrl-input" id="pg-span-pad" value="4" min="0" max="16">
+              </div>
+            </div>
+
+            <div class="pg-grid-2">
+              <div class="pg-field">
+                <label for="pg-gutter">gutter-width (px)</label>
+                <input type="number" class="ctrl-input" id="pg-gutter" value="230" min="120" max="420" step="10">
+              </div>
+              <div class="pg-field">
+                <label for="pg-seq-fold">sequence fold</label>
+                <select class="ctrl-select" id="pg-seq-fold">
+                  <option value="3" selected>3 (default)</option>
+                  <option value="2">2</option>
+                  <option value="0">0 (off)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="pg-grid-2">
+              <div class="pg-field">
+                <label for="pg-seq-internal">sequence internal</label>
+                <select class="ctrl-select" id="pg-seq-internal">
+                  <option value="auto" selected>auto</option>
+                  <option value="show">show</option>
+                  <option value="hide">hide</option>
+                </select>
+              </div>
+              <div class="pg-field">
+                <label for="pg-seq-returns">sequence returns</label>
+                <select class="ctrl-select" id="pg-seq-returns">
+                  <option value="all" selected>all</option>
+                  <option value="errors">errors</option>
+                  <option value="none">none</option>
+                </select>
+              </div>
+            </div>
+
+            <label class="ctrl-check">
+              <input type="checkbox" id="pg-wheel-zoom">
+              <span>Plain <code>wheel-zoom</code> (without Ctrl/&#8984;)</span>
+            </label>
+          </div>
+        </details>
+
+        <!-- 3. Filters -->
+        <details class="pg-group" open>
+          <summary>3. Filter Bar Builder</summary>
+          <div class="pg-group-body">
+            <label class="ctrl-check"><input type="checkbox" id="pg-f-wild" checked><span>Wildcard search (<code>field="*"</code>)</span></label>
+            <label class="ctrl-check"><input type="checkbox" id="pg-f-op"><span>Operation text (<code>spanName</code>)</span></label>
+            <label class="ctrl-check"><input type="checkbox" id="pg-f-svc" checked><span>Service dropdown (<code>auto</code>)</span></label>
+            <label class="ctrl-check"><input type="checkbox" id="pg-f-multi"><span>Services multiselect (<code>auto</code>)</span></label>
+            <label class="ctrl-check"><input type="checkbox" id="pg-f-err" checked><span>Errors Only checkbox (<code>hasError</code>)</span></label>
+            <label class="ctrl-check"><input type="checkbox" id="pg-f-time"><span>Datetime range (<code>auto-range</code>)</span></label>
+
+            <div style="padding-top:0.4rem;border-top:1px solid var(--g-border-subtle)">
+              <div style="font-size:0.74rem;font-weight:600;color:var(--g-text-secondary);margin-bottom:0.35rem">Custom Field Filter</div>
+              <div class="pg-grid-2">
+                <input type="text" class="ctrl-input" id="pg-cf-field" list="pg-log-fields-list" placeholder="e.g. service.region">
+                <select class="ctrl-select" id="pg-cf-target">
+                  <option value="span">target="span"</option>
+                  <option value="log" selected>target="log"</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- 4. Display, Theme & Colors -->
+        <details class="pg-group">
+          <summary>4. Display, Theme &amp; Kind Colors</summary>
+          <div class="pg-group-body">
+            <div class="pg-grid-2">
+              <div class="pg-field">
+                <label for="pg-theme">Element theme</label>
+                <select class="ctrl-select" id="pg-theme">
+                  <option value="" selected>(follow page)</option>
+                  <option value="light">light</option>
+                  <option value="dark">dark</option>
+                </select>
+              </div>
+              <div class="pg-field">
+                <label for="pg-height">Height (px)</label>
+                <input type="number" class="ctrl-input" id="pg-height" value="520" min="240" max="900" step="20">
+              </div>
+            </div>
+
+            <div class="pg-field">
+              <label for="pg-detail-w">detail-panel-width</label>
+              <select class="ctrl-select" id="pg-detail-w">
+                <option value="34%">34%</option>
+                <option value="40%" selected>40%</option>
+                <option value="48%">48%</option>
+              </select>
+            </div>
+
+            <label class="ctrl-check">
+              <input type="checkbox" id="pg-legend" checked>
+              <span><code>show-legend</code></span>
+            </label>
+
+            <label class="ctrl-check">
+              <input type="checkbox" id="pg-custom-colors">
+              <span>Override <code>kind-colors</code></span>
+            </label>
+
+            <div id="pg-colors-grid" class="pg-color-row" hidden>
+              <label class="ctrl-color"><span>Server</span><input type="color" id="pg-kc-server" value="#34d399"></label>
+              <label class="ctrl-color"><span>Client</span><input type="color" id="pg-kc-client" value="#fbbf24"></label>
+              <label class="ctrl-color"><span>Internal</span><input type="color" id="pg-kc-internal" value="#60a5fa"></label>
+              <label class="ctrl-color"><span>Producer</span><input type="color" id="pg-kc-producer" value="#22d3ee"></label>
+              <label class="ctrl-color"><span>Consumer</span><input type="color" id="pg-kc-consumer" value="#fb7185"></label>
+            </div>
+          </div>
+        </details>
+
+      </aside>
+
+      <!-- ================================================================
+           MAIN STAGE & INSPECTOR
+           ================================================================ -->
+      <div class="pg-main">
+        <div class="workbench" style="margin:0">
+          <div class="wb-toolbar wb-toolbar--dense">
+            <div class="wb-group">
+              <span class="wb-label">Actions:</span>
+              <button type="button" class="btn btn--sm" id="pg-act-expand">expandAll()</button>
+              <button type="button" class="btn btn--sm" id="pg-act-collapse">collapseAll()</button>
+              <button type="button" class="btn btn--sm" id="pg-act-win50" title="Scope all views to middle 50% of trace duration">Window Middle 50%</button>
+              <button type="button" class="btn btn--sm" id="pg-act-winclear">Full Window</button>
+            </div>
+            <span class="wb-spacer"></span>
+            <span class="wb-readout" id="pg-perf-badge">Ready</span>
+          </div>
+
+          <div class="wb-stage">
+            <trace-visualizer id="viz-playground" show-legend height="520" span-height="28" span-padding="4" gutter-width="230" detail-panel-width="40%">
+              <trace-view type="waterfall" active></trace-view>
+              <trace-view type="flame"></trace-view>
+              <trace-view type="service"></trace-view>
+              <trace-view type="sequence" fold="3"></trace-view>
+            </trace-visualizer>
+          </div>
+
+          <div class="metrics-strip" id="pg-metrics-strip">
+            <span>Spans: <strong id="pgm-spans">—</strong></span>
+            <span>Roots: <strong id="pgm-roots">—</strong></span>
+            <span>Services: <strong id="pgm-services">—</strong></span>
+            <span>Events: <strong id="pgm-events">—</strong></span>
+            <span>Duration: <strong id="pgm-dur">—</strong></span>
+            <span>Load + Index: <strong id="pgm-load">—</strong></span>
+          </div>
+        </div>
+
+        <!-- Bottom Tabbed Inspector: Generated Code vs Live Event Console -->
+        <div class="code-panel" style="margin:0">
+          <div class="code-bar">
+            <div class="code-tabs" role="tablist">
+              <button type="button" class="is-active" id="pg-tab-html" role="tab" aria-selected="true">Generated HTML</button>
+              <button type="button" id="pg-tab-js" role="tab" aria-selected="false">Generated JavaScript</button>
+              <button type="button" id="pg-tab-events" role="tab" aria-selected="false">Live Event Console</button>
+            </div>
+            <button type="button" class="copy-btn" id="pg-copy-code">Copy</button>
+          </div>
+          <pre class="code-pre" id="pg-pre-html"><code id="pg-code-html" data-lang="html"></code></pre>
+          <pre class="code-pre" id="pg-pre-js" hidden><code id="pg-code-js" data-lang="javascript"></code></pre>
+          <div id="pg-events-wrap" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="page-pager" aria-label="Guide pagination">
+      <a class="pager-link" href="./api.html">
+        <span class="pager-dir">&larr; Previous Chapter</span>
+        <span class="pager-title">Events, Programmatic API &amp; States</span>
+      </a>
+      <a class="pager-link pager-link--next" href="./index.html">
+        <span class="pager-dir">Back to Start &uarr;</span>
+        <span class="pager-title">Getting Started &amp; Data Transformation</span>
+      </a>
+    </nav>
+
+    <footer class="guide-footer">
+      <span>log2trace-ui Interactive Guide &middot; Built <time>__BUILD_DATE__</time></span>
+      <span>
+        <a href="./api/index.html">API Reference</a> &middot;
+        <a href="https://github.com/rukpet/log2trace" target="_blank" rel="noopener">GitHub</a>
+      </span>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+  import { formatDuration } from './dist/log2trace.min.js';
+  import { generateTrace, generateFlatLogs, FLAT_TRANSFORM_CONFIG } from './perf-gen.js';
+  import {
+    initGuideShell,
+    setCodeBlock,
+    createEventConsole,
+    loadEdgeAuthTrace,
+    loadAiSearchTrace,
+    loadIncidentCascade,
+    loadFintechLogs,
+    FINTECH_LOG_CONFIG,
+    FINTECH_LOG_RULES,
+    syncVisualizerThemes,
+  } from './guide.js';
+
+  initGuideShell();
+
+  const $ = (id) => document.getElementById(id);
+  const viz = $('viz-playground');
+  const evConsole = createEventConsole($('pg-events-wrap'), viz, { maxEntries: 120 });
+
+  // Inspector tabs
+  {
+    const tabs = {
+      html: { btn: $('pg-tab-html'), pane: $('pg-pre-html') },
+      js: { btn: $('pg-tab-js'), pane: $('pg-pre-js') },
+      events: { btn: $('pg-tab-events'), pane: $('pg-events-wrap') },
+    };
+    const copyBtn = $('pg-copy-code');
+    for (const [key, item] of Object.entries(tabs)) {
+      item.btn.addEventListener('click', () => {
+        for (const [k, other] of Object.entries(tabs)) {
+          const active = k === key;
+          other.btn.classList.toggle('is-active', active);
+          other.btn.setAttribute('aria-selected', String(active));
+          other.pane.hidden = !active;
+        }
+        copyBtn.hidden = key === 'events';
+      });
+    }
+  }
+
+  function collectDotPaths(records, maxDepth = 3) {
+    const paths = new Set();
+    const walk = (obj, prefix, depth) => {
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj) || depth > maxDepth) return;
+      for (const [k, v] of Object.entries(obj)) {
+        const next = prefix ? `${prefix}.${k}` : k;
+        if (v !== null && typeof v === 'object' && !Array.isArray(v)) walk(v, next, depth + 1);
+        else paths.add(next);
+      }
+    };
+    for (const rec of records.slice(0, 20)) walk(rec, '', 1);
+    return [...paths];
+  }
+
+  function populateFieldSuggestions(records) {
+    const list = $('pg-log-fields-list');
+    list.replaceChildren();
+    for (const p of collectDotPaths(records)) {
+      const opt = document.createElement('option');
+      opt.value = p;
+      list.appendChild(opt);
+    }
+  }
+
+  function guessLogMapping(records) {
+    const paths = collectDotPaths(records);
+    const find = (re) => paths.find((p) => re.test(p.split('.').pop())) || '';
+    const traceId = find(/^(trace_?id|request_?id|correlation_?id|id)$/i) || paths[0] || 'traceId';
+    const spanName = find(/^(operation|action|span_?name|name|method|route)$/i) || paths[1] || 'operation';
+    const svc = find(/^(service|service_?name|application|app|component)$/i) || paths[0] || 'service';
+    const ts = find(/^(@?timestamp|ts|time|created?_?at|date)$/i) || 'ts';
+    const end = find(/^(end_?time|end_?timestamp|finished_?at)$/i);
+    const status = find(/^(code|status_?code|error_?code|status)$/i);
+    const parent = find(/^(caller|parent_?service|initiating_?application)$/i);
+
+    $('pg-tf-trace').value = traceId;
+    $('pg-tf-name').value = spanName;
+    $('pg-tf-svc').value = svc;
+    $('pg-tf-ts').value = ts;
+    $('pg-tf-group').value = svc && spanName ? `${svc},${spanName}` : '';
+    $('pg-tf-parent').value = parent;
+    $('pg-tf-status').value = status;
+    $('pg-tf-end').value = end;
+    $('pg-tf-rules').checked = false;
+  }
+
+  let customParsedPayload = null;
+  let customPayloadKind = null; // 'otel' | 'logs'
+  let customCssVars = null; // optional { bg, surface, accent } from visual preset
+
+  function readTransformConfigFromInputs() {
+    const csv = (v) => v.split(',').map((s) => s.trim()).filter(Boolean);
+    const cfg = {
+      traceIdField: $('pg-tf-trace').value.trim() || 'trace.id',
+      spanNameField: $('pg-tf-name').value.trim() || 'operation',
+      serviceNameField: $('pg-tf-svc').value.trim() || 'service.name',
+      timestampField: $('pg-tf-ts').value.trim() || 'ts',
+    };
+    const group = csv($('pg-tf-group').value);
+    if (group.length) cfg.spanGroupFields = group;
+    const parent = csv($('pg-tf-parent').value);
+    if (parent.length) cfg.parentSpanLookupFields = parent;
+    const status = $('pg-tf-status').value.trim();
+    if (status) cfg.statusCodeField = status;
+    const end = $('pg-tf-end').value.trim();
+    if (end) cfg.endTimeField = end;
+    const defKind = $('pg-tf-defkind').value;
+    if (defKind) cfg.defaultSpanKind = defKind;
+    if ($('pg-source').value === 'fintech' && $('pg-tf-rules').checked) {
+      cfg.spanKindRules = FINTECH_LOG_RULES;
+    }
+    return cfg;
+  }
+
+  function updateMetricsStrip(loadMs, genMs = null) {
+    const { index } = viz.store.state.data;
+    const { table } = index;
+    const totalEvents = table.evOff.length > 0 ? table.evOff[table.length] : 0;
+    $('pgm-spans').textContent = index.size.toLocaleString();
+    $('pgm-roots').textContent = index.roots.length.toLocaleString();
+    $('pgm-services').textContent = table.services.length.toLocaleString();
+    $('pgm-events').textContent = totalEvents.toLocaleString();
+    $('pgm-dur').textContent = formatDuration(table.extentMs);
+    $('pgm-load').textContent = genMs !== null
+      ? `gen ${genMs.toFixed(0)} ms · load ${loadMs.toFixed(1)} ms`
+      : `${loadMs.toFixed(1)} ms`;
+    $('pg-perf-badge').textContent = genMs !== null
+      ? `${index.size.toLocaleString()} spans · gen ${genMs.toFixed(0)} ms · load ${loadMs.toFixed(0)} ms`
+      : `${index.size.toLocaleString()} spans loaded in ${loadMs.toFixed(1)} ms`;
+  }
+
+  function syncShellAndCarriers() {
+    const explicitTheme = $('pg-theme').value;
+    if (explicitTheme) {
+      viz.setAttribute('data-pin-theme', 'true');
+      viz.setAttribute('theme', explicitTheme);
+    } else {
+      viz.removeAttribute('data-pin-theme');
+      viz.removeAttribute('theme');
+      syncVisualizerThemes();
+    }
+
+    if (customCssVars) {
+      viz.style.setProperty('--l2t-color-background', customCssVars.bg);
+      viz.style.setProperty('--l2t-color-surface', customCssVars.surface);
+      viz.style.setProperty('--l2t-color-accent', customCssVars.accent);
+    } else {
+      viz.style.removeProperty('--l2t-color-background');
+      viz.style.removeProperty('--l2t-color-surface');
+      viz.style.removeProperty('--l2t-color-accent');
+    }
+
+    viz.setAttribute('height', $('pg-height').value || '520');
+    viz.setAttribute('span-height', $('pg-span-h').value || '28');
+    viz.setAttribute('span-padding', $('pg-span-pad').value || '4');
+    viz.setAttribute('gutter-width', $('pg-gutter').value || '230');
+    viz.setAttribute('detail-panel-width', $('pg-detail-w').value);
+    viz.toggleAttribute('show-legend', $('pg-legend').checked);
+    viz.toggleAttribute('wheel-zoom', $('pg-wheel-zoom').checked);
+
+    const customColorsOn = $('pg-custom-colors').checked;
+    $('pg-colors-grid').hidden = !customColorsOn;
+    if (customColorsOn) {
+      viz.setAttribute('kind-colors', JSON.stringify({
+        Server: $('pg-kc-server').value,
+        Client: $('pg-kc-client').value,
+        Internal: $('pg-kc-internal').value,
+        Producer: $('pg-kc-producer').value,
+        Consumer: $('pg-kc-consumer').value,
+      }));
+    } else {
+      viz.removeAttribute('kind-colors');
+    }
+    viz.refreshTheme();
+
+    // Views
+    const viewCbs = [...document.querySelectorAll('[data-pg-view]')];
+    let enabledViews = viewCbs.filter((c) => c.checked).map((c) => c.dataset.pgView);
+    if (enabledViews.length === 0) {
+      viewCbs[0].checked = true;
+      enabledViews = ['waterfall'];
+    }
+    const currentActive = viz.view;
+    for (const c of [...viz.querySelectorAll('trace-view')]) c.remove();
+    for (const [idx, type] of enabledViews.entries()) {
+      const v = document.createElement('trace-view');
+      v.setAttribute('type', type);
+      if ((enabledViews.includes(currentActive) && type === currentActive) || (!enabledViews.includes(currentActive) && idx === 0)) {
+        v.setAttribute('active', '');
+      }
+      if (type === 'sequence') {
+        v.setAttribute('internal', $('pg-seq-internal').value);
+        v.setAttribute('returns', $('pg-seq-returns').value);
+        v.setAttribute('fold', $('pg-seq-fold').value);
+      }
+      viz.appendChild(v);
+    }
+
+    // Filters
+    for (const f of [...viz.querySelectorAll('trace-filter')]) f.remove();
+    const addFilter = (attrs) => {
+      const f = document.createElement('trace-filter');
+      for (const [k, val] of Object.entries(attrs)) f.setAttribute(k, val);
+      viz.appendChild(f);
+      return attrs;
+    };
+    const activeFilters = [];
+    if ($('pg-f-wild').checked) activeFilters.push(addFilter({ field: '*', label: 'Search', type: 'text', source: 'local', width: '220', debounce: '250', placeholder: 'Search all…' }));
+    if ($('pg-f-op').checked) activeFilters.push(addFilter({ field: 'spanName', label: 'Operation', type: 'text', source: 'local', width: '180', debounce: '250', placeholder: 'Operation…' }));
+    if ($('pg-f-svc').checked) activeFilters.push(addFilter({ field: 'serviceName', label: 'Service', type: 'dropdown', source: 'local', 'options-source': 'auto', placeholder: 'All services' }));
+    if ($('pg-f-multi').checked) activeFilters.push(addFilter({ field: 'serviceName', label: 'Services', type: 'multiselect', source: 'local', 'options-source': 'auto', width: '180' }));
+    if ($('pg-f-err').checked) activeFilters.push(addFilter({ field: 'hasError', label: 'Errors Only', type: 'checkbox', source: 'local' }));
+    if ($('pg-f-time').checked) activeFilters.push(addFilter({ field: 'startTime', label: 'Time Range', type: 'datetime-range', source: 'local', 'auto-range': '' }));
+    const customField = $('pg-cf-field').value.trim();
+    if (customField) {
+      activeFilters.push(addFilter({
+        field: customField,
+        label: customField.split('.').pop(),
+        type: 'text',
+        source: 'local',
+        target: $('pg-cf-target').value,
+        width: '190',
+        debounce: '250',
+        placeholder: `Filter ${customField}…`,
+      }));
+    }
+
+    renderGeneratedCode(enabledViews, activeFilters);
+  }
+
+  function renderGeneratedCode(enabledViews, activeFilters) {
+    const source = $('pg-source').value;
+    const isLogTransform = source === 'fintech' || (source === 'custom' && customPayloadKind === 'logs');
+    const cfg = isLogTransform ? readTransformConfigFromInputs() : null;
+
+    const URL_MAP = {
+      edge: './data/edge-auth-trace.json',
+      ai: './data/ai-search-trace.json',
+      incident: './data/incident-cascade.json',
+      fintech: './data/fintech-logs.json',
+    };
+
+    const hostAttrs = [];
+    if (URL_MAP[source]) hostAttrs.push(`  data-url="${URL_MAP[source]}"`);
+    else hostAttrs.push(`  id="trace-viz"`);
+
+    if (cfg) {
+      hostAttrs.push(`  trace-id-field="${cfg.traceIdField}"`);
+      if (cfg.spanGroupFields) hostAttrs.push(`  span-group-fields="${cfg.spanGroupFields.join(',')}"`);
+      hostAttrs.push(`  span-name-field="${cfg.spanNameField}"`);
+      hostAttrs.push(`  service-name-field="${cfg.serviceNameField}"`);
+      hostAttrs.push(`  timestamp-field="${cfg.timestampField}"`);
+      if (cfg.endTimeField) hostAttrs.push(`  end-time-field="${cfg.endTimeField}"`);
+      if (cfg.statusCodeField) hostAttrs.push(`  status-code-field="${cfg.statusCodeField}"`);
+      if (cfg.parentSpanLookupFields) hostAttrs.push(`  parent-span-lookup-fields="${cfg.parentSpanLookupFields.join(',')}"`);
+      if (cfg.defaultSpanKind) hostAttrs.push(`  default-span-kind="${cfg.defaultSpanKind}"`);
+    }
+
+    if ($('pg-theme').value) hostAttrs.push(`  theme="${$('pg-theme').value}"`);
+    hostAttrs.push(`  height="${$('pg-height').value}"`);
+    if ($('pg-span-h').value !== '28') hostAttrs.push(`  span-height="${$('pg-span-h').value}"`);
+    if ($('pg-span-pad').value !== '4') hostAttrs.push(`  span-padding="${$('pg-span-pad').value}"`);
+    if ($('pg-gutter').value !== '230') hostAttrs.push(`  gutter-width="${$('pg-gutter').value}"`);
+    if ($('pg-detail-w').value !== '40%') hostAttrs.push(`  detail-panel-width="${$('pg-detail-w').value}"`);
+    if ($('pg-legend').checked) hostAttrs.push(`  show-legend`);
+    if ($('pg-wheel-zoom').checked) hostAttrs.push(`  wheel-zoom`);
+    if ($('pg-custom-colors').checked) hostAttrs.push(`  kind-colors='${viz.getAttribute('kind-colors')}'`);
+    if (customCssVars) {
+      hostAttrs.push(`  style="--l2t-color-background:${customCssVars.bg}; --l2t-color-surface:${customCssVars.surface}; --l2t-color-accent:${customCssVars.accent}"`);
+    }
+
+    const childrenLines = [];
+    if (enabledViews.length > 1 || enabledViews[0] !== 'waterfall') {
+      for (const [idx, type] of enabledViews.entries()) {
+        const seqExtra = type === 'sequence'
+          ? ` internal="${$('pg-seq-internal').value}" returns="${$('pg-seq-returns').value}" fold="${$('pg-seq-fold').value}"`
+          : '';
+        childrenLines.push(`  <trace-view type="${type}"${idx === 0 ? ' active' : ''}${seqExtra}></trace-view>`);
+      }
+    }
+    for (const f of activeFilters) {
+      const pairs = Object.entries(f).map(([k, v]) => (v === '' ? k : `${k}="${v}"`)).join(' ');
+      childrenLines.push(`  <trace-filter ${pairs}></trace-filter>`);
+    }
+    if (cfg?.spanKindRules) {
+      childrenLines.push(`  <span-kind-rule kind="Server" match-field="component" match-value="http-server"></span-kind-rule>`);
+      childrenLines.push(`  <span-kind-rule kind="Client" match-field="component" match-value="http-client"></span-kind-rule>`);
+      childrenLines.push(`  <span-kind-rule kind="Producer" match-field="component" match-value="kafka-producer"></span-kind-rule>`);
+    }
+
+    const inner = childrenLines.length ? `\n${childrenLines.join('\n')}\n` : '';
+    const htmlOut = `<script type="module" src="https://unpkg.com/log2trace-ui/dist/log2trace.min.js"><\/script>\n\n<trace-visualizer\n${hostAttrs.join('\n')}\n>${inner}</trace-visualizer>`;
+    setCodeBlock($('pg-code-html'), htmlOut, 'html');
+
+    let jsOut;
+    if (source === 'synthetic') {
+      jsOut = `import 'log2trace-ui';\nimport { generateTrace } from './perf-gen.js';\n\nconst viz = document.querySelector('#trace-viz');\nconst { traceData } = generateTrace({ n: ${$('pg-syn-n').value}, seed: ${$('pg-syn-seed').value}, ev: ${$('pg-syn-ev').value}, ns: ${$('pg-syn-ns').checked ? 1 : 0} });\nviz.traceData = traceData;`;
+    } else if (cfg) {
+      const cleanCfg = { ...cfg };
+      if (cleanCfg.spanKindRules) cleanCfg.spanKindRules = cleanCfg.spanKindRules.slice(0, 3);
+      jsOut = `import 'log2trace-ui';\n\nconst viz = document.querySelector('trace-visualizer');\nconst logs = await (await fetch('./data/fintech-logs.json')).json();\nviz.logData = {\n  logs,\n  config: ${JSON.stringify(cleanCfg, null, 2).replace(/\n/g, '\n  ')},\n};`;
+    } else {
+      const url = URL_MAP[source] ?? './data/ai-search-trace.json';
+      jsOut = `import 'log2trace-ui';\n\nconst viz = document.querySelector('trace-visualizer');\nviz.traceData = await (await fetch('${url}')).json();`;
+    }
+    setCodeBlock($('pg-code-js'), jsOut, 'javascript');
+  }
+
+  async function loadSelectedDataset() {
+    const source = $('pg-source').value;
+    $('pg-synthetic-panel').hidden = source !== 'synthetic';
+    $('pg-custom-panel').hidden = source !== 'custom';
+    $('pg-preset-rules-wrap').hidden = source !== 'fintech';
+
+    const showTransform = source === 'fintech' || (source === 'custom' && customPayloadKind === 'logs');
+    $('pg-transform-panel').hidden = !showTransform;
+
+    syncShellAndCarriers();
+
+    if (source === 'fintech') {
+      if ($('pg-tf-trace').value !== 'trace.id' && !customParsedPayload) {
+        $('pg-tf-trace').value = FINTECH_LOG_CONFIG.traceIdField;
+        $('pg-tf-name').value = FINTECH_LOG_CONFIG.spanNameField;
+        $('pg-tf-svc').value = FINTECH_LOG_CONFIG.serviceNameField;
+        $('pg-tf-ts').value = FINTECH_LOG_CONFIG.timestampField;
+        $('pg-tf-group').value = FINTECH_LOG_CONFIG.spanGroupFields.join(',');
+        $('pg-tf-parent').value = FINTECH_LOG_CONFIG.parentSpanLookupFields.join(',');
+        $('pg-tf-status').value = FINTECH_LOG_CONFIG.statusCodeField;
+        $('pg-tf-end').value = '';
+        $('pg-tf-rules').checked = true;
+      }
+      const logs = await loadFintechLogs();
+      populateFieldSuggestions(logs);
+      const t0 = performance.now();
+      viz.logData = { logs, config: readTransformConfigFromInputs() };
+      updateMetricsStrip(performance.now() - t0);
+      syncShellAndCarriers();
+    } else if (source === 'edge') {
+      const data = await loadEdgeAuthTrace();
+      const t0 = performance.now();
+      viz.traceData = data;
+      updateMetricsStrip(performance.now() - t0);
+    } else if (source === 'ai') {
+      const data = await loadAiSearchTrace();
+      const t0 = performance.now();
+      viz.traceData = data;
+      updateMetricsStrip(performance.now() - t0);
+    } else if (source === 'incident') {
+      const data = await loadIncidentCascade();
+      const t0 = performance.now();
+      viz.traceData = data;
+      updateMetricsStrip(performance.now() - t0);
+    } else if (source === 'synthetic') {
+      const n = Number($('pg-syn-n').value) || 10000;
+      const seed = Number($('pg-syn-seed').value) || 1;
+      const ev = Number($('pg-syn-ev').value);
+      const ns = $('pg-syn-ns').checked ? 1 : 0;
+      const mode = $('pg-syn-mode').value;
+
+      $('pg-perf-badge').textContent = `Generating ${n.toLocaleString()} spans…`;
+      await new Promise((r) => setTimeout(r, 16));
+
+      if (mode === 'flat') {
+        const g0 = performance.now();
+        const flatLogs = generateFlatLogs(n * 2, seed);
+        const g1 = performance.now();
+        viz.logData = { logs: flatLogs, config: FLAT_TRANSFORM_CONFIG };
+        updateMetricsStrip(performance.now() - g1, g1 - g0);
+      } else {
+        const g0 = performance.now();
+        const { traceData } = generateTrace({ n, seed, ev, ns });
+        const g1 = performance.now();
+        viz.traceData = traceData;
+        updateMetricsStrip(performance.now() - g1, g1 - g0);
+      }
+    } else if (source === 'custom' && customParsedPayload) {
+      const t0 = performance.now();
+      if (customPayloadKind === 'otel') viz.traceData = customParsedPayload;
+      else viz.logData = { logs: customParsedPayload, config: readTransformConfigFromInputs() };
+      updateMetricsStrip(performance.now() - t0);
+      syncShellAndCarriers();
+    }
+  }
+
+  // Visual + Data Complexity Presets
+  const PRESET_MAP = {
+    'ai-suite': {
+      source: 'ai', views: ['waterfall', 'flame', 'service', 'sequence'],
+      theme: '', height: 520, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
+      filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
+      seq: { internal: 'auto', returns: 'all', fold: '3' },
+      colors: null, css: null,
+    },
+    'fintech-logs': {
+      source: 'fintech', views: ['waterfall', 'flame', 'service', 'sequence'],
+      theme: '', height: 520, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
+      filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: 'payload.cardNetwork' },
+      seq: { internal: 'auto', returns: 'all', fold: '3' },
+      colors: null, css: null,
+    },
+    'compact-starter': {
+      source: 'edge', views: ['waterfall'],
+      theme: '', height: 310, spanH: 20, pad: 2, gutter: 185, legend: false, wheel: false,
+      filters: { wild: false, op: false, svc: false, multi: false, err: false, time: false, cf: '' },
+      seq: { internal: 'auto', returns: 'all', fold: '3' },
+      colors: null, css: null,
+    },
+    'noc-incident': {
+      source: 'incident', views: ['waterfall', 'service', 'sequence'],
+      theme: 'dark', height: 480, spanH: 26, pad: 4, gutter: 250, legend: true, wheel: true,
+      filters: { wild: true, op: false, svc: false, multi: false, err: true, time: false, cf: '' },
+      seq: { internal: 'auto', returns: 'errors', fold: '3' },
+      colors: { server: '#34d399', client: '#fbbf24', internal: '#60a5fa', producer: '#22d3ee', consumer: '#fb7185' },
+      css: { bg: '#0b0f17', surface: '#131a26', accent: '#38bdf8' },
+    },
+    'editorial': {
+      source: 'edge', views: ['waterfall', 'flame', 'service'],
+      theme: 'light', height: 470, spanH: 36, pad: 7, gutter: 265, legend: true, wheel: false,
+      filters: { wild: false, op: false, svc: true, multi: false, err: false, time: false, cf: '' },
+      seq: { internal: 'auto', returns: 'all', fold: '3' },
+      colors: { server: '#0f766e', client: '#d97706', internal: '#334155', producer: '#0284c7', consumer: '#be123c' },
+      css: { bg: '#fcfaf5', surface: '#f3efe6', accent: '#b45309' },
+    },
+    'scale-50k': {
+      source: 'synthetic', synN: '50000', views: ['waterfall', 'flame', 'service', 'sequence'],
+      theme: '', height: 540, spanH: 26, pad: 4, gutter: 230, legend: true, wheel: false,
+      filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
+      seq: { internal: 'auto', returns: 'all', fold: '3' },
+      colors: null, css: null,
+    },
+  };
+
+  function applySetupPreset(name) {
+    const p = PRESET_MAP[name];
+    if (!p) return;
+    for (const btn of document.querySelectorAll('[data-pg-preset]')) {
+      btn.classList.toggle('is-active', btn.dataset.pgPreset === name);
+    }
+    $('pg-source').value = p.source;
+    if (p.synN) {
+      $('pg-syn-n').value = p.synN;
+      $('pg-syn-mode').value = 'tree';
+    }
+    for (const cb of document.querySelectorAll('[data-pg-view]')) {
+      cb.checked = p.views.includes(cb.dataset.pgView);
+    }
+    $('pg-theme').value = p.theme;
+    $('pg-height').value = String(p.height);
+    $('pg-span-h').value = String(p.spanH);
+    $('pg-span-pad').value = String(p.pad);
+    $('pg-gutter').value = String(p.gutter);
+    $('pg-legend').checked = p.legend;
+    $('pg-wheel-zoom').checked = p.wheel;
+    $('pg-seq-internal').value = p.seq.internal;
+    $('pg-seq-returns').value = p.seq.returns;
+    $('pg-seq-fold').value = p.seq.fold;
+    $('pg-f-wild').checked = p.filters.wild;
+    $('pg-f-op').checked = p.filters.op;
+    $('pg-f-svc').checked = p.filters.svc;
+    $('pg-f-multi').checked = p.filters.multi;
+    $('pg-f-err').checked = p.filters.err;
+    $('pg-f-time').checked = p.filters.time;
+    $('pg-cf-field').value = p.filters.cf;
+    $('pg-custom-colors').checked = Boolean(p.colors);
+    if (p.colors) {
+      $('pg-kc-server').value = p.colors.server;
+      $('pg-kc-client').value = p.colors.client;
+      $('pg-kc-internal').value = p.colors.internal;
+      $('pg-kc-producer').value = p.colors.producer;
+      $('pg-kc-consumer').value = p.colors.consumer;
+    }
+    customCssVars = p.css;
+    void loadSelectedDataset();
+  }
+
+  for (const btn of document.querySelectorAll('[data-pg-preset]')) {
+    btn.addEventListener('click', () => applySetupPreset(btn.dataset.pgPreset));
+  }
+
+  // Custom JSON parsing & drag-and-drop
+  function ingestCustomJson(text, label = 'Pasted JSON') {
+    const msgEl = $('pg-custom-msg');
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.resourceSpans)) {
+        customParsedPayload = parsed;
+        customPayloadKind = 'otel';
+        msgEl.style.color = 'var(--g-success)';
+        msgEl.textContent = `Loaded OTLP TraceData from ${label}`;
+      } else if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
+        customParsedPayload = parsed;
+        customPayloadKind = 'logs';
+        populateFieldSuggestions(parsed);
+        guessLogMapping(parsed);
+        msgEl.style.color = 'var(--g-success)';
+        msgEl.textContent = `Loaded ${parsed.length.toLocaleString()} log records from ${label} — review field mappings below`;
+      } else {
+        throw new Error('Expected {"resourceSpans":[...]} or a non-empty array of JSON log objects');
+      }
+      void loadSelectedDataset();
+    } catch (err) {
+      msgEl.style.color = 'var(--g-danger)';
+      msgEl.textContent = `Parse error: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  }
+
+  $('pg-custom-apply').addEventListener('click', () => {
+    const raw = $('pg-custom-json').value.trim();
+    if (raw) ingestCustomJson(raw, 'textarea');
+  });
+
+  const fileInput = $('pg-file-input');
+  const dropzone = $('pg-dropzone');
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    ingestCustomJson(await file.text(), file.name);
+  });
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('is-dragover');
+  });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('is-dragover'));
+  dropzone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('is-dragover');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) ingestCustomJson(await file.text(), file.name);
+  });
+
+  // Wire sidebar controls
+  $('pg-source').addEventListener('change', () => {
+    for (const btn of document.querySelectorAll('[data-pg-preset]')) btn.classList.remove('is-active');
+    void loadSelectedDataset();
+  });
+  $('pg-syn-regen').addEventListener('click', () => void loadSelectedDataset());
+  $('pg-syn-n').addEventListener('change', () => void loadSelectedDataset());
+  $('pg-syn-mode').addEventListener('change', () => void loadSelectedDataset());
+  $('pg-tf-apply').addEventListener('click', () => void loadSelectedDataset());
+  $('pg-tf-rules').addEventListener('change', () => void loadSelectedDataset());
+  $('pg-tf-defkind').addEventListener('change', () => void loadSelectedDataset());
+
+  const liveShellIds = [
+    'pg-span-h', 'pg-span-pad', 'pg-gutter', 'pg-seq-fold', 'pg-seq-internal', 'pg-seq-returns',
+    'pg-wheel-zoom', 'pg-f-wild', 'pg-f-op', 'pg-f-svc', 'pg-f-multi', 'pg-f-err', 'pg-f-time',
+    'pg-cf-field', 'pg-cf-target', 'pg-theme', 'pg-height', 'pg-detail-w', 'pg-legend',
+    'pg-custom-colors', 'pg-kc-server', 'pg-kc-client', 'pg-kc-internal', 'pg-kc-producer', 'pg-kc-consumer',
+  ];
+  for (const id of liveShellIds) {
+    $(id).addEventListener('change', () => {
+      if (id === 'pg-theme') customCssVars = null;
+      syncShellAndCarriers();
+    });
+    if ($(id).tagName === 'INPUT' && $(id).type === 'color') {
+      $(id).addEventListener('input', syncShellAndCarriers);
+    }
+  }
+  for (const cb of document.querySelectorAll('[data-pg-view]')) {
+    cb.addEventListener('change', syncShellAndCarriers);
+  }
+
+  $('pg-copy-url').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const params = new URLSearchParams();
+    params.set('source', $('pg-source').value);
+    if ($('pg-source').value === 'synthetic') {
+      params.set('n', $('pg-syn-n').value);
+      params.set('seed', $('pg-syn-seed').value);
+      params.set('ev', $('pg-syn-ev').value);
+    }
+    const views = [...document.querySelectorAll('[data-pg-view]')]
+      .filter((c) => c.checked)
+      .map((c) => c.dataset.pgView);
+    params.set('views', views.join(','));
+    if ($('pg-theme').value) params.set('theme', $('pg-theme').value);
+
+    const url = `${location.origin}${location.pathname}#${params.toString()}`;
+    history.replaceState(null, '', `#${params.toString()}`);
+    try {
+      await navigator.clipboard.writeText(url);
+      const prev = btn.textContent;
+      btn.textContent = 'URL Copied!';
+      setTimeout(() => { btn.textContent = prev; }, 1400);
+    } catch {}
+  });
+
+  $('pg-reset-all').addEventListener('click', () => {
+    history.replaceState(null, '', location.pathname);
+    applySetupPreset('ai-suite');
+  });
+
+  $('pg-act-expand').addEventListener('click', () => {
+    viz.expandAll();
+    evConsole.log('api-call', 'expandAll()');
+  });
+  $('pg-act-collapse').addEventListener('click', () => {
+    viz.collapseAll();
+    evConsole.log('api-call', 'collapseAll()');
+  });
+  $('pg-act-win50').addEventListener('click', () => {
+    const ext = viz.store.state.data.index.table.extentMs || 1000;
+    const t0 = Math.round(ext * 0.25);
+    const t1 = Math.round(ext * 0.75);
+    viz.setTimeWindow({ t0, t1 });
+    evConsole.log('api-call', `setTimeWindow({ t0: ${t0}, t1: ${t1} })`);
+  });
+  $('pg-act-winclear').addEventListener('click', () => {
+    viz.setTimeWindow(null);
+    evConsole.log('api-call', 'setTimeWindow(null)');
+  });
+
+  // Hydrate initial URL hash parameters (#preset=noc-incident, #n=50000, #source=fintech, #views=..., #theme=dark)
+  {
+    const hash = new URLSearchParams(location.hash.replace(/^#\??/, ''));
+    if (hash.has('preset') && PRESET_MAP[hash.get('preset')]) {
+      applySetupPreset(hash.get('preset'));
+    } else {
+      if (hash.has('n')) {
+        $('pg-source').value = 'synthetic';
+        const nVal = hash.get('n');
+        if ([...$('pg-syn-n').options].some((o) => o.value === nVal)) {
+          $('pg-syn-n').value = nVal;
+        } else {
+          const opt = document.createElement('option');
+          opt.value = nVal;
+          opt.textContent = Number(nVal).toLocaleString();
+          $('pg-syn-n').appendChild(opt);
+          $('pg-syn-n').value = nVal;
+        }
+        if (hash.has('seed')) $('pg-syn-seed').value = hash.get('seed');
+        if (hash.has('ev')) $('pg-syn-ev').value = hash.get('ev');
+      } else if (hash.has('source')) {
+        const s = hash.get('source');
+        if (['ai', 'fintech', 'edge', 'incident', 'synthetic', 'custom'].includes(s)) $('pg-source').value = s;
+      }
+      if (hash.has('views')) {
+        const wanted = new Set(hash.get('views').split(',').map((s) => s.trim()).filter(Boolean));
+        if (wanted.size > 0) {
+          for (const cb of document.querySelectorAll('[data-pg-view]')) {
+            cb.checked = wanted.has(cb.dataset.pgView);
+          }
+        }
+      }
+      if (hash.has('theme')) $('pg-theme').value = hash.get('theme');
+      void loadSelectedDataset();
+    }
+  }
+</script>
+</body>
+</html>
