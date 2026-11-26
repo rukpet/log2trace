@@ -9,6 +9,6 @@
     "allowJs": true,
     "checkJs": true
   },
-  "include": ["test/**/*", "build/**/*.js"],
+  "include": ["test/**/*", "e2e/**/*", "playwright.config.ts", "build/**/*.js"],
   "exclude": []
 }

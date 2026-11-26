@@ -6,3 +6,5 @@ docs/
 docs/superpowers
 .agents/
 AGENTS.md
+playwright-report/
+test-results/
