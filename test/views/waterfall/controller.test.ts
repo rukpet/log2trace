@@ -241,13 +241,18 @@ test('buildPlan and hit read the controller\'s own state', () => {
 
 test('commands act on the view and report the zoom level', () => {
   const h = harness();
-  const commands = new Map(h.view.commands().map((command) => [command.id, command]));
+  const dirtyFlags: number[] = [];
+  const commands = new Map(
+    h.view.commands((result) => dirtyFlags.push(result.dirty)).map((command) => [command.id, command]),
+  );
 
   commands.get('zoom-in')?.run();
   assert.ok(h.view.state.camera.t1 - h.view.state.camera.t0 < 1000);
   assert.notEqual(commands.get('zoom-reset')?.readout?.(), '100%');
+  assert.ok((dirtyFlags[0] ?? 0) & WaterfallDirty.Camera);
   commands.get('zoom-reset')?.run();
   assert.equal(commands.get('zoom-reset')?.readout?.(), '100%');
+  assert.ok((dirtyFlags[1] ?? 0) & WaterfallDirty.Camera);
 
   commands.get('collapse-all')?.run();
   h.flush();

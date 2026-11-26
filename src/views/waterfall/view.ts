@@ -174,7 +174,7 @@ export class WaterfallView implements TraceView {
   }
 
   commands(): readonly ViewCommand[] {
-    return this.mounted?.controller.commands() ?? [];
+    return this.mounted?.controller.commands((result) => this.apply(result)) ?? [];
   }
 
   focus(): void {

@@ -338,9 +338,9 @@ export class WaterfallController {
   }
 
   /** The commands of the view, for the toolbar and the key handler. */
-  commands(): readonly ViewCommand[] {
+  commands(onResult?: (result: UpdateResult) => void): readonly ViewCommand[] {
     const run = (input: WaterfallInput) => (): void => {
-      this.input(input);
+      onResult?.(this.input(input));
     };
     const keyboard = (key: string): WaterfallInput => ({ type: 'key', key, shift: false, ctrl: false, alt: false });
     return [
