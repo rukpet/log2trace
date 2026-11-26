@@ -394,7 +394,7 @@ async function loadJson(path) {
 /** Tier 1 (Compact Starter): Edge API & Session Auth — 14 spans, 4 services, 184 ms. */
 export const loadEdgeAuthTrace = () => loadJson('./data/edge-auth-trace.json');
 
-/** Tier 2 (Modern Raw Logs): Card Settlement & Fraud Pipeline — 61 structured logs -> 21 spans across 8 services. */
+/** Tier 2 (Modern Raw Logs): Card Settlement & Fraud Pipeline — 61 structured logs -> 21 spans across 9 services. */
 export const loadFintechLogs = () => loadJson('./data/fintech-logs.json');
 
 /** Tier 3 (Complex Multi-View): AI RAG & Hybrid Search — 43 spans, 9 services + 4 peers, 5x shard loop, 429 failover. */

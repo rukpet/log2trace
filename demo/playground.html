@@ -1016,6 +1016,7 @@
       params.set('n', $('pg-syn-n').value);
       params.set('seed', $('pg-syn-seed').value);
       params.set('ev', $('pg-syn-ev').value);
+      if ($('pg-syn-mode').value !== 'tree') params.set('mode', $('pg-syn-mode').value);
     }
     const views = [...document.querySelectorAll('[data-pg-view]')]
       .filter((c) => c.checked)
@@ -1058,7 +1059,7 @@
     evConsole.log('api-call', 'setTimeWindow(null)');
   });
 
-  // Hydrate initial URL hash parameters (#preset=noc-incident, #n=50000, #source=fintech, #views=..., #theme=dark)
+  // Hydrate initial URL hash parameters (#preset=noc-incident, #n=50000, #mode=flat, #source=fintech, #views=..., #theme=dark)
   {
     const hash = new URLSearchParams(location.hash.replace(/^#\??/, ''));
     if (hash.has('preset') && PRESET_MAP[hash.get('preset')]) {
@@ -1078,6 +1079,7 @@
         }
         if (hash.has('seed')) $('pg-syn-seed').value = hash.get('seed');
         if (hash.has('ev')) $('pg-syn-ev').value = hash.get('ev');
+        if (hash.get('mode') === 'flat' || hash.get('mode') === 'tree') $('pg-syn-mode').value = hash.get('mode');
       } else if (hash.has('source')) {
         const s = hash.get('source');
         if (['ai', 'fintech', 'edge', 'incident', 'synthetic', 'custom'].includes(s)) $('pg-source').value = s;
