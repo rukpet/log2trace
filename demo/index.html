@@ -81,56 +81,27 @@
         arbitrary structured JSON logs into interactive waterfalls, flame graphs, service maps, and sequence diagrams — entirely client-side.
       </p>
 
-      <div class="two-col" style="margin-top:1.5rem;margin-bottom:0.9rem">
-        <div class="code-panel" style="margin:0">
-          <div class="code-bar">
-            <span>CDN / Script Tag (No Build Step)</span>
-            <button type="button" class="copy-btn">Copy</button>
+      <div class="code-panel" style="margin-top:1.35rem;margin-bottom:1rem">
+        <div class="code-bar">
+          <div class="code-tabs" role="tablist" aria-label="Installation method">
+            <button type="button" class="is-active" role="tab" aria-selected="true" data-code-tab="cdn">CDN (No Build Step)</button>
+            <button type="button" role="tab" aria-selected="false" data-code-tab="npm">npm + ES Module</button>
           </div>
-          <pre class="code-pre"><code data-lang="html">&lt;script type="module" src="https://unpkg.com/log2trace-ui/dist/log2trace.min.js"&gt;&lt;/script&gt;
-&lt;trace-visualizer data-url="./data/edge-auth-trace.json"&gt;&lt;/trace-visualizer&gt;</code></pre>
+          <button type="button" class="copy-btn">Copy</button>
         </div>
-
-        <div class="code-panel" style="margin:0">
-          <div class="code-bar">
-            <span>npm + ES Module Import</span>
-            <button type="button" class="copy-btn">Copy</button>
-          </div>
-          <pre class="code-pre"><code data-lang="javascript">// npm install log2trace-ui
+        <pre class="code-pre" data-code-pane="cdn"><code data-lang="html">&lt;script type="module" src="https://unpkg.com/log2trace-ui/dist/log2trace.min.js"&gt;&lt;/script&gt;
+&lt;trace-visualizer data-url="./data/edge-auth-trace.json"&gt;&lt;/trace-visualizer&gt;</code></pre>
+        <pre class="code-pre" data-code-pane="npm" hidden><code data-lang="javascript">// npm install log2trace-ui
 import 'log2trace-ui'; // registers custom elements
 import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
-        </div>
       </div>
 
-      <div class="callout" style="margin-top:1rem;margin-bottom:1.25rem">
+      <div class="callout" style="margin-top:0;margin-bottom:0">
         <strong>Four declarative custom elements:</strong>
         Importing the bundle registers <code>&lt;trace-visualizer&gt;</code> alongside three lightweight configuration carriers:
         <code>&lt;trace-view&gt;</code> (views &amp; per-view options),
         <code>&lt;trace-filter&gt;</code> (local &amp; external filter inputs), and
         <code>&lt;span-kind-rule&gt;</code> (log-to-span kind classification).
-      </div>
-
-      <div class="guide-cards">
-        <a class="guide-card" href="./views.html">
-          <span class="guide-card-step">02 / Views &amp; Theming</span>
-          <span class="guide-card-title">Visual Setups &amp; Design Tokens</span>
-          <span class="guide-card-desc">Compare Compact, NOC Dark, Spacious, and 4-View suites, Sequence options, CSS tokens, and custom views.</span>
-        </a>
-        <a class="guide-card" href="./filtering.html">
-          <span class="guide-card-step">03 / Filtering &amp; Sources</span>
-          <span class="guide-card-title">Local &amp; External Filters</span>
-          <span class="guide-card-desc">Wildcard search, span vs. log event targets on Fintech logs, auto dropdowns, and server fetch callbacks.</span>
-        </a>
-        <a class="guide-card" href="./api.html">
-          <span class="guide-card-step">04 / Events &amp; API</span>
-          <span class="guide-card-title">Programmatic Control</span>
-          <span class="guide-card-desc">Imperative selection, time-window scrubbing, live event streams, and empty/loading/error states.</span>
-        </a>
-        <a class="guide-card" href="./playground.html">
-          <span class="guide-card-step">05 / Setup Playground</span>
-          <span class="guide-card-title">Interactive Sandbox &amp; 50K Scale</span>
-          <span class="guide-card-desc">Switch visual &amp; complexity presets, drop your own JSON file, test 50,000 spans, and export code.</span>
-        </a>
       </div>
     </div>
 
