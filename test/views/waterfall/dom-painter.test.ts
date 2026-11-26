@@ -252,3 +252,40 @@ test('rows carry data-span-id while visible and chevron/bar slots carry data-par
   const afterCollapse = r.rows().filter((row) => row.style.display === 'none');
   assert.ok(afterCollapse.every((row) => row.getAttribute('data-span-id') === null));
 });
+
+test('gutter hides service name when remaining room is 24 px or less, matching canvas', () => {
+  // At width=1000, gutter=250, depth 0 has labelWidth = 250 - (8 + 16 + 4) - 8 = 214 px.
+  // Meter measures 6 px per char; 'svc' is 3 chars. 214 - 30*6 - 6 = 28 (> 24, shown); 214 - 31*6 - 6 = 22 (<= 24, hidden).
+  const fits = 'a'.repeat(30);
+  const tight = 'b'.repeat(31);
+  const r = rig({ id: fits, start: 0, end: 100, children: [{ id: tight, start: 0, end: 50 }] });
+
+  const rowFits = r.rows().find((row) => row.findAll('name')[0].textContent === fits);
+  const rowTight = r.rows().find((row) => row.findAll('name')[0].textContent === tight);
+  assert.ok(rowFits && rowTight);
+
+  const svcFits = rowFits.findAll('service')[0];
+  assert.equal(svcFits.classList.contains('hidden'), false);
+  assert.equal(svcFits.textContent, 'svc');
+
+  const svcTight = rowTight.findAll('service')[0];
+  assert.equal(svcTight.classList.contains('hidden'), true);
+  assert.equal(svcTight.textContent, '');
+});
+
+test('narrow bars (< 6 px) use sharp corners and duration labels align to whole pixels', () => {
+  const r = rig({ id: 'root', start: 0, end: 1000, children: [{ id: 'tiny', start: 100, end: 101 }] });
+  const tinyRow = r.rows().find((row) => row.findAll('name')[0].textContent === 'tiny');
+  assert.ok(tinyRow);
+
+  const tinyBar = tinyRow.findAll('bar')[0];
+  const tinyDur = tinyRow.findAll('duration')[0];
+  assert.equal(tinyBar.classList.contains('barSharp'), true);
+  assert.match(String(tinyDur.style.transform), /^translateX\(-?\d+px\)$/);
+
+  // Zooming in makes the 1 ms bar wider than 6 px, restoring rounded corners.
+  r.controller.setState({ t0: 95, t1: 105, scrollTop: 0 });
+  r.draw(WaterfallDirty.Camera);
+  assert.equal(tinyBar.classList.contains('barSharp'), false);
+});
+

@@ -95,7 +95,6 @@ export const row = style({
   right: 0,
   height: rowHeightVar,
   contain: 'layout paint style',
-  willChange: 'transform',
 });
 
 export const rowHover = style({ background: vars.color.hover });
@@ -162,7 +161,7 @@ export const service = style({
   marginLeft: 6,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-  font: `11px ${vars.font.sans}`,
+  fontSize: 11,
   color: vars.color.textMuted,
 });
 
@@ -183,8 +182,8 @@ export const bar = style({
   top: barInsetVar,
   height: barHeightVar,
   borderRadius: 3,
-  willChange: 'transform',
 });
+export const barSharp = style({ borderRadius: 0 });
 
 export const kind = styleVariants({
   unspecified: { background: vars.color.kindUnspecified },
@@ -196,7 +195,7 @@ export const kind = styleVariants({
 });
 
 export const barError = style({ boxShadow: `inset 3px 0 0 ${vars.color.error}` });
-export const barSelected = style({ outline: `2px solid ${vars.color.accent}`, outlineOffset: 1 });
+export const barSelected = style({ outline: `2px solid ${vars.color.accent}`, outlineOffset: 0 });
 
 export const marker = style({
   position: 'absolute',
@@ -205,7 +204,6 @@ export const marker = style({
   height: barHeightVar,
   width: 2,
   background: 'rgba(255, 255, 255, 0.8)',
-  willChange: 'transform',
 });
 
 export const duration = style({
@@ -213,9 +211,8 @@ export const duration = style({
   left: 0,
   top: 0,
   lineHeight: rowHeightVar,
-  font: `11px ${vars.font.sans}`,
+  fontSize: 11,
   whiteSpace: 'nowrap',
-  willChange: 'transform',
 });
 export const durationOutside = style({ color: vars.color.textMuted });
 /** Text on a bar takes the page background colour: white on a light page, dark on a dark one (as the canvas does). */
