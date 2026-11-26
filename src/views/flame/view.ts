@@ -4,8 +4,7 @@
  * `model.ts` decides what the boxes are and where they go; this class gives them a surface. One
  * native scroller (vertical only) holds a stage whose boxes are absolutely positioned elements, drawn
  * only for the rows in view and only when wide enough to see, and kept in a pool so that a scroll, a
- * resize or a new focus rewrites a few styles instead of rebuilding elements. Only the DOM draws
- * here: there is no second painter.
+ * resize or a new focus rewrites a few styles instead of rebuilding elements.
  *
  * What it shares through the store: a click selects every span of the box (`Target.key` names the
  * box), a hover does the same, the filter dims the boxes none of whose spans passed, the time window

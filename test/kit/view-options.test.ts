@@ -42,12 +42,12 @@ test('flagOption is true for a present attribute whatever its value, with viewAt
 });
 
 test('choiceOption takes a listed value and nothing else, preferring viewAttribute over the element', () => {
-  const o = options({}, { renderer: 'canvas', bad: 'svg' });
-  assert.equal(choiceOption(o, 'renderer', ['dom', 'canvas']), 'canvas');
-  assert.equal(choiceOption(o, 'bad', ['dom', 'canvas']), undefined);
-  assert.equal(choiceOption(o, 'absent', ['dom', 'canvas']), undefined);
-  assert.equal(choiceOption(o, 'renderer', ['dom']), undefined);
+  const o = options({}, { mode: 'full', bad: 'auto' });
+  assert.equal(choiceOption(o, 'mode', ['compact', 'full']), 'full');
+  assert.equal(choiceOption(o, 'bad', ['compact', 'full']), undefined);
+  assert.equal(choiceOption(o, 'absent', ['compact', 'full']), undefined);
+  assert.equal(choiceOption(o, 'mode', ['compact']), undefined);
 
-  assert.equal(choiceOption(options({}, { renderer: 'dom' }, { renderer: 'canvas' }), 'renderer', ['dom', 'canvas']), 'canvas');
-  assert.equal(choiceOption(options({}, { renderer: 'dom' }, { renderer: 'svg' }), 'renderer', ['dom', 'canvas']), 'dom');
+  assert.equal(choiceOption(options({}, { mode: 'compact' }, { mode: 'full' }), 'mode', ['compact', 'full']), 'full');
+  assert.equal(choiceOption(options({}, { mode: 'compact' }, { mode: 'auto' }), 'mode', ['compact', 'full']), 'compact');
 });

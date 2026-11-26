@@ -61,8 +61,7 @@
      * fresh loads of a visible tab (hidden tabs throttle requestAnimationFrame).
      *
      * Flags go in the query string or, for the unmodified demo/server.js (which 404s on
-     * query strings), in the fragment: perf.html?impl=dom&n=10000 == perf.html#impl=dom&n=10000
-     *   impl=dom                  which painter drives the visualizer (default dom)
+     * query strings), in the fragment: perf.html?n=10000 == perf.html#n=10000
      *   n=<spans>  seed=  ns=0  flat=1  heavy=  ev=    dataset, see perf-gen.js
      *   auto=1                    start as soon as the page loads
      *   only=a,b                  run only these scenarios (first-render always runs)
@@ -78,12 +77,11 @@
      *   manual=1                  mount, then record 15 s of hand-driven interaction instead of
      *                             the scripted scenarios (frames, long tasks, Event Timing)
      *   raw=1                     keep per-frame arrays in the JSON
-     *   w=, h=                    stage size for fixed-size adapters
+     *   w=, h=                    stage size in CSS px
      *   rev=, label=              free-form tags copied into the JSON (git sha, run label)
      *
-     * Adapter interface (one per implementation; scenarios only use these)
-     *   name, implemented, stageMode: 'flow' (page scroll) | 'fixed' (own scroller)
-     *   load(ctx)                      import bundle / register elements
+     * Driver interface (scenarios only use these):
+     *   load(ctx)                      verify element registration from bundle
      *   mount(stage, traceData)        build the element and hand it the data; the
      *                                  synchronous part is what first-render times
      *   unmount()
@@ -98,7 +96,7 @@
      *   enableFilter()  setFilter(text) -> Promise<{debounceMs, renderMs}>
      *   resize(widthPx)
      *   reset()                        zoom 1, scroll 0, panel closed, all expanded, no filter
-     *   timings()                      implementation-specific breakdown for first-render
+     *   timings()                      frame and painter breakdown for first-render
      *
      * Timing notes
      *   - frame deltas are differences of requestAnimationFrame timestamps while one
@@ -114,13 +112,11 @@
     } from './perf-gen.js';
 
     const SCHEMA = 'log2trace-perf/1';
-    const IMPLS = ['dom'];
     const q = new URLSearchParams(location.search);
     // demo/server.js resolves files from the raw request URL, so "perf.html?n=1000" is a 404 there;
     // the fragment never reaches the server, so "perf.html#n=1000" works with it as well.
     for (const [key, value] of new URLSearchParams(location.hash.replace(/^#\??/, ''))) if (!q.has(key)) q.set(key, value);
     const P = {
-      impl: IMPLS.includes(q.get('impl')) ? q.get('impl') : 'dom',
       auto: q.get('auto') === '1',
       only: q.get('only') ? q.get('only').split(',').map((s) => s.trim()).filter(Boolean) : null,
       wd: (Number(q.get('wd')) || 60) * 1000,
@@ -466,7 +462,7 @@
       fetch(P.sink, {
         method: 'POST', mode: 'cors', keepalive,
         headers: { 'content-type': 'text/plain' },
-        body: JSON.stringify({ kind, at: new Date().toISOString(), impl: P.impl, n: P.gen.n, ...payload }),
+        body: JSON.stringify({ kind, at: new Date().toISOString(), n: P.gen.n, ...payload }),
       }).catch(() => {});
     }
 
@@ -589,21 +585,17 @@
     }
 
     // -----------------------------------------------------------------------
-    // Adapters
+    // Driver
     // -----------------------------------------------------------------------
-    class NotImplemented extends Error {}
 
     /**
-     * Drives `<trace-visualizer>` with the DOM painter. Input goes to the
-     * interaction surface `[part="plot"]` as the events a user would produce (pointer, ctrl+wheel,
-     * key); reads and state changes that have no gesture (collapse, filter) go through the element's
-     * store, which is what its toolbar and filter bar use.
+     * Drives `<trace-visualizer>`. Input goes to the interaction surface `[part="plot"]` as the
+     * events a user would produce (pointer, ctrl+wheel, key); reads and state changes that have no
+     * gesture (collapse, filter) go through the element's store, which is what its toolbar and
+     * filter bar use.
      */
-    class NextAdapter {
-      constructor(name) {
-        this.name = name;
-        this.implemented = true;
-        this.stageMode = 'fixed';
+    class VisualizerDriver {
+      constructor() {
         this.el = null;
         this.lib = null;
       }
@@ -748,10 +740,6 @@
       notes() { return { domNodes: this.el.shadowRoot.querySelectorAll('*').length }; }
     }
 
-    function createAdapter(impl) {
-      return new NextAdapter(impl);
-    }
-
     // -----------------------------------------------------------------------
     // Dataset
     // -----------------------------------------------------------------------
@@ -801,10 +789,10 @@
     // -----------------------------------------------------------------------
 
     async function scFirstRender(ctx) {
-      const { adapter } = ctx;
+      const { driver } = ctx;
       flushObservers();
       const t0 = performance.now();
-      await adapter.mount(stage, ctx.data.traceData);
+      await driver.mount(stage, ctx.data.traceData);
       const tSync = performance.now();
       const tFrame = await afterFrame();
       await nextFrame();
@@ -818,59 +806,59 @@
         toFirstFrameMs: rnd(frameMs, 1),
         doubleRafMs: rnd(doubleRafMs, 1),
         stageHeightPx: rnd(stage.getBoundingClientRect().height, 0),
-        timings: adapter.timings(),
+        timings: driver.timings(),
         headline: { label: 'first render (js sync / to first frame)', unit: 'ms', p50: rnd(jsMs, 0), p95: rnd(frameMs, 0), max: rnd(doubleRafMs, 0) },
       };
     }
 
     async function scWheelZoom(ctx) {
-      const { adapter } = ctx;
-      await adapter.reset();
+      const { driver } = ctx;
+      await driver.reset();
       await settle();
       const frames = 120;
-      const rect = adapter.surfaceRect();
+      const rect = driver.surfaceRect();
       ctx.startMeasure();
       const res = await runFrames({
         frames, deadline: ctx.deadline,
         step: (i) => {
           const dir = Math.floor(i / 12) % 2 === 0 ? -1 : 1;           // 12 frames in, 12 frames out, ...
           const x = rect.left + rect.width * (0.15 + (0.7 * i) / (frames - 1));   // anchor sweeps left to right
-          adapter.wheelZoom(dir * 100, x, rect.top + rect.height / 2);
+          driver.wheelZoom(dir * 100, x, rect.top + rect.height / 2);
         },
       });
-      return { ...frameResult(res), framesRequested: frames, zoomAfter: adapter.readZoom() };
+      return { ...frameResult(res), framesRequested: frames, zoomAfter: driver.readZoom() };
     }
 
     async function scDragPan(ctx) {
-      const { adapter } = ctx;
-      await adapter.reset();
-      const zoomAchieved = await adapter.zoomTo(20, performance.now() + P.wd / 2);   // each step is slow on big traces: cap the setup
+      const { driver } = ctx;
+      await driver.reset();
+      const zoomAchieved = await driver.zoomTo(20, performance.now() + P.wd / 2);   // each step is slow on big traces: cap the setup
       await settle();
-      const rect = adapter.surfaceRect();
+      const rect = driver.surfaceRect();
       const x0 = rect.left + rect.width * 0.6;
       const y = rect.top + rect.height / 2;
       const frames = 120;
-      adapter.panBegin(x0, y);
+      driver.panBegin(x0, y);
       ctx.startMeasure();
       const res = await runFrames({
         frames, deadline: ctx.deadline,
-        step: (i) => adapter.panMove(x0 - (i < 60 ? i : frames - i) * 10, y),   // 600 px out, 600 px back
+        step: (i) => driver.panMove(x0 - (i < 60 ? i : frames - i) * 10, y),   // 600 px out, 600 px back
       });
-      adapter.panEnd();
+      driver.panEnd();
       return { ...frameResult(res), framesRequested: frames, zoomRequested: 20, zoomAchieved };
     }
 
     async function scScroll(ctx) {
-      const { adapter, rng } = ctx;
-      await adapter.reset();
+      const { driver, rng } = ctx;
+      await driver.reset();
       await settle();
-      const rows = adapter.rowCount();
+      const rows = driver.rowCount();
       const span = Math.max(1, rows - 20);
       ctx.startMeasure();
-      const smooth = await runFrames({ frames: 200, deadline: ctx.deadline, step: (i) => adapter.scrollToRow((i * 2) % span) });
+      const smooth = await runFrames({ frames: 200, deadline: ctx.deadline, step: (i) => driver.scrollToRow((i * 2) % span) });
       const jumps = Array.from({ length: 50 }, () => Math.floor(rng() * span));
       ctx.startMeasure();
-      const jumpRes = await runFrames({ frames: 50, deadline: ctx.deadline, step: (i) => adapter.scrollToRow(jumps[i]) });
+      const jumpRes = await runFrames({ frames: 50, deadline: ctx.deadline, step: (i) => driver.scrollToRow(jumps[i]) });
       const a = frameResult(smooth);
       const b = frameResult(jumpRes);
       return {
@@ -883,31 +871,31 @@
     }
 
     async function scHover(ctx, { frames: frameCount = 300 } = {}) {
-      const { adapter, rng } = ctx;
-      await adapter.reset();
+      const { driver, rng } = ctx;
+      await driver.reset();
       await settle();
-      adapter.scrollToRow(Math.floor(adapter.rowCount() / 3));
+      driver.scrollToRow(Math.floor(driver.rowCount() / 3));
       await settle();
-      const [first, last] = adapter.visibleRowRange();
-      const rect = adapter.surfaceRect();
+      const [first, last] = driver.visibleRowRange();
+      const rect = driver.surfaceRect();
       const picks = Array.from({ length: frameCount }, () => ({
         row: first + Math.floor(rng() * (last - first + 1)),
         x: rect.left + rng() * rect.width,
         y: rect.top + rng() * rect.height,
       }));
       ctx.startMeasure();
-      const res = await runFrames({ frames: frameCount, deadline: ctx.deadline, step: (i) => adapter.hoverRow(picks[i].row, picks[i].x, picks[i].y) });
-      adapter.hoverEnd();
+      const res = await runFrames({ frames: frameCount, deadline: ctx.deadline, step: (i) => driver.hoverRow(picks[i].row, picks[i].x, picks[i].y) });
+      driver.hoverEnd();
       return { ...frameResult(res), framesRequested: frameCount, visibleRows: [first, last] };
     }
 
     async function scSelect(ctx, { count = 50 } = {}) {
-      const { adapter, rng, data } = ctx;
-      await adapter.reset();
+      const { driver, rng, data } = ctx;
+      await driver.reset();
       await settle();
-      const rows = adapter.rowCount();
+      const rows = driver.rowCount();
       const heavyId = data.meta.hot.heavyEvents ? data.meta.hot.heavyEvents.spanId : null;
-      const heavyRow = heavyId ? adapter.rowOfSpan(heavyId) : -1;
+      const heavyRow = heavyId ? driver.rowOfSpan(heavyId) : -1;
       const picks = Array.from({ length: heavyRow >= 0 ? count - 1 : count }, () => Math.floor(rng() * rows));
       if (heavyRow >= 0) picks.splice(Math.floor(count / 2), 0, heavyRow);
       const list = [];
@@ -917,10 +905,10 @@
       for (let k = 0; k < picks.length; k++) {
         if (performance.now() > ctx.deadline) { timedOut = true; break; }
         beat({ phase: 'select', k });
-        adapter.scrollToRow(Math.max(0, picks[k] - 5));
+        driver.scrollToRow(Math.max(0, picks[k] - 5));
         await afterFrame();
-        const r = await timedAction(() => adapter.selectRow(picks[k]));
-        if (picks[k] === heavyRow && heavy === null) heavy = { ...r, events: data.meta.events.max, detailNodes: adapter.detailNodeCount() };
+        const r = await timedAction(() => driver.selectRow(picks[k]));
+        if (picks[k] === heavyRow && heavy === null) heavy = { ...r, events: data.meta.events.max, detailNodes: driver.detailNodeCount() };
         else list.push(r);
       }
       const all = heavy ? [...list, heavy] : list;
@@ -929,27 +917,27 @@
         ...latencyResult(list),
         selected: all.length,
         heavySpan: heavy && { events: heavy.events, handlerMs: rnd(heavy.handlerMs, 1), toFrameMs: rnd(heavy.toFrameMs, 1), detailNodes: heavy.detailNodes },
-        detailNodesTypical: list.length ? adapter.detailNodeCount() : null,
+        detailNodesTypical: list.length ? driver.detailNodeCount() : null,
       };
     }
 
     async function scResize(ctx) {
-      const { adapter } = ctx;
-      await adapter.reset();
+      const { driver } = ctx;
+      await driver.reset();
       await settle();
       const base = stage.getBoundingClientRect().width;
       const frames = 40;
       ctx.startMeasure();
-      const res = await runFrames({ frames, deadline: ctx.deadline, step: (i) => adapter.resize(Math.round(base * (i % 2 ? 0.7 : 1))) });
-      adapter.resize(Math.round(base));
+      const res = await runFrames({ frames, deadline: ctx.deadline, step: (i) => driver.resize(Math.round(base * (i % 2 ? 0.7 : 1))) });
+      driver.resize(Math.round(base));
       return { ...frameResult(res), framesRequested: frames, widthsPx: [Math.round(base), Math.round(base * 0.7)] };
     }
 
     async function scCollapse(ctx) {
-      const { adapter, data } = ctx;
+      const { driver, data } = ctx;
       const hot = data.meta.hot.bigSubtree;
       if (!hot) return { status: 'skipped', reason: 'dataset has no collapsible subtree' };
-      await adapter.reset();
+      await driver.reset();
       await settle();
       const ops = [];
       const rowsAfter = {};
@@ -961,18 +949,18 @@
         ops.push({ label, ...r });
         return true;
       };
-      const rowsBefore = adapter.rowCount();
+      const rowsBefore = driver.rowCount();
       ctx.startMeasure();
       for (let k = 0; k < 20; k++) {
-        if (!(await run('collapse', () => adapter.toggleCollapse(hot.spanId)))) break;
-        if (k === 0) rowsAfter.collapsed = adapter.rowCount();
-        if (!(await run('expand', () => adapter.toggleCollapse(hot.spanId)))) break;
-        if (k === 0) rowsAfter.expanded = adapter.rowCount();
+        if (!(await run('collapse', () => driver.toggleCollapse(hot.spanId)))) break;
+        if (k === 0) rowsAfter.collapsed = driver.rowCount();
+        if (!(await run('expand', () => driver.toggleCollapse(hot.spanId)))) break;
+        if (k === 0) rowsAfter.expanded = driver.rowCount();
       }
       for (let k = 0; k < 3 && !timedOut; k++) {
-        if (!(await run('collapseAll', () => adapter.collapseAll()))) break;
-        if (k === 0) rowsAfter.allCollapsed = adapter.rowCount();
-        if (!(await run('expandAll', () => adapter.expandAll()))) break;
+        if (!(await run('collapseAll', () => driver.collapseAll()))) break;
+        if (k === 0) rowsAfter.allCollapsed = driver.rowCount();
+        if (!(await run('expandAll', () => driver.expandAll()))) break;
       }
       const of = (label) => ops.filter((o) => o.label === label);
       const part = (label) => { const l = of(label); return l.length ? { samples: l.length, handler: stats(l.map((o) => o.handlerMs)), toFrame: stats(l.map((o) => o.toFrameMs)) } : null; };
@@ -982,19 +970,19 @@
         target: { spanId: hot.spanId, descendants: hot.descendants, depth: hot.depth },
         rows: { before: rowsBefore, ...rowsAfter },
         opsDone: ops.length,
-        adapterNotes: adapter.notes(),
+        driverNotes: driver.notes(),
         collapse: part('collapse'), expand: part('expand'), collapseAll: part('collapseAll'), expandAll: part('expandAll'),
         ...latencyResult(sub),
       };
     }
 
     async function scFilter(ctx) {
-      const { adapter, data } = ctx;
-      await adapter.reset();
+      const { driver, data } = ctx;
+      await driver.reset();
       await settle();
       const queries = pickFilterQueries(data.traceData);
       const tSetup = performance.now();
-      adapter.enableFilter();
+      driver.enableFilter();
       const tSetupEnd = performance.now();
       await afterFrame();
       await settle();
@@ -1006,9 +994,9 @@
         beat({ phase: 'filter', label });
         await afterFrame();
         const t0 = performance.now();
-        const r = await adapter.setFilter(text);
+        const r = await driver.setFilter(text);
         const tf = await afterFrame();
-        steps.push({ label, text, debounceMs: rnd(r.debounceMs, 1), renderMs: rnd(r.renderMs, 1), toFrameMs: rnd(tf - t0, 1), rowsAfter: adapter.rowCount() });
+        steps.push({ label, text, debounceMs: rnd(r.debounceMs, 1), renderMs: rnd(r.renderMs, 1), toFrameMs: rnd(tf - t0, 1), rowsAfter: driver.rowCount() });
         return true;
       };
       const round = async () => (await apply('selective', queries.selective.text)) && (await apply('broad', queries.broad.text)) && (await apply('clear', ''));
@@ -1057,9 +1045,8 @@
       status: 'idle',
       label: P.label,
       rev: P.rev,
-      impl: P.impl,
       params: {
-        impl: P.impl, n: P.gen.n, flat: P.gen.flat, ns: P.gen.ns, seed: P.gen.seed, heavy: P.gen.heavy, ev: P.gen.ev,
+        n: P.gen.n, flat: P.gen.flat, ns: P.gen.ns, seed: P.gen.seed, heavy: P.gen.heavy, ev: P.gen.ev,
         only: P.only, wdSec: P.wd / 1000, budgetSec: P.budget / 1000, bundle: P.bundle,
       },
       startedAt: null,
@@ -1081,7 +1068,7 @@
     const fileName = () => {
       if (P.probeOnly) return 'probe';
       const g = P.gen;
-      const parts = [P.impl, `n${g.n}`];
+      const parts = [`n${g.n}`];
       if (g.flat) parts.push('flat');
       if (g.ns === 0) parts.push('ns0');
       if (g.heavy !== 0.001 && !g.flat) parts.push(`heavy${g.heavy}`);
@@ -1133,7 +1120,7 @@
     }
 
     let running = false;
-    let adapter = null;
+    let driver = null;
     let runStarted = 0;
 
     async function runScenario(name, fn, data, rng) {
@@ -1146,12 +1133,12 @@
       flushObservers();
       const t0 = performance.now();
       // startMeasure() is called by a scenario once its setup is done, so slow setup does not eat the watchdog budget
-      const ctx = { adapter, data, rng, deadline: t0 + P.wd, startMeasure() { ctx.deadline = performance.now() + P.wd; } };
+      const ctx = { driver, data, rng, deadline: t0 + P.wd, startMeasure() { ctx.deadline = performance.now() + P.wd; } };
       let out;
       try {
         out = await fn(ctx);
       } catch (e) {
-        out = { status: e instanceof NotImplemented ? 'not-implemented' : 'error', error: String((e && e.stack) || e) };
+        out = { status: 'error', error: String((e && e.stack) || e) };
       }
       const t1 = performance.now();
       await settle();
@@ -1199,28 +1186,19 @@
         }
         result.bundle = await bundleInfo(P.bundle);
 
-        adapter = createAdapter(P.impl);
+        driver = new VisualizerDriver();
         stage.style.width = `${P.w || Math.min(1400, innerWidth - 16)}px`;
-        if (adapter.stageMode === 'fixed') {
-          stage.classList.add('fixed');
-          stage.style.height = `${P.h || Math.min(800, innerHeight - 20)}px`;
-        }
-        result.env.stage = { widthCss: stage.getBoundingClientRect().width, mode: adapter.stageMode };
-        if (adapter.stageMode === 'fixed') result.env.stage.heightCss = stage.getBoundingClientRect().height;
-        hud.meta.textContent = `${P.impl} n=${P.gen.n}${P.gen.flat ? ' flat' : ''}${P.gen.ns === 0 ? ' ns=0' : ''} dpr=${devicePixelRatio} ${result.env.refresh.hz} Hz probe ${result.env.probe.pipeline.p50}/${result.env.probe.pipeline.p95} ms`;
-
-        if (!adapter.implemented) {
-          result.status = 'not-implemented';
-          result.reason = `the ${P.impl} adapter does not implement the harness interface (see the comment in perf.html)`;
-          setStatus(result.reason);
-          result.summary = summarize();
-          publish(true);
-          return;
-        }
+        stage.classList.add('fixed');
+        stage.style.height = `${P.h || Math.min(800, innerHeight - 20)}px`;
+        result.env.stage = {
+          widthCss: stage.getBoundingClientRect().width,
+          heightCss: stage.getBoundingClientRect().height,
+        };
+        hud.meta.textContent = `n=${P.gen.n}${P.gen.flat ? ' flat' : ''}${P.gen.ns === 0 ? ' ns=0' : ''} dpr=${devicePixelRatio} ${result.env.refresh.hz} Hz probe ${result.env.probe.pipeline.p50}/${result.env.probe.pipeline.p95} ms`;
 
         setStatus('loading the bundle…');
-        const lib = await import(P.bundle);   // every adapter drives an element this bundle registers
-        await adapter.load({ lib });
+        const lib = await import(P.bundle);
+        await driver.load({ lib });
 
         setStatus('generating the dataset…');
         await afterFrame();
@@ -1259,7 +1237,7 @@
         if (mounted) {
           // tear down and probe again: shows whether the machine drifted during the run
           setStatus('tearing down, probing again…');
-          adapter.unmount();
+          driver.unmount();
           await settle();
           result.probeEnd = { cpu: cpuProbe(), pipeline: await pipelineProbe() };
         }
@@ -1351,7 +1329,7 @@
       }
     });
     if (P.only) $('only').value = P.only.join(',');
-    hud.meta.textContent = `${P.impl} n=${P.gen.n}${P.gen.flat ? ' flat' : ''}${P.gen.ns === 0 ? ' ns=0' : ''}`;
+    hud.meta.textContent = `n=${P.gen.n}${P.gen.flat ? ' flat' : ''}${P.gen.ns === 0 ? ' ns=0' : ''}`;
 
     if (P.auto) {
       setStatus('auto run starting…');
