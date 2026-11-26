@@ -20,7 +20,7 @@ function rule(field: string, value: string, kind: string): SpanKindRule {
   return { match: { [field]: value }, kind };
 }
 
-/** The mapping used for `demo/logs.json` in the interactive guide (attributes plus `<span-kind-rule>` children). */
+/** The test-fixture mapping used for `demo/logs.json` (attributes plus `<span-kind-rule>` children). */
 export const DEMO_CONFIG: TransformConfig = {
   traceIdField: 'text.BTMID',
   spanGroupFields: ['text.Application', 'text.Action'],

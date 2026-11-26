@@ -42,7 +42,7 @@ function resolveRequestPath(rawPathname) {
     return path.join(__dirname, 'index.html');
   }
 
-  if (pathname === '/api' || pathname === '/api/') {
+  if (pathname === '/api/') {
     return path.join(ROOT_DIR, 'docs', 'index.html');
   }
 
@@ -51,7 +51,7 @@ function resolveRequestPath(rawPathname) {
     return target.startsWith(path.join(ROOT_DIR, 'docs') + path.sep) ? target : null;
   }
 
-  if (pathname === '/docs' || pathname === '/docs/') {
+  if (pathname === '/docs/') {
     return path.join(ROOT_DIR, 'docs', 'index.html');
   }
 
@@ -65,7 +65,17 @@ function resolveRequestPath(rawPathname) {
 }
 
 const server = http.createServer((req, res) => {
-  const pathname = (req.url ?? '/').split(/[?#]/, 1)[0];
+  const rawUrl = req.url ?? '/';
+  const sepIdx = rawUrl.search(/[?#]/);
+  const pathname = sepIdx === -1 ? rawUrl : rawUrl.slice(0, sepIdx);
+  const suffix = sepIdx === -1 ? '' : rawUrl.slice(sepIdx);
+
+  if (pathname === '/api' || pathname === '/docs') {
+    res.writeHead(301, { Location: `${pathname}/${suffix}` });
+    res.end();
+    return;
+  }
+
   let actualPath = resolveRequestPath(pathname);
 
   if (!actualPath) {

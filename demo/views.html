@@ -761,7 +761,7 @@ registerView({
         codeLabel.textContent = 'HTML — Spacious Editorial / Postmortem Report Setup';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  theme="light"\n  height="460"\n  span-height="36"\n  span-padding="7"\n  gutter-width="265"\n  show-legend\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#fcfaf5; --l2t-color-surface:#f3efe6; --l2t-color-accent:#b45309"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n</trace-visualizer>`,
+          `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  trace-id-field="trace.id"\n  span-group-fields="service.name,operation"\n  span-name-field="operation"\n  service-name-field="service.name"\n  timestamp-field="ts"\n  status-code-field="code"\n  parent-span-lookup-fields="caller"\n  theme="light"\n  height="460"\n  span-height="36"\n  span-padding="7"\n  gutter-width="265"\n  show-legend\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#fcfaf5; --l2t-color-surface:#f3efe6; --l2t-color-accent:#b45309"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n</trace-visualizer>`,
           'html',
         );
       }

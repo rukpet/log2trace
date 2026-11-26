@@ -730,7 +730,13 @@
 
     let jsOut;
     if (source === 'synthetic') {
-      jsOut = `import 'log2trace-ui';\nimport { generateTrace } from './perf-gen.js';\n\nconst viz = document.querySelector('#trace-viz');\nconst { traceData } = generateTrace({ n: ${$('pg-syn-n').value}, seed: ${$('pg-syn-seed').value}, ev: ${$('pg-syn-ev').value}, ns: ${$('pg-syn-ns').checked ? 1 : 0} });\nviz.traceData = traceData;`;
+      const n = Number($('pg-syn-n').value) || 10000;
+      const seed = Number($('pg-syn-seed').value) || 1;
+      if ($('pg-syn-mode').value === 'flat') {
+        jsOut = `import 'log2trace-ui';\nimport { generateFlatLogs, FLAT_TRANSFORM_CONFIG } from './perf-gen.js';\n\nconst viz = document.querySelector('#trace-viz');\nconst logs = generateFlatLogs(${n * 2}, ${seed});\nviz.logData = { logs, config: FLAT_TRANSFORM_CONFIG };`;
+      } else {
+        jsOut = `import 'log2trace-ui';\nimport { generateTrace } from './perf-gen.js';\n\nconst viz = document.querySelector('#trace-viz');\nconst { traceData } = generateTrace({ n: ${n}, seed: ${seed}, ev: ${$('pg-syn-ev').value}, ns: ${$('pg-syn-ns').checked ? 1 : 0} });\nviz.traceData = traceData;`;
+      }
     } else if (cfg) {
       const cleanCfg = { ...cfg };
       if (cleanCfg.spanKindRules) cleanCfg.spanKindRules = cleanCfg.spanKindRules.slice(0, 3);
@@ -742,8 +748,13 @@
     setCodeBlock($('pg-code-js'), jsOut, 'javascript');
   }
 
+  let lastLoadedSource = null;
+
   async function loadSelectedDataset() {
     const source = $('pg-source').value;
+    const switchedSource = source !== lastLoadedSource;
+    lastLoadedSource = source;
+
     $('pg-synthetic-panel').hidden = source !== 'synthetic';
     $('pg-custom-panel').hidden = source !== 'custom';
     $('pg-preset-rules-wrap').hidden = source !== 'fintech';
@@ -751,20 +762,22 @@
     const showTransform = source === 'fintech' || (source === 'custom' && customPayloadKind === 'logs');
     $('pg-transform-panel').hidden = !showTransform;
 
+    if (source === 'fintech' && switchedSource) {
+      $('pg-tf-trace').value = FINTECH_LOG_CONFIG.traceIdField;
+      $('pg-tf-name').value = FINTECH_LOG_CONFIG.spanNameField;
+      $('pg-tf-svc').value = FINTECH_LOG_CONFIG.serviceNameField;
+      $('pg-tf-ts').value = FINTECH_LOG_CONFIG.timestampField;
+      $('pg-tf-group').value = FINTECH_LOG_CONFIG.spanGroupFields.join(',');
+      $('pg-tf-parent').value = FINTECH_LOG_CONFIG.parentSpanLookupFields.join(',');
+      $('pg-tf-status').value = FINTECH_LOG_CONFIG.statusCodeField;
+      $('pg-tf-end').value = '';
+      $('pg-tf-defkind').value = '';
+      $('pg-tf-rules').checked = true;
+    }
+
     syncShellAndCarriers();
 
     if (source === 'fintech') {
-      if ($('pg-tf-trace').value !== 'trace.id' && !customParsedPayload) {
-        $('pg-tf-trace').value = FINTECH_LOG_CONFIG.traceIdField;
-        $('pg-tf-name').value = FINTECH_LOG_CONFIG.spanNameField;
-        $('pg-tf-svc').value = FINTECH_LOG_CONFIG.serviceNameField;
-        $('pg-tf-ts').value = FINTECH_LOG_CONFIG.timestampField;
-        $('pg-tf-group').value = FINTECH_LOG_CONFIG.spanGroupFields.join(',');
-        $('pg-tf-parent').value = FINTECH_LOG_CONFIG.parentSpanLookupFields.join(',');
-        $('pg-tf-status').value = FINTECH_LOG_CONFIG.statusCodeField;
-        $('pg-tf-end').value = '';
-        $('pg-tf-rules').checked = true;
-      }
       const logs = await loadFintechLogs();
       populateFieldSuggestions(logs);
       const t0 = performance.now();

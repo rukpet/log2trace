@@ -418,15 +418,21 @@
         lines.push(`  <trace-filter ${attrPairs.join(' ')}></trace-filter>`);
       }
 
+      const ds = dsSel.value;
+      const hostTag = ds === 'fintech'
+        ? `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  trace-id-field="trace.id"\n  span-group-fields="service.name,operation"\n  span-name-field="operation"\n  service-name-field="service.name"\n  timestamp-field="ts"\n  status-code-field="code"\n  parent-span-lookup-fields="caller"\n  show-legend\n>`
+        : `<trace-visualizer data-url="./data/${ds === 'incident' ? 'incident-cascade.json' : 'ai-search-trace.json'}" show-legend>`;
+
       setCodeBlock(
         codeEl,
-        `<trace-visualizer data-url="./data/ai-search-trace.json" show-legend>\n${lines.join('\n') || '  <!-- Enable one or more filter controls above -->'}\n</trace-visualizer>`,
+        `${hostTag}\n${lines.join('\n') || '  <!-- Enable one or more filter controls above -->'}\n</trace-visualizer>`,
         'html',
       );
     }
 
     async function syncFilterData() {
       const v = dsSel.value;
+      syncFilterChildren();
       if (v === 'ai') viz.traceData = await loadAiSearchTrace();
       else if (v === 'incident') viz.traceData = await loadIncidentCascade();
       else viz.logData = { logs: await loadFintechLogs(), config: FINTECH_LOG_CONFIG };
@@ -435,7 +441,6 @@
     for (const cb of Object.values(toggles)) cb.addEventListener('change', syncFilterChildren);
     dsSel.addEventListener('change', () => void syncFilterData());
 
-    syncFilterChildren();
     void syncFilterData();
   }
 

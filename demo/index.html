@@ -510,7 +510,7 @@ console.log({ spans: index.size, roots: index.roots.length, services: index.tabl
 
     viz.addEventListener('trace-loaded', (e) => {
       const svcs = viz.store.state.data.index.table.services.length;
-      statsEl.textContent = `${e.detail.spans} spans · ${svcs} services · ${e.detail.roots} root`;
+      statsEl.textContent = `${e.detail.spans} spans · ${svcs} services · ${e.detail.roots} root${e.detail.roots === 1 ? '' : 's'}`;
     });
 
     const URL_MAP = {
