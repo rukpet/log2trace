@@ -59,7 +59,7 @@ interface Rig {
   rows(): FakeElement[];
 }
 
-function rig(tree: TreeNode, width = 1000, height = 400): Rig {
+function rig(tree: TreeNode | readonly TreeNode[], width = 1000, height = 400): Rig {
   const store = createTraceStore({ schedule: () => undefined });
   store.setData(buildSpanIndex(treeTrace(tree)));
   const controller = new WaterfallController({ store, origin: 'wf-dom' });
@@ -258,7 +258,7 @@ test('gutter hides service name when remaining room is 24 px or less, matching c
   // Meter measures 6 px per char; 'svc' is 3 chars. 214 - 30*6 - 6 = 28 (> 24, shown); 214 - 31*6 - 6 = 22 (<= 24, hidden).
   const fits = 'a'.repeat(30);
   const tight = 'b'.repeat(31);
-  const r = rig({ id: fits, start: 0, end: 100, children: [{ id: tight, start: 0, end: 50 }] });
+  const r = rig([{ id: fits, start: 0, end: 50 }, { id: tight, start: 50, end: 100 }]);
 
   const rowFits = r.rows().find((row) => row.findAll('name')[0].textContent === fits);
   const rowTight = r.rows().find((row) => row.findAll('name')[0].textContent === tight);
@@ -288,4 +288,3 @@ test('narrow bars (< 6 px) use sharp corners and duration labels align to whole 
   r.draw(WaterfallDirty.Camera);
   assert.equal(tinyBar.classList.contains('barSharp'), false);
 });
-
