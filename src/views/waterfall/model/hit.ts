@@ -1,8 +1,8 @@
 /**
  * Hit testing: what is under a point of the view.
  *
- * Geometry only, shared by the Canvas and the DOM painter, so both react to
- * the pointer identically. Finding the row is arithmetic, and the nearest
+ * Geometry only, so hit testing and the DOM painter agree on pointer
+ * targets. Finding the row is arithmetic, and the nearest
  * event marker is a binary search, so a test costs the same at 50,000 spans as
  * at 50. Reuse one {@link HitResult} for every pointer move to avoid garbage.
  *

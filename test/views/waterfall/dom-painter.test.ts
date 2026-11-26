@@ -283,3 +283,54 @@ test('narrow bars (< 6 px) use sharp corners and duration labels align to whole 
   r.draw(WaterfallDirty.Camera);
   assert.equal(tinyBar.classList.contains('barSharp'), false);
 });
+
+test('reads computed font-family from the painter layer on mount and refreshTheme', () => {
+  const original = globalThis.getComputedStyle;
+  let activeFont = 'Initial Sans';
+  const queried: unknown[] = [];
+  (globalThis as Record<string, unknown>).getComputedStyle = (el: unknown) => {
+    queried.push(el);
+    return { fontFamily: activeFont };
+  };
+  try {
+    const fonts: string[] = [];
+    const store = createTraceStore({ schedule: () => undefined });
+    store.setData(buildSpanIndex(treeTrace(wide(1))));
+    const controller = new WaterfallController({ store, origin: 'wf-font' });
+    const clock = createFakeClock();
+    const host = new FakeElement('div');
+    const painter = createDomPainter(
+      {
+        controller,
+        host: host as unknown as HTMLElement,
+        meter: createTextMeter({
+          measure: (text, font) => {
+            fonts.push(font);
+            return text.length * 6;
+          },
+        }),
+        scheduler: createFrameScheduler(clock),
+        onSize: (w, h) => { controller.resize(w, h); },
+      },
+      fakeClasses(),
+    );
+    const layer = host.children[0];
+    assert.deepEqual(queried, [layer]);
+
+    FakeResizeObserver.instances[FakeResizeObserver.instances.length - 1].fire(1000, 400);
+    clock.frame();
+    assert.ok(fonts.includes('12px Initial Sans'));
+    assert.ok(fonts.includes('11px Initial Sans'));
+
+    fonts.length = 0;
+    activeFont = 'Updated Mono';
+    painter.refreshTheme();
+    clock.frame();
+    assert.deepEqual(queried, [layer, layer]);
+    assert.ok(fonts.includes('12px Updated Mono'));
+    assert.ok(fonts.includes('11px Updated Mono'));
+    painter.dispose();
+  } finally {
+    (globalThis as Record<string, unknown>).getComputedStyle = original;
+  }
+});

@@ -29,8 +29,8 @@ export interface PainterContext {
   readonly host: HTMLElement;
   /** Caches text widths; shared, and cleared by the painter when fonts load. */
   readonly meter: TextMeter;
-  /** Computed CSS font-family used to measure labels. */
-  readonly fontFamily: string;
+  /** Fallback CSS font-family when `getComputedStyle` is unavailable (tests). */
+  readonly fontFamily?: string;
   readonly scheduler: FrameScheduler;
   /** The host has (a new) size, in CSS px. Called before the painter draws at that size. */
   readonly onSize: (width: number, height: number) => void;
@@ -41,8 +41,8 @@ export interface WaterfallPainter {
   readonly stats: PainterStats;
   /** Say what changed, as {@link WaterfallDirty} bits; the painter draws on the next frame. */
   mark(dirty: number): void;
-  /** The theme or font changed; the painter updates its font metrics and repaints. */
-  setFontFamily(fontFamily: string): void;
+  /** The theme tokens may have changed; re-read the computed font and repaint. */
+  refreshTheme(): void;
   /** Remove everything the painter added to the host and stop its listeners. */
   dispose(): void;
 }
