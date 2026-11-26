@@ -104,7 +104,7 @@
         </div>
 
         <div class="wb-stage">
-          <trace-visualizer id="viz-archetype" show-legend height="450">
+          <trace-visualizer id="viz-archetype" show-legend height="600">
             <trace-view type="waterfall" active></trace-view>
             <trace-view type="flame" label="Hotspots"></trace-view>
             <trace-view type="service"></trace-view>
@@ -136,8 +136,8 @@
         <div class="wb-toolbar wb-toolbar--dense">
           <label class="ctrl-range">
             <span>height</span>
-            <input type="range" id="wf-height" min="260" max="580" step="20" value="380">
-            <output id="wf-height-out">380px</output>
+            <input type="range" id="wf-height" min="260" max="800" step="20" value="540">
+            <output id="wf-height-out">540px</output>
           </label>
 
           <label class="ctrl-range">
@@ -179,7 +179,7 @@
         </div>
 
         <div class="wb-stage">
-          <trace-visualizer id="viz-wf" height="380" span-height="28" span-padding="5" gutter-width="230" detail-panel-width="40%" show-legend></trace-visualizer>
+          <trace-visualizer id="viz-wf" height="540" span-height="28" span-padding="5" gutter-width="230" detail-panel-width="40%" show-legend></trace-visualizer>
         </div>
 
         <div class="code-panel">
@@ -250,7 +250,7 @@
         </div>
 
         <div class="wb-stage">
-          <trace-visualizer id="viz-fs" show-legend height="440">
+          <trace-visualizer id="viz-fs" show-legend height="580">
             <trace-view type="flame" active></trace-view>
             <trace-view type="service"></trace-view>
             <trace-view type="waterfall"></trace-view>
@@ -325,7 +325,7 @@
         </div>
 
         <div class="wb-stage">
-          <trace-visualizer id="viz-seq" show-legend height="440">
+          <trace-visualizer id="viz-seq" show-legend height="600">
             <trace-view id="seq-carrier" type="sequence" active internal="auto" returns="all" fold="3" row-height="28"></trace-view>
             <trace-view type="waterfall"></trace-view>
           </trace-visualizer>
@@ -384,7 +384,7 @@
         </div>
 
         <div class="wb-stage">
-          <trace-visualizer id="viz-theme" data-pin-theme="true" theme="dark" show-legend height="390">
+          <trace-visualizer id="viz-theme" data-pin-theme="true" theme="dark" show-legend height="560">
             <trace-view type="waterfall" active></trace-view>
             <trace-view type="flame"></trace-view>
             <trace-view type="service"></trace-view>
@@ -433,7 +433,7 @@
 
       <div class="workbench">
         <div class="wb-stage">
-          <trace-visualizer id="viz-custom" show-legend height="400">
+          <trace-visualizer id="viz-custom" show-legend height="560">
             <trace-filter field="*" label="Search" type="text" source="local" placeholder="Filter spans across custom &amp; built-in views…" width="300"></trace-filter>
             <trace-view type="hot-spans" label="Slowest Spans (Custom)" active></trace-view>
             <trace-view type="waterfall"></trace-view>
@@ -661,7 +661,7 @@ registerView({
       for (const c of [...viz.querySelectorAll('trace-view')]) c.remove();
 
       if (key === 'suite') {
-        viz.setAttribute('height', '450');
+        viz.setAttribute('height', '600');
         viz.setAttribute('span-height', '28');
         viz.setAttribute('span-padding', '4');
         viz.setAttribute('gutter-width', '240');
@@ -686,11 +686,11 @@ registerView({
         codeLabel.textContent = 'HTML — Full 4-View Observability Suite (AI RAG Trace)';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer data-url="./data/ai-search-trace.json" height="450" show-legend>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame" label="Hotspots"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" fold="3"></trace-view>\n</trace-visualizer>`,
+          `<trace-visualizer data-url="./data/ai-search-trace.json" height="600" show-legend>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame" label="Hotspots"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" fold="3"></trace-view>\n</trace-visualizer>`,
           'html',
         );
       } else if (key === 'compact') {
-        viz.setAttribute('height', '290');
+        viz.setAttribute('height', '340');
         viz.setAttribute('span-height', '20');
         viz.setAttribute('span-padding', '2');
         viz.setAttribute('gutter-width', '185');
@@ -698,18 +698,18 @@ registerView({
         viz.removeAttribute('wheel-zoom');
         syncVisualizerThemes();
         viz.traceData = await loadEdgeAuthTrace();
-        metaEl.textContent = '14 spans · 20px rows · 290px tall · single view (no tabs)';
+        metaEl.textContent = '14 spans · 20px rows · 340px tall · single view (no tabs)';
         codeLabel.textContent = 'HTML — Compact Embedded Widget (PR Check / Sidebar Card)';
         setCodeBlock(
           codeEl,
-          `<!-- Omit <trace-view> children for a clean, single-view embedded waterfall -->\n<trace-visualizer\n  data-url="./data/edge-auth-trace.json"\n  height="290"\n  span-height="20"\n  span-padding="2"\n  gutter-width="185"\n></trace-visualizer>`,
+          `<!-- Omit <trace-view> children for a clean, single-view embedded waterfall -->\n<trace-visualizer\n  data-url="./data/edge-auth-trace.json"\n  height="340"\n  span-height="20"\n  span-padding="2"\n  gutter-width="185"\n></trace-visualizer>`,
           'html',
         );
       } else if (key === 'noc') {
         const kc = { Server: '#34d399', Client: '#fbbf24', Internal: '#60a5fa', Producer: '#22d3ee', Consumer: '#fb7185' };
         viz.setAttribute('data-pin-theme', 'true');
         viz.setAttribute('theme', 'dark');
-        viz.setAttribute('height', '410');
+        viz.setAttribute('height', '580');
         viz.setAttribute('span-height', '26');
         viz.setAttribute('span-padding', '4');
         viz.setAttribute('gutter-width', '250');
@@ -732,14 +732,14 @@ registerView({
         codeLabel.textContent = 'HTML — NOC Dark Incident Room Setup';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer\n  data-url="./data/incident-cascade.json"\n  theme="dark"\n  height="410"\n  show-legend\n  wheel-zoom\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#0b0f17; --l2t-color-surface:#131a26; --l2t-color-accent:#38bdf8"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" returns="errors"></trace-view>\n</trace-visualizer>`,
+          `<trace-visualizer\n  data-url="./data/incident-cascade.json"\n  theme="dark"\n  height="580"\n  show-legend\n  wheel-zoom\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#0b0f17; --l2t-color-surface:#131a26; --l2t-color-accent:#38bdf8"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" returns="errors"></trace-view>\n</trace-visualizer>`,
           'html',
         );
       } else if (key === 'editorial') {
         const kc = { Server: '#0f766e', Client: '#d97706', Internal: '#334155', Producer: '#0284c7', Consumer: '#be123c' };
         viz.setAttribute('data-pin-theme', 'true');
         viz.setAttribute('theme', 'light');
-        viz.setAttribute('height', '460');
+        viz.setAttribute('height', '640');
         viz.setAttribute('span-height', '36');
         viz.setAttribute('span-padding', '7');
         viz.setAttribute('gutter-width', '265');
@@ -761,7 +761,7 @@ registerView({
         codeLabel.textContent = 'HTML — Spacious Editorial / Postmortem Report Setup';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  trace-id-field="trace.id"\n  span-group-fields="service.name,operation"\n  span-name-field="operation"\n  service-name-field="service.name"\n  timestamp-field="ts"\n  status-code-field="code"\n  parent-span-lookup-fields="caller"\n  theme="light"\n  height="460"\n  span-height="36"\n  span-padding="7"\n  gutter-width="265"\n  show-legend\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#fcfaf5; --l2t-color-surface:#f3efe6; --l2t-color-accent:#b45309"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n</trace-visualizer>`,
+          `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  trace-id-field="trace.id"\n  span-group-fields="service.name,operation"\n  span-name-field="operation"\n  service-name-field="service.name"\n  timestamp-field="ts"\n  status-code-field="code"\n  parent-span-lookup-fields="caller"\n  theme="light"\n  height="640"\n  span-height="36"\n  span-padding="7"\n  gutter-width="265"\n  show-legend\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#fcfaf5; --l2t-color-surface:#f3efe6; --l2t-color-accent:#b45309"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n</trace-visualizer>`,
           'html',
         );
       }

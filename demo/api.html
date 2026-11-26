@@ -146,7 +146,7 @@
         </div>
 
         <div class="wb-stage">
-          <trace-visualizer id="viz-api" show-legend height="440">
+          <trace-visualizer id="viz-api" show-legend height="580">
             <trace-filter field="*" label="Search" type="text" source="local" width="240" debounce="200" placeholder="Trigger filter-changed…"></trace-filter>
             <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local"></trace-filter>
             <trace-view type="waterfall" active></trace-view>
@@ -216,7 +216,7 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
         </div>
 
         <div class="wb-stage" id="st-stage">
-          <trace-visualizer id="viz-states" height="260"></trace-visualizer>
+          <trace-visualizer id="viz-states" height="340"></trace-visualizer>
         </div>
 
         <div class="code-panel">
@@ -509,7 +509,7 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
 
     function mountFreshVisualizer() {
       const el = document.createElement('trace-visualizer');
-      el.setAttribute('height', '260');
+      el.setAttribute('height', '340');
       stage.replaceChildren(el);
       syncVisualizerThemes();
       return el;
@@ -528,7 +528,7 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
         caption.textContent = 'Empty state — no data-url and zero spans';
         setCodeBlock(
           codeEl,
-          `<!-- No data-url or empty { resourceSpans: [] } -->\n<trace-visualizer height="260"></trace-visualizer>`,
+          `<!-- No data-url or empty { resourceSpans: [] } -->\n<trace-visualizer height="340"></trace-visualizer>`,
           'html',
         );
       } else if (kind === 'required') {
@@ -545,7 +545,7 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
         caption.textContent = 'Required gate — external filter marked required before selection';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer height="260">\n  <trace-filter field="traceId" label="Trace ID" type="dropdown" source="external" required options='["pay-trc-901","pay-trc-902"]'></trace-filter>\n</trace-visualizer>`,
+          `<trace-visualizer height="340">\n  <trace-filter field="traceId" label="Trace ID" type="dropdown" source="external" required options='["pay-trc-901","pay-trc-902"]'></trace-filter>\n</trace-visualizer>`,
           'html',
         );
       } else if (kind === 'loading') {
@@ -582,7 +582,7 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
         caption.textContent = 'Error state — HTTP 404 or invalid JSON rendered cleanly inside view';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer data-url="./data/does-not-exist-404.json" height="260"></trace-visualizer>`,
+          `<trace-visualizer data-url="./data/does-not-exist-404.json" height="340"></trace-visualizer>`,
           'html',
         );
       }
