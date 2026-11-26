@@ -40,10 +40,18 @@ jobs:
 
       - name: Publish to GitHub Packages
         run: |
+          PKG_NAME="@${{ github.repository_owner }}/log2trace-ui"
           VERSION=$(node -p "require('./package.json').version")
           if [[ "$VERSION" == *"-"* ]]; then
             TAG=$(node -p "require('./package.json').version.split('-')[1].replace(/[\\.\\d]+$/, '').toLowerCase() || 'next'")
-            npm publish --tag "$TAG"
+            VERSIONS_JSON=$(npm view "$PKG_NAME" versions --registry https://npm.pkg.github.com --json 2>/dev/null || true)
+            HAS_STABLE=$(node -e "try { const v = JSON.parse(process.argv[1]); console.log((Array.isArray(v) ? v : typeof v === 'string' ? [v] : []).some(s => !s.includes('-'))); } catch { console.log(false); }" "$VERSIONS_JSON")
+            if [ "$HAS_STABLE" = "true" ]; then
+              npm publish --tag "$TAG"
+            else
+              npm publish --tag latest
+              npm dist-tag add "$PKG_NAME@$VERSION" "$TAG" --registry https://npm.pkg.github.com
+            fi
           else
             npm publish
           fi

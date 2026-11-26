@@ -39,6 +39,10 @@ jobs:
           git log -1 --pretty=%B > /tmp/commit-msg.txt
           npm run check:commit /tmp/commit-msg.txt
 
+      - name: Verify package version
+        run: |
+          node -e "const p = require('./package.json'), l = require('./package-lock.json'); if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[a-z]+\.(0|[1-9]\d*))?$/.test(p.version) || l.version !== p.version) { console.error('Expected synchronized version matching x.y.z or x.y.z-tag.N (e.g. 1.0.0-rc.8), got:', p.version); process.exit(1); }"
+
       - name: Lint
         run: npm run lint
 
