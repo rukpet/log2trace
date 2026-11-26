@@ -322,7 +322,7 @@
               </div>
               <div class="pg-field">
                 <label for="pg-height">Height (px)</label>
-                <input type="number" class="ctrl-input" id="pg-height" value="520" min="240" max="900" step="20">
+                <input type="number" class="ctrl-input" id="pg-height" value="640" min="240" max="1000" step="20">
               </div>
             </div>
 
@@ -375,7 +375,7 @@
           </div>
 
           <div class="wb-stage">
-            <trace-visualizer id="viz-playground" show-legend height="520" span-height="28" span-padding="4" gutter-width="230" detail-panel-width="40%">
+            <trace-visualizer id="viz-playground" show-legend height="640" span-height="28" span-padding="4" gutter-width="230" detail-panel-width="40%">
               <trace-view type="waterfall" active></trace-view>
               <trace-view type="flame"></trace-view>
               <trace-view type="service"></trace-view>
@@ -586,7 +586,7 @@
       viz.style.removeProperty('--l2t-color-accent');
     }
 
-    viz.setAttribute('height', $('pg-height').value || '520');
+    viz.setAttribute('height', $('pg-height').value || '640');
     viz.setAttribute('span-height', $('pg-span-h').value || '28');
     viz.setAttribute('span-padding', $('pg-span-pad').value || '4');
     viz.setAttribute('gutter-width', $('pg-gutter').value || '230');
@@ -835,28 +835,28 @@
   const PRESET_MAP = {
     'ai-suite': {
       source: 'ai', views: ['waterfall', 'flame', 'service', 'sequence'],
-      theme: '', height: 520, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
+      theme: '', height: 640, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
       colors: null, css: null,
     },
     'fintech-logs': {
       source: 'fintech', views: ['waterfall', 'flame', 'service', 'sequence'],
-      theme: '', height: 520, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
+      theme: '', height: 640, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: 'payload.cardNetwork' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
       colors: null, css: null,
     },
     'compact-starter': {
       source: 'edge', views: ['waterfall'],
-      theme: '', height: 310, spanH: 20, pad: 2, gutter: 185, legend: false, wheel: false,
+      theme: '', height: 360, spanH: 20, pad: 2, gutter: 185, legend: false, wheel: false,
       filters: { wild: false, op: false, svc: false, multi: false, err: false, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
       colors: null, css: null,
     },
     'noc-incident': {
       source: 'incident', views: ['waterfall', 'service', 'sequence'],
-      theme: 'dark', height: 480, spanH: 26, pad: 4, gutter: 250, legend: true, wheel: true,
+      theme: 'dark', height: 620, spanH: 26, pad: 4, gutter: 250, legend: true, wheel: true,
       filters: { wild: true, op: false, svc: false, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'errors', fold: '3' },
       colors: { server: '#34d399', client: '#fbbf24', internal: '#60a5fa', producer: '#22d3ee', consumer: '#fb7185' },
@@ -864,7 +864,7 @@
     },
     'editorial': {
       source: 'edge', views: ['waterfall', 'flame', 'service'],
-      theme: 'light', height: 470, spanH: 36, pad: 7, gutter: 265, legend: true, wheel: false,
+      theme: 'light', height: 640, spanH: 36, pad: 7, gutter: 265, legend: true, wheel: false,
       filters: { wild: false, op: false, svc: true, multi: false, err: false, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
       colors: { server: '#0f766e', client: '#d97706', internal: '#334155', producer: '#0284c7', consumer: '#be123c' },
@@ -872,7 +872,7 @@
     },
     'scale-50k': {
       source: 'synthetic', synN: '50000', views: ['waterfall', 'flame', 'service', 'sequence'],
-      theme: '', height: 540, spanH: 26, pad: 4, gutter: 230, legend: true, wheel: false,
+      theme: '', height: 660, spanH: 26, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
       colors: null, css: null,

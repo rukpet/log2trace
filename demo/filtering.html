@@ -115,7 +115,7 @@
         </div>
 
         <div class="wb-stage">
-          <trace-visualizer id="viz-local-filters" show-legend height="470">
+          <trace-visualizer id="viz-local-filters" show-legend height="680">
             <trace-view type="waterfall" active></trace-view>
             <trace-view type="flame"></trace-view>
             <trace-view type="service"></trace-view>
@@ -153,7 +153,7 @@
 
       <div class="workbench">
         <div class="wb-stage">
-          <trace-visualizer id="viz-log-target" show-legend height="430">
+          <trace-visualizer id="viz-log-target" show-legend height="660">
             <trace-filter field="spanName" label="Operation (span)" type="text" source="local" target="span" width="190" debounce="250" placeholder="e.g. capture…"></trace-filter>
             <trace-filter field="payload.message" label="Payload Message (log)" type="text" source="local" target="log" width="210" debounce="250" placeholder="e.g. ISO-8583, HSM…"></trace-filter>
             <trace-filter field="payload.cardNetwork" label="Card Network (log)" type="dropdown" source="local" target="log"
@@ -230,7 +230,7 @@
           <trace-visualizer id="viz-external"
             auto-fetch="false"
             show-legend
-            height="390"
+            height="620"
             trace-id-field="trace.id"
             span-group-fields="service.name,operation"
             span-name-field="operation"
