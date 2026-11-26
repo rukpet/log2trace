@@ -24,7 +24,7 @@ import { Dirty, type FrameHandle } from '../../../kit/scheduler.ts';
 import { cssVariableName, type ResolvedTheme } from '../../../kit/theme/theme.ts';
 import { clearOnFontLoad } from '../../../kit/canvas/text-cache.ts';
 import { HitPart } from '../model/hit.ts';
-import { chevronX } from '../model/layout.ts';
+import { chevronX, labelWidth } from '../model/layout.ts';
 import { FramePlan, LabelMode, RowFlag } from '../model/plan.ts';
 import { Chevron } from '../model/rows.ts';
 import type * as DomStyles from './dom.css.ts';
@@ -69,7 +69,9 @@ interface Slot {
   state: number;
   kind: number;
   chevronState: number;
+  serviceShown: boolean;
   barVisible: boolean;
+  barSharp: boolean;
   barX: number;
   barW: number;
   shownMarkers: number;
@@ -100,8 +102,8 @@ function createSlot(styles: DomClasses, kindClasses: readonly string[]): Slot {
   return {
     row, gutter, chevron, name, service, plotCell, bar, duration, markers,
     span: -1, contentStamp: -1, barStamp: -1, y: Number.NaN, state: -1, kind: -1, chevronState: -1,
-    barVisible: true, barX: Number.NaN, barW: Number.NaN, shownMarkers: 0, durationMode: -1, durationX: Number.NaN,
-    durationText: '', usedFrame: -1, hidden: false,
+    serviceShown: true, barVisible: true, barSharp: false, barX: Number.NaN, barW: Number.NaN, shownMarkers: 0,
+    durationMode: -1, durationX: Number.NaN, durationText: '', usedFrame: -1, hidden: false,
   };
 }
 
@@ -125,7 +127,8 @@ class WaterfallDomPainter implements WaterfallPainter {
   private readonly stopFonts: () => void;
   private readonly slots: Slot[] = [];
   private readonly ticks: TickElements[] = [];
-  private labelFont = '';
+  private nameFont = '';
+  private smallFont = '';
   private contentStamp = 0;
   private cameraStamp = 0;
   private frame = 0;
@@ -177,7 +180,8 @@ class WaterfallDomPainter implements WaterfallPainter {
   }
 
   private setFont(theme: ResolvedTheme): void {
-    this.labelFont = `11px ${theme.fonts.sans}`;
+    this.nameFont = `12px ${theme.fonts.sans}`;
+    this.smallFont = `11px ${theme.fonts.sans}`;
   }
 
   // ---------------------------------------------------------------------------
@@ -198,7 +202,7 @@ class WaterfallDomPainter implements WaterfallPainter {
 
     if ((dirty & SCENE_BITS) !== 0) {
       if ((dirty & Dirty.Theme) !== 0) this.context.meter.clear();
-      controller.buildPlan(this.plan, (text) => this.context.meter.measure(text, this.labelFont));
+      controller.buildPlan(this.plan, (text) => this.context.meter.measure(text, this.smallFont));
       this.writeRows();
       if ((dirty & (Dirty.Size | Dirty.Theme | Dirty.Camera | Dirty.Rows)) !== 0) this.writeTicks();
       this.stats.scenes++;
@@ -286,9 +290,17 @@ class WaterfallDomPainter implements WaterfallPainter {
     const { controller } = this.context;
     const { table } = controller.index;
     const depth = table.depth[span];
+    const room = labelWidth(controller.layout, depth);
+    const name = table.names[table.nameId[span]];
+    const service = table.services[table.svc[span]];
     slot.gutter.style.paddingLeft = `${chevronX(controller.layout, depth)}px`;
-    slot.name.textContent = table.names[table.nameId[span]];
-    slot.service.textContent = table.services[table.svc[span]];
+    slot.name.textContent = name;
+    const showService = service !== '' && room - this.context.meter.measure(name, this.nameFont) - 6 > 24;
+    if (showService !== slot.serviceShown) {
+      slot.service.classList.toggle(this.styles.hidden, !showService);
+      slot.serviceShown = showService;
+    }
+    slot.service.textContent = showService ? service : '';
     if (chevron !== slot.chevronState) {
       slot.chevron.className = `${this.styles.chevron} ${this.chevronClasses[chevron]}`;
       slot.chevronState = chevron;
@@ -312,6 +324,8 @@ class WaterfallDomPainter implements WaterfallPainter {
       slot.bar.className = `${this.styles.bar} ${this.kindClasses[kind]}`;
       slot.kind = kind;
       slot.state = -1;
+      slot.barVisible = true;
+      slot.barSharp = false;
     }
 
     const visible = (flags & RowFlag.BarVisible) !== 0;
@@ -327,6 +341,11 @@ class WaterfallDomPainter implements WaterfallPainter {
 
     const x = plan.barX0[j];
     const w = plan.barX1[j] - x;
+    const sharp = w < 6;
+    if (sharp !== slot.barSharp) {
+      slot.bar.classList.toggle(this.styles.barSharp, sharp);
+      slot.barSharp = sharp;
+    }
     if (x !== slot.barX) {
       slot.bar.style.transform = `translateX(${x}px)`;
       slot.barX = x;
@@ -345,7 +364,7 @@ class WaterfallDomPainter implements WaterfallPainter {
     }
     this.hideMarkers(slot, count);
 
-    this.setDuration(slot, plan.labelMode[j], plan.labelX[j], plan.durationText[j]);
+    this.setDuration(slot, plan.labelMode[j], Math.round(plan.labelX[j]), plan.durationText[j]);
   }
 
   private hideMarkers(slot: Slot, keep: number): void {
