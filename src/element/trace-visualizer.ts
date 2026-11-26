@@ -68,7 +68,7 @@ import { flameDefinition } from '../views/flame/view.ts';
 import { sequenceDefinition } from '../views/sequence/view.ts';
 import { serviceDefinition } from '../views/service/view.ts';
 import type { WaterfallController } from '../views/waterfall/controller.ts';
-import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/painter.ts';
+import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/dom.ts';
 import { WaterfallView, waterfallDefinition } from '../views/waterfall/view.ts';
 import { isTransformReady, kindColorOverrides, mergeConfig, readConfig, readViews, type TraceVisualizerConfig } from './config.ts';
 import { fetchJson, payloadToIndex } from './data-source.ts';

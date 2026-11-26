@@ -20,15 +20,16 @@
 import { timeToPx } from '../../../kit/geometry/camera1d.ts';
 import { niceTicks } from '../../../kit/geometry/ticks.ts';
 import { h } from '../../../kit/dom.ts';
-import { Dirty, type FrameHandle } from '../../../kit/scheduler.ts';
+import { Dirty, type FrameHandle, type FrameScheduler } from '../../../kit/scheduler.ts';
 import { cssVariableName } from '../../../kit/theme/theme.ts';
-import { clearOnFontLoad } from '../../../kit/text-cache.ts';
+import { clearOnFontLoad, type TextMeter } from '../../../kit/text-cache.ts';
+import type { WaterfallController } from '../controller.ts';
 import { HitPart } from '../model/hit.ts';
+import { WaterfallDirty } from '../model/interaction.ts';
 import { chevronX, labelWidth } from '../model/layout.ts';
 import { FramePlan, LabelMode, RowFlag } from '../model/plan.ts';
 import { Chevron } from '../model/rows.ts';
 import type * as DomStyles from './dom.css.ts';
-import { toSurfaceDirty, type PainterContext, type PainterStats, type WaterfallPainter } from './painter.ts';
 
 /** Event markers a row has elements for; the plan may carry more, and the rest are dropped. */
 export const MAX_DOM_MARKERS = 16;
@@ -41,6 +42,53 @@ const OVERLAY_BITS = SCENE_BITS | Dirty.Selection | Dirty.Hover;
 
 /** The class names of `dom.css.ts`; passed in, so this module does not import the stylesheet and runs under `node:test`. */
 export type DomClasses = typeof DomStyles;
+
+/** Counters for the harness: what the painter did. */
+export interface PainterStats {
+  /** Full redraws so far (rewrites of the rows in the DOM painter). */
+  scenes: number;
+  /** Cheap redraws so far (only the hover and selection classes). */
+  overlays: number;
+  /** Rows drawn by the last full redraw. */
+  rows: number;
+}
+
+/** What the painter is given when it is mounted. */
+export interface PainterContext {
+  readonly controller: WaterfallController;
+  /** The element to draw into. It is positioned (`position: relative`) and clips its content. */
+  readonly host: HTMLElement;
+  /** Caches text widths; shared, and cleared by the painter when fonts load. */
+  readonly meter: TextMeter;
+  /** Fallback CSS font-family when `getComputedStyle` is unavailable (tests). */
+  readonly fontFamily?: string;
+  readonly scheduler: FrameScheduler;
+  /** The host has (a new) size, in CSS px. Called before the painter draws at that size. */
+  readonly onSize: (width: number, height: number) => void;
+}
+
+/** A mounted waterfall DOM painter. */
+export interface WaterfallPainter {
+  readonly stats: PainterStats;
+  /** Say what changed, as {@link WaterfallDirty} bits; the painter draws on the next frame. */
+  mark(dirty: number): void;
+  /** The theme tokens may have changed; re-read the computed font and repaint. */
+  refreshTheme(): void;
+  /** Remove everything the painter added to the host and stop its listeners. */
+  dispose(): void;
+}
+
+function toSurfaceDirty(bits: number): number {
+  let out = 0;
+  if (bits & WaterfallDirty.Rows) out |= Dirty.Rows;
+  if (bits & WaterfallDirty.Scroll) out |= Dirty.Scroll;
+  if (bits & WaterfallDirty.Camera) out |= Dirty.Camera;
+  if (bits & WaterfallDirty.Selection) out |= Dirty.Selection;
+  if (bits & WaterfallDirty.Hover) out |= Dirty.Hover;
+  if (bits & WaterfallDirty.Theme) out |= Dirty.Theme;
+  if (bits & WaterfallDirty.Size) out |= Dirty.Size;
+  return out;
+}
 
 /** Bits of a slot's cached state. */
 enum State {

@@ -22,7 +22,7 @@ import { WaterfallController, type UpdateResult } from './controller.ts';
 import { DEFAULT_METRICS, metricsFromSpanSizes, type WaterfallMetrics } from './model/layout.ts';
 import { WaterfallDirty, type Cursor, type WaterfallInput } from './model/interaction.ts';
 import { mountDomPainter } from './paint/dom-mount.ts';
-import type { PainterStats, WaterfallPainter } from './paint/painter.ts';
+import type { PainterStats, WaterfallPainter } from './paint/dom.ts';
 import { readWaterfallSettings, type WaterfallSettings } from './settings.ts';
 import * as styles from './view.css.ts';
 
