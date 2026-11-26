@@ -28,13 +28,13 @@
 import type { FlushScheduler } from '../core/index.ts';
 
 /**
- * Dirty bits shared by the canvas painters. A client marks the bits for what
- * changed and `paint` repaints only the layers they name; a painter that needs
+ * Dirty bits shared by the painters. A client marks the bits for what
+ * changed and `paint` updates only what they name; a painter that needs
  * more bits defines them above {@link Dirty.Hover} (`1 << 7` and up). The
  * scheduler itself only ORs numbers together and never looks at the meaning.
  */
 export enum Dirty {
-  /** The canvases were resized or restored, or the page's pixel ratio changed: everything drawn is gone or in the wrong place. */
+  /** The host was resized: layout and positions may have changed. */
   Size = 1 << 0,
   /** Theme tokens or fonts changed: colours and text widths are stale. */
   Theme = 1 << 1,

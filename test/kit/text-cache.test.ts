@@ -14,7 +14,7 @@ import {
   measureWithContext,
   type FontFaceSetLike,
   type MeasureText,
-} from '../../../src/kit/canvas/text-cache.ts';
+} from '../../src/kit/text-cache.ts';
 
 const FONT = '10px Test';
 const BIG = '20px Test';

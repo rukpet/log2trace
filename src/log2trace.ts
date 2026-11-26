@@ -43,6 +43,6 @@ export type { TraceVisualizerConfig } from './element/config.ts';
 
 // The view contract: register a view of your own next to the waterfall, flame graph, service map and sequence diagram
 export { getView, listViews, registerView } from './kit/view.ts';
-export type { RendererKind, TraceView, ViewContext, ViewDefinition, ViewHit } from './kit/view.ts';
+export type { TraceView, ViewContext, ViewDefinition, ViewHit } from './kit/view.ts';
 export { choiceOption, flagOption, numberOption, type ViewOptions } from './kit/view-options.ts';
 export type { ViewCommand } from './kit/commands.ts';

@@ -4,10 +4,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getView, listViews, registerView, resolveRenderer, resolveViews, type TraceView, type ViewDefinition } from '../../src/kit/view.ts';
+import { getView, listViews, registerView, resolveViews, type TraceView, type ViewDefinition } from '../../src/kit/view.ts';
 
-function definition(id: string, renderers: ViewDefinition['renderers'] = ['dom']): ViewDefinition {
-  return { id, label: id.toUpperCase(), renderers, capabilities: {}, create: () => ({}) as TraceView };
+function definition(id: string): ViewDefinition {
+  return { id, label: id.toUpperCase(), capabilities: {}, create: () => ({}) as TraceView };
 }
 
 test('a registered view is found by its id and listed once, in registration order', () => {
@@ -28,12 +28,6 @@ test('registering an id again replaces the definition without moving it', () => 
   assert.equal(getView('gamma-test')?.label, 'Replaced');
   const ids = listViews().map((view) => view.id);
   assert.ok(ids.indexOf('gamma-test') < ids.indexOf('delta-test'));
-});
-
-test('resolveRenderer takes the one asked for when the view has it, else the default', () => {
-  assert.equal(resolveRenderer('canvas', ['dom', 'canvas']), 'canvas');
-  assert.equal(resolveRenderer(undefined, ['dom', 'canvas']), 'dom');
-  assert.equal(resolveRenderer('canvas', ['dom']), 'dom', 'a view without a canvas backend ignores the request');
 });
 
 test('resolveViews keeps known types once in document order, overrides labels, and picks the active tab', () => {

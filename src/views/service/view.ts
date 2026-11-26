@@ -29,7 +29,7 @@ import {
 import { bindInput } from '../../kit/input/bind.ts';
 import { InputActionKind, Key, type InputAction } from '../../kit/input/types.ts';
 import { getFrameScheduler, type FrameHandle } from '../../kit/scheduler.ts';
-import type { RendererKind, TraceView, ViewContext, ViewDefinition } from '../../kit/view.ts';
+import type { TraceView, ViewContext, ViewDefinition } from '../../kit/view.ts';
 import {
   NodeKind,
   describeEdge,
@@ -95,7 +95,6 @@ function svgEl<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<strin
 
 /** The Service Graph view. */
 export class ServiceView implements TraceView {
-  readonly renderer: RendererKind = 'dom';
   private mounted: {
     readonly ctx: ViewContext;
     readonly root: HTMLElement;
@@ -834,7 +833,6 @@ export class ServiceView implements TraceView {
 export const serviceDefinition: ViewDefinition = {
   id: 'service',
   label: 'Service graph',
-  renderers: ['dom'],
   capabilities: { legend: false },
   create: () => new ServiceView(),
 };

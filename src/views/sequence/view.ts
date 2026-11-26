@@ -11,7 +11,6 @@ import { bindInput } from '../../kit/input/bind.ts';
 import { InputActionKind, Key, type InputAction } from '../../kit/input/types.ts';
 import { getFrameScheduler, type FrameHandle, type FrameScheduler } from '../../kit/scheduler.ts';
 import type {
-  RendererKind,
   TraceView,
   ViewContext,
   ViewDefinition,
@@ -61,7 +60,6 @@ interface MountedSequenceView {
 
 /** The sequence diagram view. */
 export class SequenceView implements TraceView {
-  readonly renderer: RendererKind = 'dom';
   private readonly scheduler: FrameScheduler;
   private mounted: MountedSequenceView | null = null;
 
@@ -473,7 +471,6 @@ export class SequenceView implements TraceView {
 export const sequenceDefinition: ViewDefinition = {
   id: 'sequence',
   label: 'Sequence',
-  renderers: ['dom'],
   capabilities: { legend: true },
   create: () => new SequenceView(),
 };

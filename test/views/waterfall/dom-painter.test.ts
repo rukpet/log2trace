@@ -6,9 +6,8 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildSpanIndex, createTraceStore, type TraceStore } from '../../../src/core/index.ts';
-import { createTextMeter } from '../../../src/kit/canvas/text-cache.ts';
+import { createTextMeter } from '../../../src/kit/text-cache.ts';
 import { createFrameScheduler, type FrameScheduler } from '../../../src/kit/scheduler.ts';
-import { COLOR_TOKENS, KIND_TOKENS, type ColorToken, type ResolvedTheme } from '../../../src/kit/theme/theme.ts';
 import { WaterfallController } from '../../../src/views/waterfall/controller.ts';
 import { WaterfallDirty } from '../../../src/views/waterfall/model/interaction.ts';
 import { createDomPainter, type DomClasses } from '../../../src/views/waterfall/paint/dom.ts';
@@ -36,11 +35,7 @@ function fakeClasses(): DomClasses {
   }) as DomClasses;
 }
 
-const theme: ResolvedTheme = (() => {
-  const colors = {} as Record<ColorToken, string>;
-  for (const token of COLOR_TOKENS) colors[token] = `color:${token}`;
-  return { colors, fonts: { sans: 'Test Sans', mono: 'Test Mono' }, kindColors: KIND_TOKENS.map((token) => colors[token]), dark: false };
-})();
+const FONT_FAMILY = 'Test Sans';
 
 interface Rig {
   readonly store: TraceStore;
@@ -71,7 +66,7 @@ function rig(tree: TreeNode | readonly TreeNode[], width = 1000, height = 400): 
       controller,
       host: host as unknown as HTMLElement,
       meter: createTextMeter({ measure: (text) => text.length * 6 }),
-      theme,
+      fontFamily: FONT_FAMILY,
       scheduler,
       onSize: (w, h) => {
         controller.resize(w, h);
@@ -225,7 +220,7 @@ test('a view without a size draws nothing', () => {
   const clock = createFakeClock();
   const host = new FakeElement('div');
   const painter = createDomPainter(
-    { controller, host: host as unknown as HTMLElement, meter: createTextMeter({ measure: (t) => t.length }), theme, scheduler: createFrameScheduler(clock), onSize: () => undefined },
+    { controller, host: host as unknown as HTMLElement, meter: createTextMeter({ measure: (t) => t.length }), fontFamily: FONT_FAMILY, scheduler: createFrameScheduler(clock), onSize: () => undefined },
     fakeClasses(),
   );
   clock.frame();
@@ -253,7 +248,7 @@ test('rows carry data-span-id while visible and chevron/bar slots carry data-par
   assert.ok(afterCollapse.every((row) => row.getAttribute('data-span-id') === null));
 });
 
-test('gutter hides service name when remaining room is 24 px or less, matching canvas', () => {
+test('gutter hides service name when remaining room is 24 px or less', () => {
   // At width=1000, gutter=250, depth 0 has labelWidth = 250 - (8 + 16 + 4) - 8 = 214 px.
   // Meter measures 6 px per char; 'svc' is 3 chars. 214 - 30*6 - 6 = 28 (> 24, shown); 214 - 31*6 - 6 = 22 (<= 24, hidden).
   const fits = 'a'.repeat(30);

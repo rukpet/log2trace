@@ -37,7 +37,7 @@ import {
 } from './model/interaction.ts';
 import { computeLayout, resolveMetrics, type WaterfallLayout, type WaterfallMetrics } from './model/layout.ts';
 import { buildFramePlan, type FramePlan } from './model/plan.ts';
-import { Chevron, chevronOf, projectRows, type RowProjection } from './model/rows.ts';
+import { projectRows, type RowProjection } from './model/rows.ts';
 
 /** Options of {@link WaterfallController}. */
 export interface ControllerOptions {
@@ -60,31 +60,6 @@ export interface UpdateResult {
 }
 
 export type { ViewCommand };
-
-/** One row of the accessibility tree. */
-export interface A11yItem {
-  readonly id: SpanId;
-  /** What a screen reader says: service and span name. */
-  readonly label: string;
-  /** Depth in the tree, from 0. */
-  readonly level: number;
-  /** `undefined` for a leaf. */
-  readonly expanded?: boolean;
-  readonly selected: boolean;
-  /** Position among all rows, from 1. */
-  readonly position: number;
-}
-
-/** The part of the tree a screen reader needs: the rows in view. */
-export interface A11yTree {
-  readonly role: 'tree';
-  readonly label: string;
-  /** Id of the selected span when it is among `items`, else `null`. */
-  readonly activeId: SpanId | null;
-  /** Number of rows in all. */
-  readonly size: number;
-  readonly items: readonly A11yItem[];
-}
 
 /** The waterfall's state and behaviour, without any drawing. */
 export class WaterfallController {
@@ -365,39 +340,6 @@ export class WaterfallController {
     const camera = withWindow(this.viewState.camera, saved.t0, saved.t1);
     this.viewState = fitViewState({ ...this.viewState, camera, scrollTop: saved.scrollTop }, this.viewLayout, this.rows.count);
     return { dirty: WaterfallDirty.Camera | WaterfallDirty.Scroll, scrollTo: true };
-  }
-
-  /**
-   * The rows in view as an accessibility tree, with a margin of a few rows.
-   *
-   * @param margin - Rows to include above and below the visible ones.
-   */
-  a11y(label: string, margin = 3): A11yTree {
-    const { count, rows } = this.rows;
-    const { table } = this.viewIndex;
-    const rowHeight = this.viewLayout.rowHeight;
-    const first = Math.max(0, Math.floor(this.viewState.scrollTop / rowHeight) - margin);
-    const last = Math.min(count - 1, Math.ceil((this.viewState.scrollTop + this.viewLayout.bodyHeight) / rowHeight) + margin);
-    const selected = this.store.state.selection.primary;
-
-    const items: A11yItem[] = [];
-    let activeId: SpanId | null = null;
-    for (let row = first; row <= last; row++) {
-      const span = rows[row];
-      const id = table.ids[span];
-      const chevron = chevronOf(this.viewIndex, this.rows, this.store.state.collapsed, row);
-      const isSelected = this.isSelected(span);
-      if (id === selected) activeId = id;
-      items.push({
-        id,
-        label: `${table.services[table.svc[span]]}: ${table.names[table.nameId[span]]}`,
-        level: table.depth[span],
-        expanded: chevron === Chevron.None ? undefined : chevron === Chevron.Expanded,
-        selected: isSelected,
-        position: row + 1,
-      });
-    }
-    return { role: 'tree', label, activeId, size: count, items };
   }
 
 }

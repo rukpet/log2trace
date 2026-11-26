@@ -3,32 +3,27 @@
  *
  * The headless `WaterfallController` decides what is shown; this class gives it a surface. It
  * builds the native scroller (`part="plot"`, a transparent element whose spacer gives the rows
- * their scroll range, so the wheel, touch, keys and scrollbar all work natively while a painter
- * redraws from the scroll position), binds the input kit to it, mounts a painter (Canvas 2D or the
- * virtualized DOM, chosen by `renderer`), keeps the accessibility tree of the canvas painter, and
- * reports hovers to the page through the view context. Nothing here knows about the filter bar,
- * the detail panel or the tabs.
+ * their scroll range, so the wheel, touch, keys and scrollbar all work natively while the DOM
+ * painter redraws from the scroll position), binds the input kit to it, mounts the virtualized
+ * DOM painter, and reports hovers to the page through the view context. Nothing here knows about
+ * the filter bar, the detail panel or the tabs.
  */
 
 import { Slice, touches, type ChangeSet, type SpanId } from '../../core/index.ts';
 import { describeSpan } from '../../core/index.ts';
-import * as a11yStyles from '../../kit/a11y.css.ts';
-import { createTextMeter, measureWithContext, type TextMeter } from '../../kit/canvas/text-cache.ts';
+import { createTextMeter, measureWithContext, type TextMeter } from '../../kit/text-cache.ts';
 import type { ViewCommand } from '../../kit/commands.ts';
 import { h } from '../../kit/dom.ts';
 import { bindInput } from '../../kit/input/bind.ts';
 import { InputActionKind, Key, type InputAction } from '../../kit/input/types.ts';
-import { getFrameScheduler, type FrameHandle } from '../../kit/scheduler.ts';
-import { ThemeProbe } from '../../kit/theme/theme.ts';
-import * as probeStyles from '../../kit/theme/probe.css.ts';
-import { resolveRenderer, type RendererKind, type TraceView, type ViewContext, type ViewDefinition } from '../../kit/view.ts';
+import { getFrameScheduler } from '../../kit/scheduler.ts';
+import type { TraceView, ViewContext, ViewDefinition } from '../../kit/view.ts';
 import { WaterfallController, type UpdateResult } from './controller.ts';
 import { DEFAULT_METRICS, metricsFromSpanSizes, type WaterfallMetrics } from './model/layout.ts';
 import { WaterfallDirty, type Cursor, type WaterfallInput } from './model/interaction.ts';
-import { mountCanvasPainter } from './paint/canvas.ts';
 import { mountDomPainter } from './paint/dom-mount.ts';
-import type { PainterFactory, PainterStats, WaterfallPainter } from './paint/painter.ts';
-import { readWaterfallSettings, WATERFALL_RENDERERS, type WaterfallSettings } from './settings.ts';
+import type { PainterStats, WaterfallPainter } from './paint/painter.ts';
+import { readWaterfallSettings, type WaterfallSettings } from './settings.ts';
 import * as styles from './view.css.ts';
 
 /** Maps the keys of the input kit to the `KeyboardEvent.key` values the reducer knows. */
@@ -59,15 +54,11 @@ interface Mounted {
   readonly controller: WaterfallController;
   readonly plot: HTMLElement;
   readonly spacer: HTMLElement;
-  readonly a11yRoot: HTMLElement;
   readonly surface: HTMLElement;
-  readonly probe: ThemeProbe;
   readonly meter: TextMeter;
-  readonly a11y: FrameHandle;
   readonly cleanups: Array<() => void>;
   painter: WaterfallPainter | null;
   cursor: Cursor;
-  a11yKey: string;
   hoverKey: string | null;
 }
 
@@ -88,10 +79,6 @@ function isSavedState(value: unknown): value is SavedState {
 export class WaterfallView implements TraceView {
   private mounted: Mounted | null = null;
 
-  get renderer(): RendererKind | undefined {
-    return this.mounted?.painter?.kind;
-  }
-
   /** Parts of the view for tests and the performance harness; not a public API. */
   get internals(): { readonly controller: WaterfallController; readonly painter: WaterfallPainter | null; readonly plot: HTMLElement } | null {
     const m = this.mounted;
@@ -110,17 +97,13 @@ export class WaterfallView implements TraceView {
 
     const spacer = h('div', { class: styles.spacer });
     const plot = h('div', { class: [styles.plot, styles.cursor.default], part: 'plot', tabindex: 0, role: 'application', 'aria-label': 'Trace waterfall' }, spacer);
-    const a11yRoot = h('div', { class: a11yStyles.visuallyHidden });
-    surface.append(plot, a11yRoot);
+    surface.append(plot);
 
-    const probe = new ThemeProbe(surface, { container: probeStyles.container, color: probeStyles.color, font: probeStyles.font });
     const measureContext = document.createElement('canvas').getContext('2d');
     if (measureContext === null) throw new Error('the waterfall needs a 2D canvas');
     const meter = createTextMeter({ measure: measureWithContext(measureContext) });
 
-    const scheduler = getFrameScheduler();
-    const a11y = scheduler.register({ paint: () => this.renderA11y() });
-    this.mounted = { ctx, controller, plot, spacer, a11yRoot, surface, probe, meter, a11y, cleanups, painter: null, cursor: 'default', a11yKey: '', hoverKey: null };
+    this.mounted = { ctx, controller, plot, spacer, surface, meter, cleanups, painter: null, cursor: 'default', hoverKey: null };
 
     cleanups.push(bindInput(plot, {
       onAction: (action) => this.onAction(action),
@@ -135,7 +118,6 @@ export class WaterfallView implements TraceView {
     this.applyMetrics();
     this.mountPainter();
     this.syncSpacer();
-    a11y.mark(1);
   }
 
   unmount(): void {
@@ -143,11 +125,8 @@ export class WaterfallView implements TraceView {
     if (m === null) return;
     this.mounted = null;
     for (const cleanup of m.cleanups) cleanup();
-    m.a11y.dispose();
     m.painter?.dispose();
-    m.probe.dispose();
     m.plot.remove();
-    m.a11yRoot.remove();
     m.ctx.hover(null);
   }
 
@@ -156,7 +135,6 @@ export class WaterfallView implements TraceView {
     if (m === null) return;
     this.apply(m.controller.update(change));
     if (touches(change, Slice.Data)) this.syncSpacer();
-    if (touches(change, Slice.Selection)) m.a11y.mark(1);
   }
 
   optionsChanged(): void {
@@ -164,13 +142,12 @@ export class WaterfallView implements TraceView {
     if (m === null) return;
     m.controller.wheelZoom = this.settings().wheelZoom;
     this.applyMetrics();
-    this.swapPainter();
   }
 
   themeChanged(): void {
     const m = this.mounted;
     if (m === null) return;
-    m.painter?.setTheme(m.probe.resolve());
+    m.painter?.setFontFamily(this.readFontFamily(m.surface));
   }
 
   commands(): readonly ViewCommand[] {
@@ -206,6 +183,10 @@ export class WaterfallView implements TraceView {
     return m === null ? readWaterfallSettings({ config: {}, attribute: () => null }) : readWaterfallSettings(m.ctx.options());
   }
 
+  private readFontFamily(surface: HTMLElement): string {
+    return globalThis.getComputedStyle?.(surface).fontFamily || 'system-ui, sans-serif';
+  }
+
   private applyMetrics(): void {
     const m = this.mounted;
     if (m === null) return;
@@ -217,39 +198,18 @@ export class WaterfallView implements TraceView {
     this.apply(m.controller.setMetrics(metrics));
   }
 
-  /**
-   * The backend the settings ask for. `auto` is the DOM painter: at 50,000 spans it keeps the frame
-   * interval of the canvas on every scenario of the harness (see the stage 3 A/B in the plan), and it
-   * brings text selection, find-in-page, a real accessibility tree and forced colours for free.
-   */
-  private chosenRenderer(): RendererKind {
-    return resolveRenderer(this.settings().renderer, WATERFALL_RENDERERS);
-  }
-
   private mountPainter(): void {
     const m = this.mounted;
     if (m === null) return;
-    const factory: PainterFactory = this.chosenRenderer() === 'dom' ? mountDomPainter : mountCanvasPainter;
-    m.painter = factory({
+    m.painter = mountDomPainter({
       controller: m.controller,
       host: m.surface,
       meter: m.meter,
-      theme: m.probe.resolve(),
+      fontFamily: this.readFontFamily(m.surface),
       scheduler: getFrameScheduler(),
       onSize: (width, height) => this.apply(m.controller.resize(width, height)),
     });
-    m.a11yKey = '';
-    m.a11y.mark(1);
     m.painter.mark(WaterfallDirty.Rows | WaterfallDirty.Scroll | WaterfallDirty.Camera | WaterfallDirty.Selection | WaterfallDirty.Hover | WaterfallDirty.Theme | WaterfallDirty.Size);
-  }
-
-  /** Replace the painter after `renderer` changed; the camera, scroll position and selection stay, they are not the painter's. */
-  private swapPainter(): void {
-    const m = this.mounted;
-    if (m === null) return;
-    if (m.painter !== null && m.painter.kind === this.chosenRenderer()) return;
-    m.painter?.dispose();
-    this.mountPainter();
   }
 
   /** Run an input through the controller and carry out what it asks for. */
@@ -312,7 +272,6 @@ export class WaterfallView implements TraceView {
     if ((dirty & (WaterfallDirty.Camera | WaterfallDirty.Rows)) !== 0) m.ctx.refreshCommands();
 
     m.painter?.mark(dirty);
-    if ((dirty & (WaterfallDirty.Rows | WaterfallDirty.Scroll | WaterfallDirty.Selection | WaterfallDirty.Size)) !== 0) m.a11y.mark(1);
     this.reportHover(dirty);
   }
 
@@ -348,46 +307,12 @@ export class WaterfallView implements TraceView {
       info: () => describeSpan(index, id, 'brief'),
     });
   }
-
-  /** Rebuild the accessibility tree of the rows in view when it changed (canvas only). */
-  private renderA11y(): void {
-    const m = this.mounted;
-    if (m === null) return;
-    if (m.painter?.kind !== 'canvas') {
-      // the DOM painter's rows are the tree
-      if (m.a11yKey !== 'dom') m.a11yRoot.replaceChildren();
-      m.a11yKey = 'dom';
-      return;
-    }
-    const tree = m.controller.a11y('Spans');
-    const first = tree.items[0]?.position ?? 0;
-    const key = `${tree.size}|${first}|${tree.items.length}|${tree.activeId ?? ''}`;
-    if (key === m.a11yKey) return;
-    m.a11yKey = key;
-
-    m.a11yRoot.replaceChildren(
-      h(
-        'div',
-        { role: 'tree', 'aria-label': tree.label },
-        tree.items.map((item) =>
-          h('div', {
-            role: 'treeitem',
-            'aria-level': item.level + 1,
-            'aria-expanded': item.expanded,
-            'aria-selected': item.selected,
-            'aria-posinset': item.position,
-            'aria-setsize': tree.size,
-          }, item.label)),
-      ),
-    );
-  }
 }
 
 /** The waterfall, as the element lists it. */
 export const waterfallDefinition: ViewDefinition = {
   id: 'waterfall',
   label: 'Waterfall',
-  renderers: WATERFALL_RENDERERS,
   capabilities: { legend: true },
   create: () => new WaterfallView(),
 };
