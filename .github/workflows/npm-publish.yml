@@ -32,12 +32,24 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
+      - name: Ensure npm supports OIDC dist-tags
+        run: |
+          node -e "const [maj, min] = process.argv[1].split('.').map(Number); process.exit(maj > 11 || (maj === 11 && min >= 21) ? 0 : 1)" "$(npm -v)" \
+            || npm install -g 'npm@>=11.21.0 <12'
+
       - name: Publish to npm
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if [[ "$VERSION" == *"-"* ]]; then
             TAG=$(node -p "require('./package.json').version.split('-')[1].replace(/[\\.\\d]+$/, '').toLowerCase() || 'next'")
-            npm publish --tag "$TAG" --provenance
+            VERSIONS_JSON=$(npm view log2trace-ui versions --json 2>/dev/null || true)
+            HAS_STABLE=$(node -e "try { const v = JSON.parse(process.argv[1]); console.log((Array.isArray(v) ? v : typeof v === 'string' ? [v] : []).some(s => !s.includes('-'))); } catch { console.log(false); }" "$VERSIONS_JSON")
+            if [ "$HAS_STABLE" = "true" ]; then
+              npm publish --tag "$TAG" --provenance
+            else
+              npm publish --tag latest --provenance
+              npm dist-tag add "log2trace-ui@$VERSION" "$TAG" || true
+            fi
           else
             npm publish --provenance
           fi
