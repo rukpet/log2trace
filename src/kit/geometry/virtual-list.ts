@@ -7,7 +7,7 @@
  * filter). Row `r` occupies `[r * rowHeight, (r + 1) * rowHeight)` in content
  * coordinates, and `scrollTop` is the content offset of the viewport's top edge.
  *
- * Pure functions with no DOM: the canvas and DOM painters share them, and
+ * Pure functions with no DOM: views share them, and
  * tests run in plain Node. Bad input (zero or negative sizes, NaN) gives an
  * empty range or a scroll position of 0, never NaN.
  */

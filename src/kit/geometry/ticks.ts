@@ -7,7 +7,7 @@
  * exact multiples of the step, and labels whose decimals follow from the step,
  * so neighbouring labels never collapse into each other at deep zoom.
  *
- * Pure functions with no DOM: the canvas and DOM painters draw from the same
+ * Pure functions with no DOM: views draw from the same
  * {@link TickSet}, and tests run in plain Node.
  */
 

@@ -3,7 +3,7 @@
  *
  * Everything dynamic (positions, widths) is written from the painter through `element.style`;
  * these classes carry the rest. Colours come from the theme tokens, so the DOM painter follows
- * light, dark, forced colours and the host page's overrides without a probe.
+ * light, dark, forced colours and the host page's overrides directly.
  */
 
 import { createVar, style, styleVariants } from '@vanilla-extract/css';
@@ -215,7 +215,7 @@ export const duration = style({
   whiteSpace: 'nowrap',
 });
 export const durationOutside = style({ color: vars.color.textMuted });
-/** Text on a bar takes the page background colour: white on a light page, dark on a dark one (as the canvas does). */
+/** Text on a bar takes the page background colour: white on a light page, dark on a dark one. */
 export const durationInside = style({ color: vars.color.background });
 
 export const eventHover = style({

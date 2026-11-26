@@ -147,7 +147,7 @@ export class WaterfallView implements TraceView {
   themeChanged(): void {
     const m = this.mounted;
     if (m === null) return;
-    m.painter?.setFontFamily(this.readFontFamily(m.surface));
+    m.painter?.refreshTheme();
   }
 
   commands(): readonly ViewCommand[] {
@@ -183,10 +183,6 @@ export class WaterfallView implements TraceView {
     return m === null ? readWaterfallSettings({ config: {}, attribute: () => null }) : readWaterfallSettings(m.ctx.options());
   }
 
-  private readFontFamily(surface: HTMLElement): string {
-    return globalThis.getComputedStyle?.(surface).fontFamily || 'system-ui, sans-serif';
-  }
-
   private applyMetrics(): void {
     const m = this.mounted;
     if (m === null) return;
@@ -205,7 +201,6 @@ export class WaterfallView implements TraceView {
       controller: m.controller,
       host: m.surface,
       meter: m.meter,
-      fontFamily: this.readFontFamily(m.surface),
       scheduler: getFrameScheduler(),
       onSize: (width, height) => this.apply(m.controller.resize(width, height)),
     });

@@ -4,8 +4,7 @@
  * The plan is built for the rows in view from the row projection, the camera
  * and the scroll position. It decides what is drawn (which bars are visible,
  * how wide, which event markers survive, where each duration label goes), so
- * the Canvas and DOM painters, which only turn the plan into pixels or
- * elements, always agree.
+ * the DOM painter only turns the plan into elements.
  *
  * The plan is a set of preallocated typed arrays that are rewritten in place
  * every frame: no allocation while zooming and panning (apart from the short

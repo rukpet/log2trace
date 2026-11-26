@@ -145,7 +145,7 @@ class WaterfallDomPainter implements WaterfallPainter {
     this.body = h('div', { class: this.styles.body, role: 'tree', 'aria-label': 'Spans' }, this.hoverBox);
     this.layer = h('div', { class: this.styles.layer }, this.body, this.ruler, this.divider);
     context.host.prepend(this.layer);
-    this.setFont(context.fontFamily);
+    this.setFont(this.readFontFamily());
 
     this.handle = context.scheduler.register({ paint: (dirty) => this.paint(dirty) });
     this.observer = new ResizeObserver((entries) => {
@@ -165,9 +165,9 @@ class WaterfallDomPainter implements WaterfallPainter {
     this.handle.mark(toSurfaceDirty(dirty));
   }
 
-  setFontFamily(fontFamily: string): void {
+  refreshTheme(): void {
     this.context.meter.clear();
-    this.setFont(fontFamily);
+    this.setFont(this.readFontFamily());
     this.handle.mark(Dirty.Theme);
   }
 
@@ -176,6 +176,10 @@ class WaterfallDomPainter implements WaterfallPainter {
     this.stopFonts();
     this.handle.dispose();
     this.layer.remove();
+  }
+
+  private readFontFamily(): string {
+    return globalThis.getComputedStyle?.(this.layer).fontFamily || this.context.fontFamily || 'system-ui, sans-serif';
   }
 
   private setFont(fontFamily: string): void {

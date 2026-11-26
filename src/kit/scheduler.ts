@@ -94,7 +94,7 @@ export interface FrameHandle {
   /**
    * Paint now, with the pending bits, instead of waiting for the frame: for a
    * caller that must not show an unpainted frame, such as a `ResizeObserver`
-   * callback after clearing the canvas by resizing it. The frame that was
+   * callback when a resize would otherwise leave a blank frame. The frame that was
    * requested for those bits is cancelled when nothing else needs it. Does
    * nothing when no bits are pending; when called from inside the client's own
    * `paint`, the bits wait for the next frame instead.
