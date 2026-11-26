@@ -153,7 +153,7 @@
                 <span style="font-size:0.72rem;color:var(--g-text-muted)">Accepts OTLP <code>{ resourceSpans }</code> or raw <code>[...]</code> log arrays</span>
               </label>
               <input type="file" id="pg-file-input" accept=".json,application/json" hidden>
-              <textarea class="ctrl-textarea" id="pg-custom-json" rows="5" placeholder='Paste OTLP JSON {"resourceSpans":[...]} or raw log array [{"traceId":"...","service":"..."}]'></textarea>
+              <textarea class="ctrl-textarea" id="pg-custom-json" aria-label="Paste custom OTLP or log JSON" rows="5" placeholder='Paste OTLP JSON {"resourceSpans":[...]} or raw log array [{"traceId":"...","service":"..."}]'></textarea>
               <button type="button" class="btn btn--primary btn--sm" id="pg-custom-apply">Parse &amp; Render JSON</button>
               <div id="pg-custom-msg" style="font-size:0.75rem;color:var(--g-text-muted)"></div>
             </div>
@@ -297,8 +297,8 @@
             <div style="padding-top:0.4rem;border-top:1px solid var(--g-border-subtle)">
               <div style="font-size:0.74rem;font-weight:600;color:var(--g-text-secondary);margin-bottom:0.35rem">Custom Field Filter</div>
               <div class="pg-grid-2">
-                <input type="text" class="ctrl-input" id="pg-cf-field" list="pg-log-fields-list" placeholder="e.g. service.region">
-                <select class="ctrl-select" id="pg-cf-target">
+                <input type="text" class="ctrl-input" id="pg-cf-field" aria-label="Custom filter field dot-path" list="pg-log-fields-list" placeholder="e.g. service.region">
+                <select class="ctrl-select" id="pg-cf-target" aria-label="Custom filter target">
                   <option value="span">target="span"</option>
                   <option value="log" selected>target="log"</option>
                 </select>

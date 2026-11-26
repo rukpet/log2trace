@@ -195,6 +195,26 @@ export function initGuideShell() {
     btn.addEventListener('click', () => setPageTheme(btn.dataset.themeBtn));
   }
 
+  const pageNav = document.querySelector('.page-nav');
+  if (pageNav) {
+    const syncNavFade = () => {
+      const maxScroll = pageNav.scrollWidth - pageNav.clientWidth;
+      pageNav.classList.toggle('is-overflow-left', pageNav.scrollLeft > 4);
+      pageNav.classList.toggle('is-overflow-right', maxScroll - pageNav.scrollLeft > 4);
+    };
+    const scrollActiveTab = () => {
+      const activeTab = pageNav.querySelector('a[aria-current="page"]');
+      if (activeTab) {
+        activeTab.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' });
+      }
+      syncNavFade();
+    };
+    scrollActiveTab();
+    document.fonts?.ready?.then(scrollActiveTab);
+    pageNav.addEventListener('scroll', syncNavFade, { passive: true });
+    window.addEventListener('resize', syncNavFade, { passive: true });
+  }
+
   const toc = document.getElementById('sidebar-toc');
   const mobileBtn = document.getElementById('toc-mobile-btn');
   if (toc && mobileBtn) {
