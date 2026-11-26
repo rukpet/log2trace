@@ -100,12 +100,31 @@ export function setCodeBlock(codeEl, rawText, lang = 'html') {
 
 export function enhanceCodeBlocks(root = document) {
   for (const panel of root.querySelectorAll('.code-panel')) {
-    const codeEl = panel.querySelector('.code-pre code');
-    if (codeEl && !codeEl.dataset.highlighted) {
-      const lang = codeEl.dataset.lang || 'html';
-      const raw = codeEl.dataset.rawCode ?? codeEl.textContent ?? '';
-      setCodeBlock(codeEl, raw, lang);
-      codeEl.dataset.highlighted = 'true';
+    for (const codeEl of panel.querySelectorAll('.code-pre code')) {
+      if (!codeEl.dataset.highlighted) {
+        const lang = codeEl.dataset.lang || 'html';
+        const raw = codeEl.dataset.rawCode ?? codeEl.textContent ?? '';
+        setCodeBlock(codeEl, raw, lang);
+        codeEl.dataset.highlighted = 'true';
+      }
+    }
+    const tabBtns = [...panel.querySelectorAll('[data-code-tab]')];
+    if (tabBtns.length && !panel.dataset.tabsBound) {
+      panel.dataset.tabsBound = 'true';
+      const panes = [...panel.querySelectorAll('[data-code-pane]')];
+      for (const btn of tabBtns) {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.codeTab;
+          for (const b of tabBtns) {
+            const active = b.dataset.codeTab === target;
+            b.classList.toggle('is-active', active);
+            b.setAttribute('aria-selected', String(active));
+          }
+          for (const p of panes) {
+            p.hidden = p.dataset.codePane !== target;
+          }
+        });
+      }
     }
     const copyBtn = panel.querySelector('.copy-btn');
     if (copyBtn && !copyBtn.dataset.bound) {
