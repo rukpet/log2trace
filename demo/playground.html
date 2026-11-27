@@ -947,6 +947,8 @@
     $('pg-seq-internal').value = p.seq.internal;
     $('pg-seq-returns').value = p.seq.returns;
     $('pg-seq-fold').value = p.seq.fold;
+    $('pg-stats-group').value = p.stats?.groupBy ?? 'service-operation';
+    $('pg-stats-sort').value = p.stats?.sort ?? 'self';
     $('pg-f-wild').checked = p.filters.wild;
     $('pg-f-op').checked = p.filters.op;
     $('pg-f-svc').checked = p.filters.svc;

@@ -98,6 +98,11 @@ export const row = style({
   backgroundColor: vars.color.background,
   cursor: 'pointer',
   boxSizing: 'border-box',
+  selectors: {
+    '&[hidden]': {
+      display: 'none',
+    },
+  },
 });
 
 export const rowChild = style({
@@ -127,15 +132,31 @@ export const cell = style({
   textOverflow: 'ellipsis',
   boxSizing: 'border-box',
   borderRight: `1px solid ${vars.color.grid}`,
+  selectors: {
+    '&[hidden]': {
+      display: 'none',
+    },
+  },
 });
 
 export const cellIdentity = style({
   position: 'sticky',
   left: 0,
-  zIndex: 1,
+  zIndex: 2,
   gap: '6px',
-  backgroundColor: 'inherit',
+  backgroundColor: vars.color.background,
   borderRight: `1px solid ${vars.color.border}`,
+  selectors: {
+    [`${rowChild} &`]: {
+      backgroundColor: vars.color.surface,
+    },
+    [`${rowHovered} &`]: {
+      backgroundImage: `linear-gradient(0deg, ${vars.color.hover}, ${vars.color.hover})`,
+    },
+    [`${rowSelected} &`]: {
+      backgroundImage: `linear-gradient(0deg, ${vars.color.selection}, ${vars.color.selection})`,
+    },
+  },
 });
 
 export const cellIdentityChild = style({
@@ -170,6 +191,11 @@ export const chevron = style({
   lineHeight: 1,
   flexShrink: 0,
   cursor: 'pointer',
+  selectors: {
+    '&[hidden]': {
+      display: 'none',
+    },
+  },
   ':hover': {
     color: vars.color.text,
     backgroundColor: vars.color.hover,

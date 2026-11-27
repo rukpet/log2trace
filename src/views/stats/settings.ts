@@ -55,15 +55,15 @@ export const STATS_ROW_H_MIN = 22;
 export const STATS_ROW_H_MAX = 48;
 
 export interface StatsSettings {
-  /** Grouping dimension (`group-by` on `<trace-view type="stats">`, or `stats-group-by` / `statsGroupBy`). Default `'service-operation'`. */
+  /** Grouping dimension (reactive on `<trace-view type="stats" group-by="...">`; initial fallback `stats-group-by` / `config.statsGroupBy`). Default `'service-operation'`. */
   readonly groupBy: GroupByMode;
-  /** Active sort column (`sort` on `<trace-view type="stats">`, or `stats-sort` / `statsSort`). Default `'self'`. */
+  /** Active sort column (reactive on `<trace-view type="stats" sort="...">`; initial fallback `stats-sort` / `config.statsSort`). Default `'self'`. */
   readonly sort: SortColumn;
-  /** Active sort direction (`sort-dir` on `<trace-view type="stats">`, or `stats-sort-dir` / `statsSortDir`). Default `'desc'`. */
+  /** Active sort direction (reactive on `<trace-view type="stats" sort-dir="...">`; initial fallback `stats-sort-dir` / `config.statsSortDir`). Default `'desc'`. */
   readonly sortDir: SortDirection;
-  /** Whether active local filters scope rows & aggregations (`true`) or dim non-matches (`false`). Default `true`. */
+  /** Whether active local filters scope rows & aggregations (`true`) or dim non-matches (`false`) (reactive on `<trace-view type="stats" matches-only="...">`; initial fallback `stats-matches-only` / `config.statsMatchesOnly`). Default `true`. */
   readonly matchesOnly: boolean;
-  /** Row height in CSS pixels (`row-height` on `<trace-view type="stats">`, or `row-height` / `rowHeight`). Default `28`, clamped to `[22, 48]`. */
+  /** Row height in CSS pixels (reactive on `<trace-view type="stats" row-height="...">`; initial fallback `row-height` / `config.rowHeight`). Default `28`, clamped to `[22, 48]`. */
   readonly rowHeight: number;
 }
 

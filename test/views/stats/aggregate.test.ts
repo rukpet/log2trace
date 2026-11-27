@@ -131,7 +131,9 @@ test('primarySpanOfGroup picks sort-aware representative span and describe build
   assert.equal(groupInfo.title, 'SELECT item');
   assert.equal(groupInfo.subtitle, 'db-svc');
   assert.equal(groupInfo.status, 'error');
-  assert.equal(groupInfo.sections.length, 2);
+  assert.equal(groupInfo.sections.length, 1);
+  assert.ok(groupInfo.sections[0].rows?.some(([k]) => k === 'P50 / P95'));
+  assert.ok(groupInfo.sections[0].rows?.some(([k]) => k === 'Min / Avg / Max'));
 
   const spanInfo = describeStatsSpan(agg, index.spans.get('q3')?.idx ?? 0);
   assert.equal(spanInfo.title, 'SELECT item');

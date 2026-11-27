@@ -118,3 +118,38 @@ test('supports toolbar actions, filter toggling, and getState/setState round-tri
   assert.equal(restored.viewState.sort, 'self');
   assert.equal(restored.viewState.matchesOnly, true);
 });
+
+test('toggleSort resets scrollTop to 0 and applySettings overrides interactive state even when matching prior default', () => {
+  const spans = [];
+  for (let i = 0; i < 40; i++) {
+    spans.push(span(`s-${i}`, undefined, i * 10, i * 10 + (i + 1), { name: `op-${i}`, kind: SpanKind.Internal }));
+  }
+  const index = buildSpanIndex(trace(['worker', spans]));
+  const store = createTraceStore();
+  store.setData(index);
+  store.flushSync();
+
+  const controller = new StatsController({ store, origin: 'stats-sort' });
+  controller.setViewport(800, 180);
+  controller.ensureProjection();
+
+  // Clicking sort with focusRow === -1 must keep scrollTop at 0 instead of chasing old row 0
+  controller.toggleSort('self');
+  assert.equal(controller.viewState.scrollTop, 0);
+  controller.setScroll(200, 0);
+  controller.toggleSort('name');
+  assert.equal(controller.viewState.scrollTop, 0);
+
+  // User cycles groupBy interactively, then host applies settings back to prior default ('service-operation')
+  controller.cycleGroupBy();
+  assert.equal(controller.viewState.groupBy, 'service');
+  controller.applySettings({
+    groupBy: 'service-operation',
+    sort: 'self',
+    sortDir: 'desc',
+    matchesOnly: true,
+    rowHeight: 28,
+  });
+  assert.equal(controller.viewState.groupBy, 'service-operation');
+  assert.equal(controller.viewState.sort, 'self');
+});

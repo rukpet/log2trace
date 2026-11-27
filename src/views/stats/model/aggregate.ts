@@ -427,33 +427,27 @@ export function describeStatsGroup(agg: StatsAggregation, groupIdx: number): Inf
   const selfMs = agg.selfMs[groupIdx];
   const share = agg.totalSelfMs > 0 ? `${((selfMs / agg.totalSelfMs) * 100).toFixed(1)}%` : '0.0%';
 
-  const summaryRows: InfoRow[] = [
+  const rows: InfoRow[] = [
     ['Spans', String(count)],
     ['Errors', errors > 0 ? `${errors} (${((errors / count) * 100).toFixed(1)}%)` : '0'],
     ['Self Time', `${formatDuration(selfMs)} (${share})`],
     ['Total', formatDuration(agg.totalMs[groupIdx])],
+    [
+      'Min / Avg / Max',
+      `${formatDuration(agg.minMs[groupIdx])} / ${formatDuration(agg.avgMs[groupIdx])} / ${formatDuration(agg.maxMs[groupIdx])}`,
+    ],
+    ['P50 / P95', `${formatDuration(agg.p50Ms[groupIdx])} / ${formatDuration(agg.p95Ms[groupIdx])}`],
   ];
   if (agg.filtered && !agg.matchesOnly) {
-    summaryRows.push(['Filter matches', `${agg.matchedCount[groupIdx]} / ${count}`]);
+    rows.push(['Filter matches', `${agg.matchedCount[groupIdx]} / ${count}`]);
   }
-
-  const distRows: InfoRow[] = [
-    ['Min', formatDuration(agg.minMs[groupIdx])],
-    ['Avg', formatDuration(agg.avgMs[groupIdx])],
-    ['P50', formatDuration(agg.p50Ms[groupIdx])],
-    ['P95', formatDuration(agg.p95Ms[groupIdx])],
-    ['Max', formatDuration(agg.maxMs[groupIdx])],
-  ];
 
   const subtitle = agg.secondary[groupIdx] || undefined;
   return {
     title: agg.label[groupIdx],
     subtitle,
     status: errors > 0 ? 'error' : undefined,
-    sections: [
-      { title: 'Group', rows: summaryRows },
-      { title: 'Latency', rows: distRows },
-    ],
+    sections: [{ title: 'Group', rows }],
   };
 }
 
