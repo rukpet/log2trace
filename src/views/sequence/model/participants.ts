@@ -7,7 +7,9 @@
  */
 
 import { SpanKind, type SpanIndex } from '../../../core/index.ts';
-import { inferredPeerOf } from '../../../core/peers.ts';
+import { EXTERNAL_PEER_NAME, classifyLeafPeers, inferredPeerOf, type PeerResolver } from '../../../core/peers.ts';
+
+export { EXTERNAL_PEER_NAME, type PeerResolver };
 
 /** Kind of participant lifeline column in the sequence diagram. */
 export const enum ParticipantKind {
@@ -19,14 +21,8 @@ export const enum ParticipantKind {
   Inferred = 2,
 }
 
-/** Fallback label for leaf CLIENT/PRODUCER spans that have no cross-service child and no peer attributes. */
-export const EXTERNAL_PEER_NAME = '(external)';
-
 /** Label for the synthetic entry gate lifeline. */
 export const GATE_NAME = 'Client';
-
-/** Optional peer resolver callback signature for extracting an inferred peer from a span row. */
-export type PeerResolver = (index: SpanIndex, row: number) => { readonly name: string } | null;
 
 /** Participant lifelines and their horizontal column ordering. */
 export interface Participants {
@@ -108,14 +104,10 @@ export function buildParticipants(
     firstRowList.push(0);
   }
 
-  const serviceParticipantByName = new Map<string, number>();
   for (let s = 0; s < serviceCount; s++) {
-    const pId = serviceBase + s;
-    const svcName = table.services[s];
-    names.push(svcName);
+    names.push(table.services[s]);
     kinds.push(ParticipantKind.Service);
     firstRowList.push(n);
-    serviceParticipantByName.set(svcName, pId);
   }
 
   // 2. Map each row to its service participant and record each service's first row.
@@ -128,56 +120,23 @@ export function buildParticipants(
     }
   }
 
-  // 3. Inspect CLIENT / PRODUCER spans without cross-service descendants for inferred peers.
-  const peerOfRow = new Int32Array(n).fill(-1);
-  const inferredParticipantByName = new Map<string, number>();
-
-  function internInferred(peerName: string, row: number): number {
-    let infId = inferredParticipantByName.get(peerName);
-    if (infId === undefined) {
-      infId = names.length;
-      inferredParticipantByName.set(peerName, infId);
-      names.push(peerName);
+  // 3. Leaf CLIENT / PRODUCER spans that call a peer: a known service, or an inferred participant.
+  const peers = classifyLeafPeers(index, peerOf);
+  const participantOfPeer = new Int32Array(peers.count);
+  for (let q = 0; q < peers.count; q++) {
+    if (peers.knownService[q] >= 0) {
+      participantOfPeer[q] = serviceBase + peers.knownService[q];
+    } else {
+      participantOfPeer[q] = names.length;
+      names.push(peers.names[q]);
       kinds.push(ParticipantKind.Inferred);
-      firstRowList.push(row);
-    } else if (row < firstRowList[infId]) {
-      firstRowList[infId] = row;
+      firstRowList.push(peers.firstRow[q]);
     }
-    return infId;
   }
-
+  const peerOfRow = new Int32Array(n);
   for (let r = 0; r < n; r++) {
-    const k = table.kind[r];
-    if (k !== SpanKind.Client && k !== SpanKind.Producer) continue;
-
-    const ownSvc = table.svc[r];
-    const endRow = table.subtreeEnd[r];
-    let hasCrossServiceDescendant = false;
-    for (let c = r + 1; c < endRow; c++) {
-      if (table.svc[c] !== ownSvc) {
-        hasCrossServiceDescendant = true;
-        break;
-      }
-    }
-    if (hasCrossServiceDescendant) continue;
-
-    const peer = peerOf(index, r);
-    if (peer !== null) {
-      const ownName = table.services[ownSvc];
-      if (peer.name === ownName) {
-        peerOfRow[r] = -1;
-      } else {
-        const knownServiceId = serviceParticipantByName.get(peer.name);
-        if (knownServiceId !== undefined) {
-          peerOfRow[r] = knownServiceId;
-        } else {
-          peerOfRow[r] = internInferred(peer.name, r);
-        }
-      }
-    } else if (endRow === r + 1) {
-      // Leaf CLIENT/PRODUCER span with no children at all and no peer attributes.
-      peerOfRow[r] = internInferred(EXTERNAL_PEER_NAME, r);
-    }
+    const q = peers.peerOfRow[r];
+    peerOfRow[r] = q < 0 ? -1 : participantOfPeer[q];
   }
 
   const count = names.length;
