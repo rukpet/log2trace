@@ -8,6 +8,10 @@
  * shared with the waterfall and read the same way it reads them. Unknown or malformed values read
  * as "not set".
  *
+ * As with the stats view, only the `<trace-view>` attributes are reactive: a `<trace-visualizer>`
+ * attribute (`lane-max-rows`) or a `config` key is an initial fallback, read when the view is
+ * created, and changing it later has no effect on a view that is already showing.
+ *
  * Headless: no DOM, no browser globals.
  */
 
