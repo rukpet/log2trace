@@ -152,6 +152,10 @@ export const gutter = style({
 });
 export const headerHover = style({ background: vars.color.hover });
 
+/** The height of the name's line: a row's, or less where a collapsed lane's summary row is lower than a row. */
+const lineHeightVar = createVar();
+const collapsedHeader = `${header}[aria-expanded="false"]`;
+
 /** What the header says; it stays inside the lane while the lane scrolls under the ruler. */
 export const headerContent = style({
   position: 'absolute',
@@ -160,13 +164,18 @@ export const headerContent = style({
   top: 1,
   display: 'flex',
   alignItems: 'flex-start',
+  vars: { [lineHeightVar]: `calc(${rowHeightVar} - 1px)` },
+  selectors: {
+    // a collapsed lane is only a summary row tall, however tall the rows are: the line stays inside it, centred
+    [`${collapsedHeader} &`]: { vars: { [lineHeightVar]: `calc(min(${rowHeightVar}, ${summaryHeightVar}) - 1px)` } },
+  },
 });
 
 /** As tall as the name's line, so the triangle centred in it is centred on the text at any row height. */
 export const chevron = style({
   flex: 'none',
   width: 16,
-  height: `calc(${rowHeightVar} - 1px)`,
+  height: lineHeightVar,
   position: 'relative',
 });
 
@@ -201,7 +210,7 @@ export const headerText = style({
 });
 
 export const name = style({
-  lineHeight: `calc(${rowHeightVar} - 1px)`,
+  lineHeight: lineHeightVar,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   fontWeight: 600,
