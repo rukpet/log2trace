@@ -635,13 +635,17 @@ console.log({ spans: index.size, roots: index.roots.length, services: index.tabl
           ...(cfg.parentSpanLookupFields ? [`  parent-span-lookup-fields="${cfg.parentSpanLookupFields.join(',')}"`] : []),
           `  show-legend`,
         ];
+        const ruleLines = FINTECH_LOG_RULES.map((r) => {
+          const [[field, value]] = Object.entries(r.match);
+          return `  <span-kind-rule kind="${r.kind}" match-field="${field}" match-value="${value}"></span-kind-rule>`;
+        }).join('\n');
         setCodeBlock(
           codeSetup,
-          `<trace-visualizer\n${attrs.join('\n')}\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence"></trace-view>\n  <span-kind-rule kind="Server" match-field="component" match-value="http-server"></span-kind-rule>\n  <span-kind-rule kind="Client" match-field="component" match-value="http-client"></span-kind-rule>\n  <span-kind-rule kind="Producer" match-field="component" match-value="kafka-producer"></span-kind-rule>\n</trace-visualizer>`,
+          `<trace-visualizer\n${attrs.join('\n')}\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence"></trace-view>\n${ruleLines}\n</trace-visualizer>`,
           'html',
         );
       } else {
-        const previewCfg = { ...cfg, spanKindRules: FINTECH_LOG_RULES.slice(0, 3) };
+        const previewCfg = { ...cfg, spanKindRules: FINTECH_LOG_RULES };
         setCodeBlock(
           codeSetup,
           `const el = document.querySelector('#viz-logs');\n\nel.logData = {\n  logs: await (await fetch('./data/fintech-logs.json')).json(),\n  config: ${JSON.stringify(previewCfg, null, 2).replace(/\n/g, '\n  ')},\n};`,
