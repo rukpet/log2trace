@@ -438,13 +438,13 @@
         A lane taller than <code>max-rows</code> is capped with a <strong>+N rows</strong> overflow row (click it to show every level).
         A <strong>collapsed lane</strong> becomes a one-row in-flight concurrency area chart with error ticks; with a filter active it counts
         only matching requests. The gutter reports each lane's <em>spans &middot; busy % &middot; peak concurrency &middot; errors</em>, and
-        hovering an empty gap inside a lane shows its idle time. Selecting a span fades everything outside its request's causal tree.
+        hovering an empty stretch of a lane (between spans, or before its first and after its last) shows its idle time. Selecting a span fades everything outside its request's causal tree.
       </p>
 
       <div class="callout">
         <strong>Try it on the worker pool:</strong> 40 image tasks run on an 8-slot <code>image-worker</code> pool, so that lane stays pinned at 8
-        concurrent spans (saturation), preceded by a ~120&nbsp;ms idle gap while <code>job-scheduler</code> waits on an uninstrumented feature-flag call.
-        Hover the empty space before the first task, collapse <code>image-worker</code> to see its concurrency curve, then switch on
+        concurrent spans (saturation), preceded by a ~140&nbsp;ms idle gap while <code>job-scheduler</code> waits on an uninstrumented feature-flag call.
+        Hover the empty space at the start of the <code>image-worker</code> lane to read the idle time, double-click it to zoom to it, collapse <code>image-worker</code> to see its concurrency curve, then switch on
         <em>Errors Only</em> to count only the 3 failing tasks.
       </div>
 
@@ -855,6 +855,8 @@ registerView({
       }
 
       clearInlineTheme();
+      // a click on a tab set `view`, which wins over the new carriers' `active`
+      viz.removeAttribute('view');
       for (const c of [...viz.querySelectorAll('trace-view')]) c.remove();
 
       if (key === 'suite') {

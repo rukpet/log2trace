@@ -671,13 +671,13 @@
     }
     const currentActive = pendingActiveView ?? viz.view;
     pendingActiveView = null;
+    // the `view` attribute (set by a click on a tab) wins over `active`, so it is set to the same view below
+    const activeType = enabledViews.includes(currentActive) ? currentActive : enabledViews[0];
     for (const c of [...viz.querySelectorAll('trace-view')]) c.remove();
-    for (const [idx, type] of enabledViews.entries()) {
+    for (const type of enabledViews) {
       const v = document.createElement('trace-view');
       v.setAttribute('type', type);
-      if ((enabledViews.includes(currentActive) && type === currentActive) || (!enabledViews.includes(currentActive) && idx === 0)) {
-        v.setAttribute('active', '');
-      }
+      if (type === activeType) v.setAttribute('active', '');
       if (type === 'sequence') {
         v.setAttribute('internal', $('pg-seq-internal').value);
         v.setAttribute('returns', $('pg-seq-returns').value);
@@ -692,6 +692,7 @@
       }
       viz.appendChild(v);
     }
+    viz.view = activeType;
 
     // Filters
     for (const f of [...viz.querySelectorAll('trace-filter')]) f.remove();
