@@ -99,7 +99,7 @@
           <label class="ctrl-check"><input type="checkbox" id="lf-op" checked><span>Text <code>spanName</code></span></label>
           <label class="ctrl-check"><input type="checkbox" id="lf-svc" checked><span>Auto Dropdown <code>serviceName</code></span></label>
           <label class="ctrl-check"><input type="checkbox" id="lf-kind" checked><span>Static Dropdown <code>spanKind</code></span></label>
-          <label class="ctrl-check"><input type="checkbox" id="lf-multi" checked><span>Multiselect <code>serviceName</code></span></label>
+          <label class="ctrl-check"><input type="checkbox" id="lf-multi"><span>Multiselect <code>serviceName</code></span></label>
           <label class="ctrl-check"><input type="checkbox" id="lf-err" checked><span>Checkbox <code>hasError</code></span></label>
           <label class="ctrl-check"><input type="checkbox" id="lf-time"><span>Datetime <code>startTime</code></span></label>
 
@@ -175,7 +175,17 @@
             <span>HTML — Combining target="span" and target="log" Filters</span>
             <button type="button" class="copy-btn">Copy</button>
           </div>
-          <pre class="code-pre"><code data-lang="html">&lt;trace-visualizer data-url="./data/fintech-logs.json" ... show-legend&gt;
+          <pre class="code-pre"><code data-lang="html">&lt;trace-visualizer
+  data-url="./data/fintech-logs.json"
+  trace-id-field="trace.id"
+  span-group-fields="service.name,operation"
+  span-name-field="operation"
+  service-name-field="service.name"
+  timestamp-field="ts"
+  status-code-field="code"
+  parent-span-lookup-fields="caller"
+  show-legend
+&gt;
   &lt;!-- Span-level match (default target="span") --&gt;
   &lt;trace-filter field="spanName" label="Operation (span)" type="text" source="local" target="span"&gt;&lt;/trace-filter&gt;
 
@@ -185,6 +195,8 @@
     options='["visa","amex","mastercard"]' placeholder="All networks"&gt;&lt;/trace-filter&gt;
   &lt;trace-filter field="service.region" label="Region (log)" type="dropdown" source="local" target="log"
     options='["us-east-1","eu-west-1","ap-south-1"]' placeholder="All regions"&gt;&lt;/trace-filter&gt;
+  &lt;trace-filter field="severity" label="Severity (log)" type="dropdown" source="local" target="log"
+    options='["INFO","DEBUG","ERROR"]' placeholder="Any severity"&gt;&lt;/trace-filter&gt;
 &lt;/trace-visualizer&gt;</code></pre>
         </div>
       </div>
@@ -358,6 +370,7 @@
     loadIncidentCascade,
     loadFintechLogs,
     FINTECH_LOG_CONFIG,
+    FINTECH_LOG_RULES,
     syncVisualizerThemes,
   } from './guide.js';
 
@@ -423,9 +436,17 @@
         ? `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  trace-id-field="trace.id"\n  span-group-fields="service.name,operation"\n  span-name-field="operation"\n  service-name-field="service.name"\n  timestamp-field="ts"\n  status-code-field="code"\n  parent-span-lookup-fields="caller"\n  show-legend\n>`
         : `<trace-visualizer data-url="./data/${ds === 'incident' ? 'incident-cascade.json' : 'ai-search-trace.json'}" show-legend>`;
 
+      const ruleLines = ds === 'fintech'
+        ? FINTECH_LOG_RULES.map((r) => {
+          const [[field, value]] = Object.entries(r.match);
+          return `  <span-kind-rule kind="${r.kind}" match-field="${field}" match-value="${value}"></span-kind-rule>`;
+        })
+        : [];
+      const childLines = [...lines, ...ruleLines];
+
       setCodeBlock(
         codeEl,
-        `${hostTag}\n${lines.join('\n') || '  <!-- Enable one or more filter controls above -->'}\n</trace-visualizer>`,
+        `${hostTag}\n${childLines.join('\n') || '  <!-- Enable one or more filter controls above -->'}\n</trace-visualizer>`,
         'html',
       );
     }
@@ -438,7 +459,18 @@
       else viz.logData = { logs: await loadFintechLogs(), config: FINTECH_LOG_CONFIG };
     }
 
-    for (const cb of Object.values(toggles)) cb.addEventListener('change', syncFilterChildren);
+    toggles.svc.addEventListener('change', () => {
+      if (toggles.svc.checked) toggles.multi.checked = false;
+      syncFilterChildren();
+    });
+    toggles.multi.addEventListener('change', () => {
+      if (toggles.multi.checked) toggles.svc.checked = false;
+      syncFilterChildren();
+    });
+    for (const [key, cb] of Object.entries(toggles)) {
+      if (key === 'svc' || key === 'multi') continue;
+      cb.addEventListener('change', syncFilterChildren);
+    }
     dsSel.addEventListener('change', () => void syncFilterData());
 
     void syncFilterData();

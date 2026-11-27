@@ -879,9 +879,17 @@
     },
   };
 
+  let activePresetName = 'ai-suite';
+
+  function clearActivePreset() {
+    activePresetName = null;
+    for (const btn of document.querySelectorAll('[data-pg-preset]')) btn.classList.remove('is-active');
+  }
+
   function applySetupPreset(name) {
     const p = PRESET_MAP[name];
     if (!p) return;
+    activePresetName = name;
     for (const btn of document.querySelectorAll('[data-pg-preset]')) {
       btn.classList.toggle('is-active', btn.dataset.pgPreset === name);
     }
@@ -979,15 +987,15 @@
 
   // Wire sidebar controls
   $('pg-source').addEventListener('change', () => {
-    for (const btn of document.querySelectorAll('[data-pg-preset]')) btn.classList.remove('is-active');
+    clearActivePreset();
     void loadSelectedDataset();
   });
-  $('pg-syn-regen').addEventListener('click', () => void loadSelectedDataset());
-  $('pg-syn-n').addEventListener('change', () => void loadSelectedDataset());
-  $('pg-syn-mode').addEventListener('change', () => void loadSelectedDataset());
-  $('pg-tf-apply').addEventListener('click', () => void loadSelectedDataset());
-  $('pg-tf-rules').addEventListener('change', () => void loadSelectedDataset());
-  $('pg-tf-defkind').addEventListener('change', () => void loadSelectedDataset());
+  $('pg-syn-regen').addEventListener('click', () => { clearActivePreset(); void loadSelectedDataset(); });
+  $('pg-syn-n').addEventListener('change', () => { clearActivePreset(); void loadSelectedDataset(); });
+  $('pg-syn-mode').addEventListener('change', () => { clearActivePreset(); void loadSelectedDataset(); });
+  $('pg-tf-apply').addEventListener('click', () => { clearActivePreset(); void loadSelectedDataset(); });
+  $('pg-tf-rules').addEventListener('change', () => { clearActivePreset(); void loadSelectedDataset(); });
+  $('pg-tf-defkind').addEventListener('change', () => { clearActivePreset(); void loadSelectedDataset(); });
 
   const liveShellIds = [
     'pg-span-h', 'pg-span-pad', 'pg-gutter', 'pg-seq-fold', 'pg-seq-internal', 'pg-seq-returns',
@@ -997,32 +1005,45 @@
   ];
   for (const id of liveShellIds) {
     $(id).addEventListener('change', () => {
+      clearActivePreset();
+      if (id === 'pg-f-svc' && $('pg-f-svc').checked) $('pg-f-multi').checked = false;
+      if (id === 'pg-f-multi' && $('pg-f-multi').checked) $('pg-f-svc').checked = false;
       if (id === 'pg-theme') customCssVars = null;
       syncShellAndCarriers();
     });
     if ($(id).tagName === 'INPUT' && $(id).type === 'color') {
-      $(id).addEventListener('input', syncShellAndCarriers);
+      $(id).addEventListener('input', () => {
+        clearActivePreset();
+        syncShellAndCarriers();
+      });
     }
   }
   for (const cb of document.querySelectorAll('[data-pg-view]')) {
-    cb.addEventListener('change', syncShellAndCarriers);
+    cb.addEventListener('change', () => {
+      clearActivePreset();
+      syncShellAndCarriers();
+    });
   }
 
   $('pg-copy-url').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     const params = new URLSearchParams();
-    params.set('source', $('pg-source').value);
-    if ($('pg-source').value === 'synthetic') {
-      params.set('n', $('pg-syn-n').value);
-      params.set('seed', $('pg-syn-seed').value);
-      params.set('ev', $('pg-syn-ev').value);
-      if ($('pg-syn-mode').value !== 'tree') params.set('mode', $('pg-syn-mode').value);
+    if (activePresetName) {
+      params.set('preset', activePresetName);
+    } else {
+      params.set('source', $('pg-source').value);
+      if ($('pg-source').value === 'synthetic') {
+        params.set('n', $('pg-syn-n').value);
+        params.set('seed', $('pg-syn-seed').value);
+        params.set('ev', $('pg-syn-ev').value);
+        if ($('pg-syn-mode').value !== 'tree') params.set('mode', $('pg-syn-mode').value);
+      }
+      const views = [...document.querySelectorAll('[data-pg-view]')]
+        .filter((c) => c.checked)
+        .map((c) => c.dataset.pgView);
+      params.set('views', views.join(','));
+      if ($('pg-theme').value) params.set('theme', $('pg-theme').value);
     }
-    const views = [...document.querySelectorAll('[data-pg-view]')]
-      .filter((c) => c.checked)
-      .map((c) => c.dataset.pgView);
-    params.set('views', views.join(','));
-    if ($('pg-theme').value) params.set('theme', $('pg-theme').value);
 
     const url = `${location.origin}${location.pathname}#${params.toString()}`;
     history.replaceState(null, '', `#${params.toString()}`);
@@ -1065,6 +1086,9 @@
     if (hash.has('preset') && PRESET_MAP[hash.get('preset')]) {
       applySetupPreset(hash.get('preset'));
     } else {
+      if (hash.has('n') || hash.has('source') || hash.has('views') || hash.has('theme')) {
+        clearActivePreset();
+      }
       if (hash.has('n')) {
         $('pg-source').value = 'synthetic';
         const nVal = hash.get('n');

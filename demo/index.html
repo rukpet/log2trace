@@ -503,19 +503,24 @@ console.log({ spans: index.size, roots: index.roots.length, services: index.tabl
 
       viz.toggleAttribute('show-legend', legendCb.checked);
 
-      for (const child of [...viz.querySelectorAll('trace-view')]) child.remove();
-      if (allViewsCb.checked) {
-        for (const [idx, type] of ['waterfall', 'flame', 'service', 'sequence'].entries()) {
-          const v = document.createElement('trace-view');
-          v.setAttribute('type', type);
-          if (idx === 0) v.setAttribute('active', '');
-          viz.appendChild(v);
+      const existingViews = [...viz.querySelectorAll('trace-view')];
+      const wantAllViews = allViewsCb.checked;
+      if ((wantAllViews && existingViews.length !== 4) || (!wantAllViews && existingViews.length !== 0)) {
+        for (const child of existingViews) child.remove();
+        if (wantAllViews) {
+          for (const [idx, type] of ['waterfall', 'flame', 'service', 'sequence'].entries()) {
+            const v = document.createElement('trace-view');
+            v.setAttribute('type', type);
+            if (idx === 0) v.setAttribute('active', '');
+            viz.appendChild(v);
+          }
         }
       }
 
       if (deliveryMode === 'url' && URL_MAP[ds]) {
-        viz.removeAttribute('data-url');
-        viz.setAttribute('data-url', URL_MAP[ds]);
+        if (viz.getAttribute('data-url') !== URL_MAP[ds]) {
+          viz.setAttribute('data-url', URL_MAP[ds]);
+        }
       } else {
         viz.removeAttribute('data-url');
         const data = ds === 'edge'
