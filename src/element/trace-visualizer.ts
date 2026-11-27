@@ -591,9 +591,12 @@ export class TraceVisualizerElement extends HTMLElement {
 
     const saved = this.viewStates.get(id);
     if (saved !== undefined && saved !== null) view.setState(saved);
-    // a span selected while this view was away is brought into view; otherwise the view stays where it was left
+    // A view shown for the first time brings the selected span into view. One shown again stays where it
+    // was left (its saved state) unless a different span was selected while it was away. A saved state is
+    // only ever recorded together with the selection at that moment, so a first showing has none to override.
     const primary = this.shared.state.selection.primary;
-    if (primary !== null && this.selectionWhenHidden.has(id) && this.selectionWhenHidden.get(id) !== primary) view.reveal?.(primary);
+    const shownBefore = this.selectionWhenHidden.has(id);
+    if (primary !== null && (!shownBefore || this.selectionWhenHidden.get(id) !== primary)) view.reveal?.(primary);
 
     this.renderStatus();
     if (previous !== undefined) this.emit('view-changed', { view: id, previous });

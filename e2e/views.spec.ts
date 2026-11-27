@@ -1,5 +1,5 @@
 import { clickCenter, expect, test, waterfallRows } from './support/harness.ts';
-import { SAMPLE_TRACE } from './support/fixtures.ts';
+import { BASE_MS, SAMPLE_TRACE, SAMPLE_TRACE_ID } from './support/fixtures.ts';
 
 test.describe('DOM & SVG views and real input gestures', () => {
   test('waterfall (DOM): tree hierarchy, collapse/expand, time window, wheel zoom, and drag pan', async ({ page, harness }) => {
@@ -130,6 +130,65 @@ test.describe('DOM & SVG views and real input gestures', () => {
     // ArrowUp moves selection from createOrder back to parent GET /orders
     await page.keyboard.press('ArrowUp');
     await expect(viz.locator('aside[aria-label="Span details"]')).toContainText('GET /orders');
+  });
+
+  test('a span selected in another view is revealed when the waterfall is opened for the first time', async ({ harness }) => {
+    // A root with 60 children: the last one is the waterfall's bottom row, far below the first screenful,
+    // and wide enough to click in the flame graph.
+    const ns = (ms: number): string => (BigInt(BASE_MS + ms) * 1_000_000n).toString();
+    const children = Array.from({ length: 60 }, (_, i) => {
+      const last = i === 59;
+      return {
+        traceId: SAMPLE_TRACE_ID,
+        spanId: `step-${i}`,
+        parentSpanId: 'root',
+        name: last ? 'final step' : `step ${i}`,
+        kind: 1,
+        startTimeUnixNano: ns(last ? 300 : i * 5),
+        endTimeUnixNano: ns(last ? 1000 : i * 5 + 4),
+      };
+    });
+    const tallTrace = {
+      resourceSpans: [{
+        resource: { attributes: [{ key: 'service.name', value: { stringValue: 'worker' } }] },
+        scopeSpans: [{
+          scope: { name: 'e2e' },
+          spans: [
+            { traceId: SAMPLE_TRACE_ID, spanId: 'root', name: 'run', kind: 1, startTimeUnixNano: ns(0), endTimeUnixNano: ns(1000) },
+            ...children,
+          ],
+        }],
+      }],
+    };
+
+    await harness.openBlank();
+    const viz = await harness.mount({
+      attrs: { height: '520', view: 'flame' },
+      children: [
+        { tag: 'trace-view', attrs: { type: 'flame', active: '' } },
+        { tag: 'trace-view', attrs: { type: 'waterfall' } },
+      ],
+      traceData: tallTrace,
+    });
+
+    // Select the last span in the flame graph; the waterfall has never been shown
+    const flame = viz.locator('[part="flame"][aria-label="Flame graph"]');
+    await flame.getByText('final step', { exact: true }).click();
+    await expect(viz.locator('aside[aria-label="Span details"]')).toContainText('final step');
+
+    await viz.locator('[part="tabs"] [role="tab"]', { hasText: 'Waterfall' }).click();
+
+    const plot = viz.locator('[part="plot"]');
+    const row = viz.locator('[data-span-id="step-59"]');
+    await expect(row).toBeVisible();
+    await expect(row).toHaveAttribute('aria-selected', 'true');
+    await expect.poll(() => plot.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    const [plotBox, rowBox] = await Promise.all([plot.boundingBox(), row.boundingBox()]);
+    expect(plotBox && rowBox).toBeTruthy();
+    if (plotBox && rowBox) {
+      expect(rowBox.y).toBeGreaterThanOrEqual(plotBox.y);
+      expect(rowBox.y + rowBox.height).toBeLessThanOrEqual(plotBox.y + plotBox.height);
+    }
   });
 
   test('service graph view: nodes, inferred peer, SVG edges, selection, and 2D pan/zoom', async ({ page, harness }) => {
