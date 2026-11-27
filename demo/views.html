@@ -235,15 +235,6 @@
       <div class="workbench">
         <div class="wb-toolbar">
           <div class="wb-group">
-            <span class="wb-label">Open View</span>
-            <div class="segmented" role="group" aria-label="Switch between Flame and Service">
-              <button type="button" id="fs-btn-flame" class="is-active" aria-pressed="true">Flame Graph</button>
-              <button type="button" id="fs-btn-service" aria-pressed="false">Service Map</button>
-              <button type="button" id="fs-btn-waterfall" aria-pressed="false">Waterfall</button>
-            </div>
-          </div>
-
-          <div class="wb-group">
             <label class="wb-label" for="fs-dataset">Complexity Profile</label>
             <select class="ctrl-select" id="fs-dataset">
               <option value="ai" selected>AI Hybrid RAG (43 spans, 9 services + 5 external peers)</option>
@@ -1029,28 +1020,7 @@ registerView({
   // ── Section 3: Flame & Service Map ────────────────────────────────────────
   {
     const viz = document.getElementById('viz-fs');
-    const btns = {
-      flame: document.getElementById('fs-btn-flame'),
-      service: document.getElementById('fs-btn-service'),
-      waterfall: document.getElementById('fs-btn-waterfall'),
-    };
     const dsSel = document.getElementById('fs-dataset');
-
-    function syncActiveBtn(activeId) {
-      for (const [id, btn] of Object.entries(btns)) {
-        const on = id === activeId;
-        btn.classList.toggle('is-active', on);
-        btn.setAttribute('aria-pressed', String(on));
-      }
-    }
-
-    for (const [id, btn] of Object.entries(btns)) {
-      btn.addEventListener('click', () => {
-        viz.view = id;
-        syncActiveBtn(id);
-      });
-    }
-    viz.addEventListener('view-changed', (e) => syncActiveBtn(e.detail.view));
 
     async function loadFsData() {
       const v = dsSel.value;
