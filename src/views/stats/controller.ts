@@ -296,34 +296,37 @@ export class StatsController {
   }
 
   applySettings(next: StatsSettings): number {
-    const prev = this.defaults;
     this.defaults = next;
     let added: number = StatsDirty.None;
 
-    if (next.groupBy !== prev.groupBy) {
+    if (next.groupBy !== this.viewState.groupBy) {
       this.viewState.groupBy = next.groupBy;
-      this.viewState.sort = normalizeSortColumn(next.groupBy, this.viewState.sort);
+      this.viewState.scrollTop = 0;
+      this.viewState.focusRow = -1;
+      this.viewState.hoveredRow = -1;
       this.aggStale = true;
       this.projStale = true;
-      added |= StatsDirty.Data | StatsDirty.Layout | StatsDirty.Rows;
+      this.onScrollTo?.(0);
+      added |= StatsDirty.Data | StatsDirty.Layout | StatsDirty.Rows | StatsDirty.Scroll;
     }
-    if (next.sort !== prev.sort) {
-      this.viewState.sort = normalizeSortColumn(this.viewState.groupBy, next.sort);
+    const normalizedSort = normalizeSortColumn(this.viewState.groupBy, next.sort);
+    if (normalizedSort !== this.viewState.sort) {
+      this.viewState.sort = normalizedSort;
       this.projStale = true;
       added |= StatsDirty.Rows;
     }
-    if (next.sortDir !== prev.sortDir) {
+    if (next.sortDir !== this.viewState.sortDir) {
       this.viewState.sortDir = next.sortDir;
       this.projStale = true;
       added |= StatsDirty.Rows;
     }
-    if (next.matchesOnly !== prev.matchesOnly) {
+    if (next.matchesOnly !== this.viewState.matchesOnly) {
       this.viewState.matchesOnly = next.matchesOnly;
       this.aggStale = true;
       this.projStale = true;
       added |= StatsDirty.Data | StatsDirty.Layout | StatsDirty.Rows;
     }
-    if (next.rowHeight !== prev.rowHeight) {
+    if (next.rowHeight !== this.viewState.rowHeight) {
       this.viewState.rowHeight = next.rowHeight;
       added |= StatsDirty.Layout | StatsDirty.Rows | StatsDirty.Scroll;
     }
@@ -389,7 +392,6 @@ export class StatsController {
 
   toggleSort(column: SortColumn): number {
     const normalized = normalizeSortColumn(this.viewState.groupBy, column);
-    const anchor = this.captureAnchor();
     if (this.viewState.sort === normalized) {
       this.viewState.sortDir = this.viewState.sortDir === 'desc' ? 'asc' : 'desc';
     } else {
@@ -397,7 +399,8 @@ export class StatsController {
       this.viewState.sortDir = defaultSortDirForColumn(normalized);
     }
     this.projStale = true;
-    this.restoreAnchor(anchor);
+    this.viewState.scrollTop = 0;
+    this.onScrollTo?.(0);
     const added = StatsDirty.Rows | StatsDirty.Scroll;
     this.dirty |= added;
     return added;

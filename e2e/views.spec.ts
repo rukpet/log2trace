@@ -267,16 +267,18 @@ test.describe('DOM & SVG views and real input gestures', () => {
     await expect(rows).toHaveCount(6);
     await expect(rows.nth(1)).toHaveAttribute('aria-level', '2');
 
-    // Keyboard ArrowDown + ArrowLeft navigates back to parent group and collapses it
+    // Keyboard ArrowDown + ArrowLeft navigates back to parent group and collapses it; hidden pooled slot must not remain visible
     await stats.focus();
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
     await expect(rows).toHaveCount(5);
+    await expect(stats.locator('[role="row"][aria-level]:visible')).toHaveCount(5);
 
-    // Filter Errors Only: Matches only ON shows 1 group; toggling Matches only to dim shows all 5
+    // Filter Errors Only: Matches only ON shows 1 visible group; toggling Matches only to dim shows all 5
     await viz.locator('[data-filter-field="hasError"][data-filter-type="checkbox"]').check();
     await expect(rows).toHaveCount(1);
+    await expect(stats.locator('[role="row"][aria-level]:visible')).toHaveCount(1);
     await toolbar.getByRole('button', { name: 'Matches only' }).click();
     await expect(rows).toHaveCount(5);
     await viz.locator('[data-filter-field="hasError"][data-filter-type="checkbox"]').uncheck();
@@ -287,5 +289,8 @@ test.describe('DOM & SVG views and real input gestures', () => {
     await expect(stats.locator('[role="columnheader"]')).toHaveCount(7);
     await expect(stats.locator('[role="columnheader"][data-sort-col="start"]')).toBeVisible();
     await expect(rows).toHaveCount(5);
+    // Flat span rows must hide chevrons and excess metric cells (only 7 visible gridcells per row)
+    await expect(rows.nth(0).locator('[data-part="chevron"]')).toBeHidden();
+    await expect(rows.nth(0).locator('[role="gridcell"]:visible')).toHaveCount(7);
   });
 });
