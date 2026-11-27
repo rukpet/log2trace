@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>log2trace-ui — Interactive Guide: Getting Started &amp; Data Transformation</title>
-  <meta name="description" content="Interactive guide for log2trace-ui: install the zero-dependency Web Component, render OpenTelemetry traces across complexity tiers, transform structured JSON logs into spans, and classify span kinds.">
+  <meta name="description" content="Interactive guide for log2trace-ui: install the zero-dependency Web Component, render OpenTelemetry traces, transform structured JSON logs into spans, and classify span kinds.">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,13 +106,13 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
     </div>
 
     <!-- ====================================================================
-         SECTION 1 — Native OpenTelemetry Traces (Complexity Tiers)
+         SECTION 1 — Native OpenTelemetry Traces
          ==================================================================== -->
     <section class="doc-section" id="otel-traces">
       <h2><span class="sec-num">1</span>Native OpenTelemetry Traces</h2>
       <p class="doc-prose">
         Point <code>data-url</code> at any standard <a href="https://opentelemetry.io/docs/specs/otlp/" target="_blank" rel="noopener">OTLP JSON</a>
-        endpoint (<code>{ resourceSpans: [...] }</code>) or assign it directly to <code>.traceData</code>. Switch across complexity tiers below —
+        endpoint (<code>{ resourceSpans: [...] }</code>) or assign it directly to <code>.traceData</code>. Switch between sample traces below —
         from a compact 14-span edge auth request to a 43-span parallel AI RAG pipeline with 429 failover and a 2.8&nbsp;s incident retry storm.
       </p>
 
@@ -127,11 +127,11 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
           </div>
 
           <div class="wb-group">
-            <label class="wb-label" for="otel-dataset-select">Complexity Tier</label>
+            <label class="wb-label" for="otel-dataset-select">Sample Trace</label>
             <select class="ctrl-select" id="otel-dataset-select">
-              <option value="edge">Tier 1: Edge Session Auth (14 spans, 4 services, 184 ms)</option>
-              <option value="ai">Tier 3: AI Hybrid RAG + Failover (43 spans, 9 services, 1.42 s)</option>
-              <option value="incident">Tier 4: Retry Storm &amp; Circuit Breaker (19 spans, 2.84 s)</option>
+              <option value="edge">Edge Session Auth (14 spans, 4 services, 184 ms)</option>
+              <option value="ai">AI Hybrid RAG + Failover (43 spans, 9 services, 1.42 s)</option>
+              <option value="incident">Retry Storm &amp; Circuit Breaker (19 spans, 2.84 s)</option>
               <option value="inline">Minimal Inline Object (3 spans, 86 ms)</option>
             </select>
           </div>

@@ -2,7 +2,7 @@
  * Shared runtime utilities for the log2trace-ui interactive guide pages:
  * - Page shell (theme toggle synced with unpinned <trace-visualizer> elements, TOC scroll-spy, mobile TOC)
  * - Zero-dependency syntax highlighting & copy-to-clipboard code blocks
- * - Fresh, domain-diverse datasets under ./data/ spanning 4 complexity tiers
+ * - Fresh, domain-diverse sample datasets under ./data/
  * - Structured live event inspector widget
  */
 
@@ -396,7 +396,7 @@ export function createEventConsole(container, vizEl, { maxEntries = 80 } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Fresh Datasets (generated in ./data/ across 4 complexity tiers)
+// Fresh Datasets (sample traces and logs under ./data/)
 // ---------------------------------------------------------------------------
 
 const cache = new Map();
@@ -410,19 +410,19 @@ async function loadJson(path) {
   return cache.get(path);
 }
 
-/** Tier 1 (Compact Starter): Edge API & Session Auth — 14 spans, 4 services, 184 ms. */
+/** Compact Starter: Edge API & Session Auth — 14 spans, 4 services, 184 ms. */
 export const loadEdgeAuthTrace = () => loadJson('./data/edge-auth-trace.json');
 
-/** Tier 2 (Modern Raw Logs): Card Settlement & Fraud Pipeline — 61 structured logs -> 21 spans across 9 services. */
+/** Modern Raw Logs: Card Settlement & Fraud Pipeline — 61 structured logs -> 21 spans across 9 services. */
 export const loadFintechLogs = () => loadJson('./data/fintech-logs.json');
 
-/** Tier 3 (Complex Multi-View): AI RAG & Hybrid Search — 43 spans, 9 services + 4 peers, 5x shard loop, 429 failover. */
+/** Complex Multi-View: AI RAG & Hybrid Search — 43 spans, 9 services + 4 peers, 5x shard loop, 429 failover. */
 export const loadAiSearchTrace = () => loadJson('./data/ai-search-trace.json');
 
-/** Tier 4 (Incident Cascade): Retry Storm & Circuit Breaker — 19 spans, 3 exponential-backoff retries, DLQ fallback. */
+/** Incident Cascade: Retry Storm & Circuit Breaker — 19 spans, 3 exponential-backoff retries, DLQ fallback. */
 export const loadIncidentCascade = () => loadJson('./data/incident-cascade.json');
 
-/** Tier 5 (Worker Pool): batch fan-out onto an 8-slot worker pool — 138 spans, saturation, an idle gap, ghost peers (s3, postgresql), 3 failures. */
+/** Worker Pool: batch fan-out onto an 8-slot worker pool — 138 spans, saturation, an idle gap, ghost peers (s3, postgresql), 3 failures. */
 export const loadWorkerPoolTrace = () => loadJson('./data/worker-pool-trace.json');
 
 export const FINTECH_LOG_RULES = [
