@@ -351,6 +351,20 @@ export async function clickCenter(page: Page, target: Locator): Promise<void> {
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 }
 
+/**
+ * Resolve once the views have painted what the last input or layout change asked for.
+ *
+ * The views paint on a shared `requestAnimationFrame`, so the DOM they own lags a frame behind the
+ * state the input changed, and a resize noticed by a `ResizeObserver` lands one frame later still.
+ * Wait for it before measuring a bar that the next gesture aims at; assert on the state a gesture
+ * changes with `expect`/`expect.poll`, which retry.
+ */
+export async function afterPaint(page: Page): Promise<void> {
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+  );
+}
+
 /** Move the pointer to the visual center of a rendered element via page.mouse. */
 export async function hoverCenter(page: Page, target: Locator): Promise<void> {
   await expect(target).toBeVisible();

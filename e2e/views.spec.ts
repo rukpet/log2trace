@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { clickCenter, expect, test, waterfallRows } from './support/harness.ts';
+import { afterPaint, clickCenter, expect, test, waterfallRows } from './support/harness.ts';
 import { SAMPLE_TRACE } from './support/fixtures.ts';
 
 /** The guide's worker-pool dataset: 138 spans, an 8-slot `image-worker` pool, ghost peers `s3.eu-west-1.amazonaws.com` and `postgresql:jobs`. */
@@ -329,6 +329,12 @@ test.describe('DOM & SVG views and real input gestures', () => {
     const lane = (name: string) => viz.locator(`[data-part="lane"][data-lane="${name}"]`);
     const selection = () => viz.evaluate((el) => (el as HTMLElement & { selection: string[] }).selection);
     const details = viz.locator('aside[aria-label="Span details"]');
+    // The bars are pooled elements that a frame repaints, so the x of every painted bar says whether the last camera change has landed
+    // (a bar clipped at the plot edge does not move, hence all of them, sorted: slots are reused in any order). Pooled slots that are
+    // out of view stay in the DOM, hidden, with the span id they last showed, so only :visible ones count.
+    const barXs = () => viz.locator('[data-part="bar"]:visible').evaluateAll(
+      (bars) => bars.map((bar) => Math.round(bar.getBoundingClientRect().x)).sort((p, q) => p - q).join(','),
+    );
 
     // One lane per instrumented service, plus italic ghost peer lanes for uninstrumented callees
     for (const service of ['ingest-api', 'job-scheduler', 'image-worker', 'notifier']) {
@@ -347,12 +353,16 @@ test.describe('DOM & SVG views and real input gestures', () => {
     await expect(waterfallRows(viz).first()).toBeVisible();
     await viz.locator('[part="tabs"] [role="tab"]', { hasText: 'Lanes' }).click();
     await expect(lane('image-worker')).toBeVisible();
+    await afterPaint(page);
 
     // Click a bar: selects it and opens the detail panel
     const scheduleBar = viz.locator('[data-part="bar"]', { hasText: 'schedule batch' });
     await clickCenter(page, scheduleBar);
     await expect(details).toContainText('schedule batch');
-    expect(await selection()).toHaveLength(1);
+    await expect.poll(selection).toHaveLength(1);
+    // The panel narrows the plot, and the bars follow a frame later: measure them only once they have
+    await afterPaint(page);
+    const barsAtFullView = await barXs();
 
     // Double-click a bar zooms to it; Home/0 resets
     const taskId = firstTaskSpanId();
@@ -364,6 +374,7 @@ test.describe('DOM & SVG views and real input gestures', () => {
     await plot.focus();
     await page.keyboard.press('0');
     await expect(zoomReadout).toHaveText('100%');
+    await expect.poll(barXs).toBe(barsAtFullView);
 
     // Header click collapses a lane into a concurrency summary (an svg path); a second click expands it again
     await clickCenter(page, lane('image-worker').getByText('image-worker', { exact: true }));
@@ -387,10 +398,9 @@ test.describe('DOM & SVG views and real input gestures', () => {
       await page.keyboard.up('Control');
       await expect(zoomReadout).not.toHaveText('100%');
 
-      // a bar clipped at the plot edge does not move, so compare the x of every painted bar
-      const barXs = () => viz.locator('[data-part="bar"]:visible').evaluateAll(
-        (bars) => bars.map((bar) => Math.round(bar.getBoundingClientRect().x)).join(','),
-      );
+      // the readout changes with the camera, the bars a frame later: take the zoomed bars as the baseline of the drag
+      await expect.poll(barXs).not.toBe(barsAtFullView);
+      await afterPaint(page);
       const barsBeforeDrag = await barXs();
       await page.mouse.move(x, y);
       await page.mouse.down();
@@ -401,6 +411,8 @@ test.describe('DOM & SVG views and real input gestures', () => {
     await plot.focus();
     await page.keyboard.press('0');
     await expect(zoomReadout).toHaveText('100%');
+    // click the bar where the reset has put it, not where the zoomed camera had it
+    await expect.poll(barXs).toBe(barsAtFullView);
 
     // ArrowRight selects the next span on the same track (same row, further right)
     await clickCenter(page, taskBar);
@@ -409,7 +421,10 @@ test.describe('DOM & SVG views and real input gestures', () => {
     await page.keyboard.press('ArrowRight');
     await expect.poll(async () => (await selection())[0]).not.toBe(taskId);
     const nextId = (await selection())[0];
-    const after = await viz.locator(`[data-part="bar"][data-span-id="${nextId}"]`).boundingBox();
+    // a bar that left the view stays in the DOM, hidden, with its span id: look at the painted one
+    const nextBar = viz.locator(`[data-part="bar"][data-span-id="${nextId}"]:visible`);
+    await expect(nextBar).toBeVisible();
+    const after = await nextBar.boundingBox();
     expect(before && after).toBeTruthy();
     if (before && after) {
       expect(after.y).toBeCloseTo(before.y, 0);
@@ -419,10 +434,10 @@ test.describe('DOM & SVG views and real input gestures', () => {
     // Switching tabs keeps the selection, in the waterfall and back in lanes
     await viz.locator('[part="tabs"] [role="tab"]', { hasText: 'Waterfall' }).click();
     await expect(waterfallRows(viz).and(viz.locator(`[data-span-id="${nextId}"]`))).toHaveAttribute('aria-selected', 'true');
-    expect(await selection()).toEqual([nextId]);
+    await expect.poll(selection).toEqual([nextId]);
     await viz.locator('[part="tabs"] [role="tab"]', { hasText: 'Lanes' }).click();
     await expect(plot).toBeVisible();
-    expect(await selection()).toEqual([nextId]);
+    await expect.poll(selection).toEqual([nextId]);
     await expect(details).toContainText('process image');
   });
 });
