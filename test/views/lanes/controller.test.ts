@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SpanMask,
+  Slice,
   buildSpanIndex,
   createTraceStore,
   type ChangeSet,
@@ -241,8 +242,24 @@ test('an external window moves the camera; its own window is ignored', () => {
   assert.equal(h.flush().dirty & LanesDirty.Camera, 0);
   assert.equal(h.view.state.camera.t0, 100);
 
+  h.store.setWindow(null, { origin: 'lanes-1' });
+  assert.equal(h.flush().dirty & LanesDirty.Camera, 0, 'its own clearing is ignored too');
+  assert.equal(h.view.state.camera.t0, 100);
+
+  h.store.setWindow({ t0: 100, t1: 300 }, { origin: 'api' });
+  h.flush();
   h.store.setWindow(null, { origin: 'api' });
-  assert.equal(h.flush().dirty, 0, 'a cleared window changes nothing here, like the waterfall');
+  assert.ok(h.flush().dirty & LanesDirty.Camera, 'a cleared window shows the whole trace');
+  assert.equal(h.view.state.camera.t0, 0);
+  assert.equal(h.view.state.camera.t1, 1000);
+  assert.equal(h.view.state.camera.widthPx, 756);
+
+  h.store.setWindow({ t0: 100, t1: 300 }, { origin: 'api' });
+  h.flush();
+  h.store.setWindow(null, { origin: 'api' });
+  h.flush();
+  h.store.touch(Slice.Window, { origin: 'api' });
+  assert.equal(h.flush().dirty & LanesDirty.Camera, 0, 'nothing to redraw when the whole trace is shown already');
 });
 
 test('getState and setState round trip the camera, the scroll position and the lane modes by name', () => {
@@ -531,4 +548,209 @@ test('the self-time of a lane header follows the shared window', () => {
   h.flush();
   const windowed = new Map(h.view.describeHit(hit)?.sections[0].rows).get('Self time');
   assert.notEqual(windowed, all);
+});
+
+// -----------------------------------------------------------------------------
+// Picking follows the view state, not the last painted frame
+// -----------------------------------------------------------------------------
+
+/** A painted view of the wide trace, with `mutate` applied after the paint and no frame since. */
+function stale(mutate: (h: Harness) => void, height = 600): Harness {
+  const h = harness(wideTrace(), height);
+  h.paint();
+  mutate(h);
+  return h;
+}
+
+/** The same view as {@link stale}, repainted after `mutate`: what the user sees. */
+function repainted(mutate: (h: Harness) => void, height = 600): Harness {
+  const h = stale(mutate, height);
+  h.paint();
+  return h;
+}
+
+/** View y of the middle of a span's bar in the painted plan. */
+function barY(h: Harness, id: string): number {
+  return h.plan.runY[runOf(h, id)] + h.view.layout.rowHeight / 2;
+}
+
+const click = (x: number, y: number) => ({ type: 'click', x, y, additive: false }) as const;
+
+test('a click after a scroll and before the next frame picks the span at the new scroll position', () => {
+  const scroll = (h: Harness): void => void h.view.input({ type: 'scroll', top: 36 });
+  const probe = harness(wideTrace(), 240);
+  probe.paint();
+  const y = barY(probe, 'w-call');
+  const x = PLOT_LEFT + 300;
+
+  const before = harness(wideTrace(), 240);
+  before.paint();
+  before.view.input(click(x, y));
+  assert.equal(before.store.state.selection.primary, 'w-call');
+
+  const s = stale(scroll, 240);
+  s.view.input(click(x, y));
+  const f = repainted(scroll, 240);
+  f.view.input(click(x, y));
+  assert.notEqual(s.store.state.selection.primary, 'w-call', 'the bar scrolled away from the pointer');
+  assert.equal(s.store.state.selection.primary, f.store.state.selection.primary);
+  assert.equal(s.view.plan.scrollTop, 36);
+  assert.equal(s.view.plan, s.plan, 'the painter keeps reading the plan it filled');
+});
+
+test('a hover after a scroll and before the next frame hovers the span at the new scroll position', () => {
+  const scroll = (h: Harness): void => void h.view.input({ type: 'scroll', top: 36 });
+  const probe = harness(wideTrace(), 240);
+  probe.paint();
+  const y = barY(probe, 'w-call');
+  const x = PLOT_LEFT + 300;
+
+  const s = stale(scroll, 240);
+  s.view.input({ type: 'hover', x, y });
+  const f = repainted(scroll, 240);
+  f.view.input({ type: 'hover', x, y });
+  assert.notEqual([...(s.store.state.hover?.ids ?? [])][0], 'w-call');
+  assert.deepEqual([...(s.store.state.hover?.ids ?? [])], [...(f.store.state.hover?.ids ?? [])]);
+});
+
+test('a second click after collapsing a lane picks against the new stack', () => {
+  const collapseWeb = (h: Harness): void => {
+    const header = h.view.input(click(50, 40 + 10)); // the header of web
+    assert.equal(header.state.stack.modes[h.view.model.names.indexOf('web')], LaneMode.Collapsed);
+  };
+  const probe = harness();
+  probe.paint();
+  // a point on the header of the lane that moves up when web collapses
+  const peer = probe.view.model.names.indexOf('postgres');
+  const k = probe.view.state.stack.positionOfLane[peer];
+  const y = 40 + probe.view.state.stack.top[k] + 30;
+
+  const s = stale(collapseWeb);
+  s.view.input(click(50, y));
+  const f = repainted(collapseWeb);
+  f.view.input(click(50, y));
+  const modes = (h: Harness): number[] => [...h.view.state.stack.modes];
+  assert.deepEqual(modes(s), modes(f));
+  const pos = (h: Harness, name: string): number => h.view.state.stack.modes[h.view.model.names.indexOf(name)];
+  assert.equal(pos(s, 'postgres'), LaneMode.Capped, 'the stale stack had the peer lane here');
+  assert.equal(pos(s, 'bg'), LaneMode.Collapsed, 'the lane that moved up is the one toggled');
+});
+
+test('a click after a zoom and before the next frame picks by the new camera', () => {
+  const zoom = (h: Harness): void => void h.view.input({ type: 'zoomBy', factor: 0.5 });
+  const probe = harness();
+  probe.paint();
+  const x = PLOT_LEFT + (probe.plan.runX0[runOf(probe, 'b1')] + probe.plan.runX1[runOf(probe, 'b1')]) / 2;
+  const y = barY(probe, 'b1');
+
+  const s = stale(zoom);
+  const r = s.view.input(click(x, y));
+  const f = repainted(zoom);
+  f.view.input(click(x, y));
+  assert.deepEqual([...s.store.state.selection.ids], [...f.store.state.selection.ids]);
+  assert.equal(s.store.state.selection.primary, null, 'b1 left the window');
+  assert.equal(r.handled, false);
+
+  // double click: the bar of the old camera is not there to zoom to
+  const d = stale(zoom);
+  d.view.input({ type: 'doubleClick', x, y });
+  const e = repainted(zoom);
+  e.view.input({ type: 'doubleClick', x, y });
+  assert.equal(d.view.state.camera.t0, e.view.state.camera.t0);
+  assert.equal(d.view.state.camera.t1, e.view.state.camera.t1);
+  assert.ok(d.view.state.camera.t1 - d.view.state.camera.t0 > 100, 'b1 is not there to zoom to');
+});
+
+test('a click after the sizes changed picks by the new layout', () => {
+  const taller = (h: Harness): void => void h.view.setMetrics({ rowHeight: 30, barHeight: 26 });
+  const probe = harness();
+  probe.paint();
+  const y = barY(probe, 'p3');
+  const s = stale(taller);
+  s.view.input(click(PLOT_LEFT + 300, y));
+  const f = repainted(taller);
+  f.view.input(click(PLOT_LEFT + 300, y));
+  assert.equal(s.store.state.selection.primary, f.store.state.selection.primary);
+});
+
+test('picking uses the last text fitter, and does not rebuild a plan that is current', () => {
+  let fits = 0;
+  const counting = (text: string, maxWidth: number): string => {
+    fits++;
+    return fitText(text, maxWidth);
+  };
+  const h = harness();
+  h.view.buildPlan(h.plan, counting);
+  const painted = fits;
+  assert.ok(painted > 0);
+
+  h.view.input({ type: 'hover', x: PLOT_LEFT + 300, y: 49 });
+  h.view.input({ type: 'hover', x: PLOT_LEFT + 310, y: 49 });
+  h.view.input(click(PLOT_LEFT + 300, 49));
+  h.view.hit(PLOT_LEFT + 300, 49);
+  assert.equal(fits, painted, 'no rebuild while nothing changed');
+
+  h.view.input({ type: 'zoomBy', factor: 0.5 });
+  h.view.input({ type: 'hover', x: PLOT_LEFT + 300, y: 49 });
+  assert.ok(fits > painted, 'rebuilt with the painter\'s fitter');
+  assert.equal(h.plan.t0, h.view.state.camera.t0);
+  assert.equal(h.plan.t0, 250);
+  const after = fits;
+  h.view.input({ type: 'hover', x: PLOT_LEFT + 301, y: 49 });
+  assert.equal(fits, after);
+});
+
+test('picking before any frame was painted works from the view state', () => {
+  const h = harness();
+  assert.equal(h.view.plan.model, null);
+  h.view.input(click(PLOT_LEFT + 300, 49));
+  assert.equal(h.store.state.selection.primary, 'w');
+  assert.equal(h.view.plan.labelCount, 0, 'no fitter yet: labels are left out');
+});
+
+// -----------------------------------------------------------------------------
+// A hover the view drops is cleared in the store
+// -----------------------------------------------------------------------------
+
+function hovering(): Harness {
+  const h = harness();
+  h.paint();
+  h.view.input({ type: 'hover', x: PLOT_LEFT + 300, y: 49 });
+  assert.deepEqual([...(h.store.state.hover?.ids ?? [])], ['w']);
+  return h;
+}
+
+test('a relayout clears the hover this view put in the store', () => {
+  const h = hovering();
+  h.view.applySettings({ peers: false });
+  assert.equal(h.view.state.hover, null);
+  assert.equal(h.store.state.hover, null);
+  assert.ok(h.flush().dirty & LanesDirty.Hover);
+
+  const m = hovering();
+  m.view.setMetrics({ rowHeight: 24, barHeight: 20 });
+  assert.equal(m.store.state.hover, null);
+});
+
+test('a relayout leaves a hover of another view alone', () => {
+  const h = hovering();
+  h.store.setHover(['b1'], { origin: 'other' });
+  h.view.applySettings({ peers: false });
+  assert.deepEqual([...(h.store.state.hover?.ids ?? [])], ['b1']);
+});
+
+test('restoring a state, and revealing a span in a collapsed lane, clear the hover the view put in the store', () => {
+  const h = hovering();
+  const saved = h.view.getState();
+  h.view.setState(saved);
+  assert.equal(h.store.state.hover, null);
+
+  const r = harness();
+  r.view.input({ type: 'laneMode', lane: r.view.model.names.indexOf('bg'), mode: LaneMode.Collapsed });
+  r.paint();
+  r.view.input({ type: 'hover', x: PLOT_LEFT + 300, y: 49 });
+  assert.notEqual(r.store.state.hover, null);
+  r.view.reveal('b1');
+  assert.equal(r.view.state.hover, null);
+  assert.equal(r.store.state.hover, null);
 });

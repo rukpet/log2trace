@@ -10,8 +10,8 @@
  * Shared state it follows: the data (a new index resets the view), the selection and hover (turned
  * into row masks, with the causal tree of the selection for dimming), the filter (non-matching
  * spans are dimmed and summaries count matches only, nothing is repacked) and the time window
- * (followed when another origin sets it, like the waterfall). The store's collapse state is ignored:
- * hiding spans would leave false idle gaps in the lanes.
+ * (followed when another origin sets it, like the waterfall; clearing it shows the whole trace).
+ * The store's collapse state is ignored: hiding spans would leave false idle gaps in the lanes.
  *
  * Headless: no DOM, no browser globals.
  */
@@ -33,7 +33,7 @@ import {
 import { spanTimings } from '../../core/self-time.ts';
 import type { SpanIndex } from '../../core/span-index.ts';
 import type { ViewCommand } from '../../kit/commands.ts';
-import { formatZoom, withWindow, zoomRatio } from '../../kit/geometry/camera1d.ts';
+import { createCamera, formatZoom, withWindow, zoomRatio } from '../../kit/geometry/camera1d.ts';
 import { HitPart, createHitResult, hitTest, rowsOfRun, type HitResult } from './model/hit.ts';
 import {
   LanesDirty,
@@ -98,6 +98,8 @@ export interface SavedLanesState {
   readonly laneModes: Readonly<Record<string, 'collapsed' | 'capped' | 'full'>>;
 }
 
+/** Labels left out: what picking uses until the painter has handed over its text fitter (labels do not change what is where). */
+const NO_LABELS = (): string => '';
 const NOTHING: UpdateResult = Object.freeze({ dirty: 0, scrollTo: false });
 const EVERYTHING = LanesDirty.Lanes | LanesDirty.Scroll | LanesDirty.Camera | LanesDirty.Selection | LanesDirty.Hover | LanesDirty.Filter | LanesDirty.Size;
 
@@ -122,6 +124,8 @@ export class LanesController {
   private width = 0;
   private height = 0;
   private lastPlan = new LanesFramePlan();
+  private lastFit: (text: string, maxWidth: number) => string = NO_LABELS;
+  private lastOverscan = 0;
   private selectionTarget: TraceState['selection'] | null = null;
   private selectionMask: SelectionMasks | null = null;
   private hoverTarget: TraceState['hover'] = null;
@@ -242,6 +246,7 @@ export class LanesController {
     this.viewLayout = computeLayout(this.metrics, this.width, this.height);
     const before = this.viewState;
     this.viewState = fitViewState(restack(before, this.spec(), before.stack.modes), this.viewLayout);
+    this.releaseHover(before, this.viewState);
     return { dirty: LanesDirty.Lanes | LanesDirty.Size | LanesDirty.Camera | LanesDirty.Scroll, scrollTo: this.viewState.scrollTop !== before.scrollTop };
   }
 
@@ -311,8 +316,10 @@ export class LanesController {
     if (touches(change, Slice.Hover)) dirty |= LanesDirty.Hover;
     if (touches(change, Slice.Theme | Slice.Config)) dirty |= LanesDirty.Theme;
     this.syncTargets();
-    if (touches(change, Slice.Window) && state.window !== null && change.origin !== this.origin) {
-      const camera = withWindow(this.viewState.camera, state.window.t0, state.window.t1);
+    if (touches(change, Slice.Window) && change.origin !== this.origin) {
+      // a cleared window is the whole trace, as for `setTimeWindow(null)`
+      const { camera: current } = this.viewState;
+      const camera = state.window === null ? createCamera(current.total, current.widthPx) : withWindow(current, state.window.t0, state.window.t1);
       if (camera.t0 !== this.viewState.camera.t0 || camera.t1 !== this.viewState.camera.t1) {
         this.viewState = { ...this.viewState, camera };
         dirty |= LanesDirty.Camera;
@@ -329,10 +336,45 @@ export class LanesController {
    *   scroll position when `scrollTo`, sets the cursor and redraws `dirty`.
    */
   input(input: LanesInput): InputResult {
-    const result = reduceInteraction(this.viewState, input, this.context());
+    // picking must see the view as it is now, not as the last frame drew it
+    if (input.type === 'click' || input.type === 'doubleClick' || input.type === 'hover') this.freshenPlan();
+    const before = this.viewState;
+    const result = reduceInteraction(before, input, this.context());
     this.viewState = result.state;
     for (const effect of result.effects) this.apply(effect);
+    if (!result.effects.some((effect) => effect.type === 'hover')) this.releaseHover(before, result.state);
     return result;
+  }
+
+  /** Whether the plan was made for another view state than the current one (geometry only; flags are not picked on). */
+  private planIsStale(): boolean {
+    const plan = this.lastPlan;
+    const { camera, stack, scrollTop } = this.viewState;
+    return (
+      plan.model !== this.laneModel ||
+      plan.layout !== this.viewLayout ||
+      plan.stack !== stack ||
+      plan.t0 !== camera.t0 ||
+      plan.t1 !== camera.t1 ||
+      plan.plotWidth !== camera.widthPx ||
+      plan.scrollTop !== scrollTop
+    );
+  }
+
+  /**
+   * Rebuild the plan in place when it no longer matches the view state: state changes land between
+   * frames, and a click or hover in that gap must pick what is on screen after them. Nothing happens
+   * (a handful of comparisons, no allocation) while the plan is current, which is the case for every
+   * hover that follows a painted frame.
+   */
+  private freshenPlan(): void {
+    if (this.planIsStale()) this.buildPlan(this.lastPlan, this.lastFit, this.lastOverscan);
+  }
+
+  /** The view state dropped its hover without saying so (the stack was rebuilt): clear the one this view put in the store. */
+  private releaseHover(before: ViewState, after: ViewState): void {
+    if (before.hover === null || after.hover !== null) return;
+    if (this.store.state.hover?.origin === this.origin) this.store.setHover(null, { origin: this.origin });
   }
 
   private apply(effect: Effect): void {
@@ -382,6 +424,8 @@ export class LanesController {
   /** Fill `plan` for the lanes in view; `plan` becomes what {@link LanesController.hit} picks against. */
   buildPlan(plan: LanesFramePlan, fitText: (text: string, maxWidth: number) => string, overscan = 0): void {
     this.syncTargets();
+    this.lastFit = fitText;
+    this.lastOverscan = overscan;
     buildLanesPlan(plan, {
       model: this.laneModel,
       layout: this.viewLayout,
@@ -400,6 +444,7 @@ export class LanesController {
 
   /** What is at a point of the view, as drawn by the last plan. The returned object is reused by the next call. */
   hit(x: number, y: number): HitResult {
+    this.freshenPlan();
     return hitTest(this.lastPlan, x, y, this.hitResult);
   }
 
@@ -557,7 +602,9 @@ export class LanesController {
     const finite = (value: unknown, fallback: number): number => (typeof value === 'number' && Number.isFinite(value) ? value : fallback);
     const camera = withWindow(this.viewState.camera, finite(rec.t0, this.viewState.camera.t0), finite(rec.t1, this.viewState.camera.t1));
     const stacked = restack({ ...this.viewState, camera }, this.spec(), modes);
+    const before = this.viewState;
     this.viewState = fitViewState({ ...stacked, scrollTop: Math.max(0, finite(rec.scrollTop, 0)) }, this.viewLayout);
+    this.releaseHover(before, this.viewState);
     return { dirty: LanesDirty.Lanes | LanesDirty.Camera | LanesDirty.Scroll, scrollTo: true };
   }
 }
