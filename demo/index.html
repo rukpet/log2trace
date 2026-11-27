@@ -121,8 +121,8 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
           <div class="wb-group">
             <span class="wb-label">Delivery</span>
             <div class="segmented" role="group" aria-label="OTel delivery mode">
-              <button type="button" id="otel-mode-url" class="is-active" aria-pressed="true">HTML data-url</button>
-              <button type="button" id="otel-mode-prop" aria-pressed="false">JS .traceData</button>
+              <button type="button" id="otel-mode-url" class="is-active" aria-pressed="true" title="Load the trace declaratively via the data-url HTML attribute">HTML data-url</button>
+              <button type="button" id="otel-mode-prop" aria-pressed="false" title="Load the trace programmatically by assigning the .traceData JavaScript property">JS .traceData</button>
             </div>
           </div>
 
@@ -136,12 +136,12 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
             </select>
           </div>
 
-          <label class="ctrl-check">
+          <label class="ctrl-check" title="Toggle between all 4 view tabs (Waterfall, Flame, Service, Sequence) and a single Waterfall view">
             <input type="checkbox" id="otel-all-views" checked>
             <span>All 4 views</span>
           </label>
 
-          <label class="ctrl-check">
+          <label class="ctrl-check" title="Toggle the span-kind color legend in the visualizer toolbar">
             <input type="checkbox" id="otel-show-legend" checked>
             <span>Show legend</span>
           </label>
@@ -187,8 +187,8 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
           <div class="wb-group">
             <span class="wb-label">API Style</span>
             <div class="segmented" role="group" aria-label="Log configuration style">
-              <button type="button" id="log-style-attr" class="is-active" aria-pressed="true">HTML Attributes</button>
-              <button type="button" id="log-style-js" aria-pressed="false">JS .logData</button>
+              <button type="button" id="log-style-attr" class="is-active" aria-pressed="true" title="Show declarative HTML attributes and <span-kind-rule> children">HTML Attributes</button>
+              <button type="button" id="log-style-js" aria-pressed="false" title="Show programmatic JavaScript .logData assignment">JS .logData</button>
             </div>
           </div>
 
@@ -396,7 +396,7 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
               <option value="ai">ai-search-trace.json (43 OTel spans &rarr; SpanIndex)</option>
             </select>
           </div>
-          <button type="button" class="btn btn--primary" id="btn-run-core">Run Headless Pipeline</button>
+          <button type="button" class="btn btn--primary" id="btn-run-core" title="Run transformLogs() and buildSpanIndex() in JavaScript and inspect the resulting OTLP TraceData">Run Headless Pipeline</button>
           <span class="wb-spacer"></span>
           <span class="wb-readout" id="core-metrics-readout">Click Run to inspect output</span>
         </div>

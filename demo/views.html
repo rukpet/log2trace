@@ -94,10 +94,10 @@
       <div class="workbench">
         <div class="wb-toolbar wb-toolbar--dense">
           <div class="segmented" role="group" aria-label="Visual setup archetypes">
-            <button type="button" id="arch-suite" class="is-active" aria-pressed="true">4-View AI RAG Suite</button>
-            <button type="button" id="arch-compact" aria-pressed="false">Compact Embedded Card</button>
-            <button type="button" id="arch-noc" aria-pressed="false">NOC Dark Incident Room</button>
-            <button type="button" id="arch-editorial" aria-pressed="false">Spacious Editorial</button>
+            <button type="button" id="arch-suite" class="is-active" aria-pressed="true" title="43-span AI RAG trace with all 4 views, default theme, and sequence loop folding">4-View AI RAG Suite</button>
+            <button type="button" id="arch-compact" aria-pressed="false" title="14-span auth trace in a compact 340px single-view card with 20px rows and no tabs">Compact Embedded Card</button>
+            <button type="button" id="arch-noc" aria-pressed="false" title="19-span retry storm pinned to dark obsidian tokens, custom kind colors, and wheel-zoom">NOC Dark Incident Room</button>
+            <button type="button" id="arch-editorial" aria-pressed="false" title="21-span transformed fintech logs in a spacious 36px-row warm paper light theme">Spacious Editorial</button>
           </div>
           <span class="wb-spacer"></span>
           <span class="wb-readout" id="arch-meta">43 spans · 9 services · 4 tabs</span>
@@ -172,7 +172,7 @@
             <span>show-legend</span>
           </label>
 
-          <label class="ctrl-check">
+          <label class="ctrl-check" title="Zoom the timeline with plain mouse-wheel scrolling instead of requiring Ctrl/Cmd + wheel">
             <input type="checkbox" id="wf-wheel-zoom">
             <span>wheel-zoom</span>
           </label>
@@ -318,7 +318,7 @@
             <output id="seq-row-h-out">28px</output>
           </label>
 
-          <label class="ctrl-check">
+          <label class="ctrl-check" title="Zoom the sequence diagram with plain mouse-wheel scrolling instead of requiring Ctrl/Cmd + wheel">
             <input type="checkbox" id="seq-wheel-zoom">
             <span>wheel-zoom</span>
           </label>
@@ -380,7 +380,7 @@
           <label class="ctrl-color"><span>Client</span><input type="color" id="th-k-client" value="#fbbf24"></label>
           <label class="ctrl-color"><span>Internal</span><input type="color" id="th-k-internal" value="#60a5fa"></label>
 
-          <button type="button" class="btn btn--sm" id="th-reset">Reset</button>
+          <button type="button" class="btn btn--sm" id="th-reset" title="Restore the Default Light palette preset and default span-kind colors">Reset</button>
         </div>
 
         <div class="wb-stage">

@@ -95,13 +95,13 @@
       <div class="workbench">
         <div class="wb-toolbar wb-toolbar--dense">
           <span class="wb-label">Toggle Controls:</span>
-          <label class="ctrl-check"><input type="checkbox" id="lf-wildcard" checked><span>Wildcard <code>field="*"</code></span></label>
-          <label class="ctrl-check"><input type="checkbox" id="lf-op" checked><span>Text <code>spanName</code></span></label>
-          <label class="ctrl-check"><input type="checkbox" id="lf-svc" checked><span>Auto Dropdown <code>serviceName</code></span></label>
-          <label class="ctrl-check"><input type="checkbox" id="lf-kind" checked><span>Static Dropdown <code>spanKind</code></span></label>
-          <label class="ctrl-check"><input type="checkbox" id="lf-multi"><span>Multiselect <code>serviceName</code></span></label>
-          <label class="ctrl-check"><input type="checkbox" id="lf-err" checked><span>Checkbox <code>hasError</code></span></label>
-          <label class="ctrl-check"><input type="checkbox" id="lf-time"><span>Datetime <code>startTime</code></span></label>
+          <label class="ctrl-check" title="Search across all span fields, attributes, and log events"><input type="checkbox" id="lf-wildcard" checked><span>Wildcard <code>field="*"</code></span></label>
+          <label class="ctrl-check" title="Substring filter matching only span operation names"><input type="checkbox" id="lf-op" checked><span>Text <code>spanName</code></span></label>
+          <label class="ctrl-check" title="Single-select service dropdown auto-populated from loaded spans (mutually exclusive with Multiselect)"><input type="checkbox" id="lf-svc" checked><span>Auto Dropdown <code>serviceName</code></span></label>
+          <label class="ctrl-check" title="Static dropdown filtering by OTel SpanKind"><input type="checkbox" id="lf-kind" checked><span>Static Dropdown <code>spanKind</code></span></label>
+          <label class="ctrl-check" title="Multi-select service picker auto-populated from loaded spans (mutually exclusive with Auto Dropdown)"><input type="checkbox" id="lf-multi"><span>Multiselect <code>serviceName</code></span></label>
+          <label class="ctrl-check" title="Checkbox showing only spans with OTel Error status (code 2)"><input type="checkbox" id="lf-err" checked><span>Checkbox <code>hasError</code></span></label>
+          <label class="ctrl-check" title="Start/end datetime range picker auto-initialized to the trace bounds"><input type="checkbox" id="lf-time"><span>Datetime <code>startTime</code></span></label>
 
           <span class="wb-spacer"></span>
           <div class="wb-group">
