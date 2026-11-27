@@ -72,12 +72,12 @@
       <!-- One-click Visual & Complexity Setup Presets -->
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;margin-top:0.85rem">
         <span class="wb-label" style="margin-right:0.2rem">Setup Presets:</span>
-        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite">AI RAG 4-View Suite</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="fintech-logs">Fintech Logs + Rules</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="compact-starter">Compact Embedded Card</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="noc-incident">NOC Dark Incident Room</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="editorial">Spacious Editorial</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="scale-50k">50,000 Spans Stress Test</button>
+        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite" aria-pressed="true">AI RAG 4-View Suite</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="fintech-logs" aria-pressed="false">Fintech Logs + Rules</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="compact-starter" aria-pressed="false">Compact Embedded Card</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="noc-incident" aria-pressed="false">NOC Dark Incident Room</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="editorial" aria-pressed="false">Spacious Editorial</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="scale-50k" aria-pressed="false">50,000 Spans Stress Test</button>
       </div>
     </div>
 
@@ -883,7 +883,10 @@
 
   function clearActivePreset() {
     activePresetName = null;
-    for (const btn of document.querySelectorAll('[data-pg-preset]')) btn.classList.remove('is-active');
+    for (const btn of document.querySelectorAll('[data-pg-preset]')) {
+      btn.classList.remove('is-active');
+      btn.setAttribute('aria-pressed', 'false');
+    }
   }
 
   function applySetupPreset(name) {
@@ -891,7 +894,9 @@
     if (!p) return;
     activePresetName = name;
     for (const btn of document.querySelectorAll('[data-pg-preset]')) {
-      btn.classList.toggle('is-active', btn.dataset.pgPreset === name);
+      const active = btn.dataset.pgPreset === name;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
     }
     $('pg-source').value = p.source;
     if (p.synN) {

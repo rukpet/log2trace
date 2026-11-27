@@ -94,9 +94,9 @@
         <div class="wb-toolbar wb-toolbar--dense">
           <div class="wb-group">
             <span class="wb-label">Load Data:</span>
-            <button type="button" class="btn btn--primary btn--sm" id="api-load-ai">loadTraceData('ai-search-trace.json')</button>
-            <button type="button" class="btn btn--sm" id="api-load-fintech">loadAndTransform('fintech-logs.json')</button>
-            <button type="button" class="btn btn--sm" id="api-load-incident">loadTraceData('incident-cascade.json')</button>
+            <button type="button" class="btn btn--primary btn--sm" id="api-load-ai" aria-pressed="true">loadTraceData('ai-search-trace.json')</button>
+            <button type="button" class="btn btn--sm" id="api-load-fintech" aria-pressed="false">loadAndTransform('fintech-logs.json')</button>
+            <button type="button" class="btn btn--sm" id="api-load-incident" aria-pressed="false">loadTraceData('incident-cascade.json')</button>
           </div>
 
           <span class="wb-spacer"></span>
@@ -417,7 +417,17 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
       }
     }
 
-    viz.addEventListener('trace-loaded', populateSpanDropdown);
+    function resetWindowSliders() {
+      winT0.value = '0';
+      winT1.value = '100';
+      winT0Out.textContent = '0%';
+      winT1Out.textContent = '100%';
+    }
+
+    viz.addEventListener('trace-loaded', () => {
+      populateSpanDropdown();
+      resetWindowSliders();
+    });
     viz.addEventListener('view-changed', (e) => {
       viewSelect.value = e.detail.view;
     });
@@ -426,17 +436,33 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
       setCodeBlock(codeSpan, JSON.stringify(e.detail.span, null, 2), 'javascript');
     });
 
-    document.getElementById('api-load-ai').addEventListener('click', async () => {
+    const loadBtns = {
+      ai: document.getElementById('api-load-ai'),
+      fintech: document.getElementById('api-load-fintech'),
+      incident: document.getElementById('api-load-incident'),
+    };
+    function setActiveLoadBtn(activeKey) {
+      for (const [k, btn] of Object.entries(loadBtns)) {
+        const active = k === activeKey;
+        btn.classList.toggle('btn--primary', active);
+        btn.setAttribute('aria-pressed', String(active));
+      }
+    }
+
+    loadBtns.ai.addEventListener('click', async () => {
+      setActiveLoadBtn('ai');
       evConsole.log('api-call', "loadTraceData('./data/ai-search-trace.json')");
       await viz.loadTraceData('./data/ai-search-trace.json');
     });
 
-    document.getElementById('api-load-fintech').addEventListener('click', async () => {
+    loadBtns.fintech.addEventListener('click', async () => {
+      setActiveLoadBtn('fintech');
       evConsole.log('api-call', "loadAndTransform('./data/fintech-logs.json', FINTECH_LOG_CONFIG)");
       await viz.loadAndTransform('./data/fintech-logs.json', FINTECH_LOG_CONFIG);
     });
 
-    document.getElementById('api-load-incident').addEventListener('click', async () => {
+    loadBtns.incident.addEventListener('click', async () => {
+      setActiveLoadBtn('incident');
       evConsole.log('api-call', "loadTraceData('./data/incident-cascade.json')");
       await viz.loadTraceData('./data/incident-cascade.json');
     });
@@ -486,10 +512,7 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
     winT1.addEventListener('input', () => { winT1Out.textContent = `${winT1.value}%`; });
 
     document.getElementById('api-win-reset').addEventListener('click', () => {
-      winT0.value = '0';
-      winT1.value = '100';
-      winT0Out.textContent = '0%';
-      winT1Out.textContent = '100%';
+      resetWindowSliders();
       viz.setTimeWindow(null);
       evConsole.log('api-call', 'setTimeWindow(null)');
     });
