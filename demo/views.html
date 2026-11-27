@@ -448,6 +448,8 @@
           </div>
           <pre class="code-pre"><code data-lang="javascript">import { registerView, formatDuration, spanKindName } from 'log2trace-ui';
 
+// Register before &lt;trace-visualizer&gt; upgrades (or set viz.view = 'hot-spans'
+// after re-inserting its &lt;trace-view&gt; carrier if the element was already parsed).
 registerView({
   id: 'hot-spans',
   label: 'Slowest Spans',
@@ -518,6 +520,7 @@ registerView({
     loadIncidentCascade,
     loadFintechLogs,
     FINTECH_LOG_CONFIG,
+    FINTECH_LOG_RULES,
     syncVisualizerThemes,
   } from './guide.js';
 
@@ -761,9 +764,13 @@ registerView({
         viz.logData = { logs: await loadFintechLogs(), config: FINTECH_LOG_CONFIG };
         metaEl.textContent = '21 spans · 36px spacious rows · warm paper palette · fintech logs';
         codeLabel.textContent = 'HTML — Spacious Editorial / Postmortem Report Setup';
+        const ruleLines = FINTECH_LOG_RULES.map((r) => {
+          const [[field, value]] = Object.entries(r.match);
+          return `  <span-kind-rule kind="${r.kind}" match-field="${field}" match-value="${value}"></span-kind-rule>`;
+        }).join('\n');
         setCodeBlock(
           codeEl,
-          `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  trace-id-field="trace.id"\n  span-group-fields="service.name,operation"\n  span-name-field="operation"\n  service-name-field="service.name"\n  timestamp-field="ts"\n  status-code-field="code"\n  parent-span-lookup-fields="caller"\n  theme="light"\n  height="640"\n  span-height="36"\n  span-padding="7"\n  gutter-width="265"\n  show-legend\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#fcfaf5; --l2t-color-surface:#f3efe6; --l2t-color-accent:#b45309"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n</trace-visualizer>`,
+          `<trace-visualizer\n  data-url="./data/fintech-logs.json"\n  trace-id-field="trace.id"\n  span-group-fields="service.name,operation"\n  span-name-field="operation"\n  service-name-field="service.name"\n  timestamp-field="ts"\n  status-code-field="code"\n  parent-span-lookup-fields="caller"\n  theme="light"\n  height="640"\n  span-height="36"\n  span-padding="7"\n  gutter-width="265"\n  show-legend\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#fcfaf5; --l2t-color-surface:#f3efe6; --l2t-color-accent:#b45309"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n${ruleLines}\n</trace-visualizer>`,
           'html',
         );
       }
@@ -990,19 +997,23 @@ registerView({
         if (!useCustomBg || isDarkHex(cBg.value)) {
           cBg.value = PRESETS.default.bg;
           currentSurface = PRESETS.default.surface;
+        } else if (currentSurface && isDarkHex(currentSurface)) {
+          currentSurface = PRESETS.default.surface;
         }
         useCustomBg = true;
       } else if (modeSel.value === 'dark') {
         if (!useCustomBg || !isDarkHex(cBg.value)) {
           cBg.value = PRESETS.midnight.bg;
           currentSurface = PRESETS.midnight.surface;
+        } else if (currentSurface && !isDarkHex(currentSurface)) {
+          currentSurface = PRESETS.midnight.surface;
         }
         useCustomBg = true;
       }
       applyThemeControls();
     });
-    cBg.addEventListener('input', () => { useCustomBg = true; applyThemeControls(); });
-    cBg.addEventListener('change', () => { useCustomBg = true; applyThemeControls(); });
+    cBg.addEventListener('input', () => { useCustomBg = true; currentSurface = ''; applyThemeControls(); });
+    cBg.addEventListener('change', () => { useCustomBg = true; currentSurface = ''; applyThemeControls(); });
     for (const el of [cAccent, kServer, kClient, kInternal]) {
       el.addEventListener('input', applyThemeControls);
       el.addEventListener('change', applyThemeControls);
