@@ -61,8 +61,8 @@
           <h1>Setup Playground &amp; Scale Lab</h1>
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-          <button type="button" class="btn btn--sm" id="pg-copy-url">Copy Shareable URL</button>
-          <button type="button" class="btn btn--sm" id="pg-reset-all">Reset Defaults</button>
+          <button type="button" class="btn btn--sm" id="pg-copy-url" title="Copy a shareable URL encoding the current preset or configuration in the hash">Copy Shareable URL</button>
+          <button type="button" class="btn btn--sm" id="pg-reset-all" title="Reset all controls back to the default AI RAG 4-View Suite preset">Reset Defaults</button>
         </div>
       </div>
       <p class="doc-lead" style="margin-top:0.4rem;font-size:0.93rem">
@@ -72,12 +72,12 @@
       <!-- One-click Visual & Complexity Setup Presets -->
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;margin-top:0.85rem">
         <span class="wb-label" style="margin-right:0.2rem">Setup Presets:</span>
-        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite" aria-pressed="true">AI RAG 4-View Suite</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="fintech-logs" aria-pressed="false">Fintech Logs + Rules</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="compact-starter" aria-pressed="false">Compact Embedded Card</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="noc-incident" aria-pressed="false">NOC Dark Incident Room</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="editorial" aria-pressed="false">Spacious Editorial</button>
-        <button type="button" class="btn btn--sm" data-pg-preset="scale-50k" aria-pressed="false">50,000 Spans Stress Test</button>
+        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite" aria-pressed="true" title="43-span AI Hybrid RAG trace with all 4 views and local search/service/error filters">AI RAG 4-View Suite</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="fintech-logs" aria-pressed="false" title="61 raw fintech JSON logs transformed with 8 span-kind rules and a log-target cardNetwork filter">Fintech Logs + Rules</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="compact-starter" aria-pressed="false" title="14-span auth trace in a compact 360px single-view waterfall with 20px rows">Compact Embedded Card</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="noc-incident" aria-pressed="false" title="19-span retry storm in dark obsidian theme with custom kind colors and wheel-zoom">NOC Dark Incident Room</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="editorial" aria-pressed="false" title="14-span auth trace in a spacious 36px-row warm paper light theme">Spacious Editorial</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="scale-50k" aria-pressed="false" title="Generate and mount 50,000 synthetic spans (~152K events) to test large-trace performance">50,000 Spans Stress Test</button>
       </div>
     </div>
 
@@ -143,7 +143,7 @@
                 <input type="checkbox" id="pg-syn-ns" checked>
                 <span>Nanosecond precision timestamps</span>
               </label>
-              <button type="button" class="btn btn--primary btn--sm" id="pg-syn-regen">Generate &amp; Mount</button>
+              <button type="button" class="btn btn--primary btn--sm" id="pg-syn-regen" title="Generate a fresh synthetic trace with the selected span count, seed, and shape">Generate &amp; Mount</button>
             </div>
 
             <!-- Custom JSON upload / paste panel -->
@@ -154,7 +154,7 @@
               </label>
               <input type="file" id="pg-file-input" accept=".json,application/json" hidden>
               <textarea class="ctrl-textarea" id="pg-custom-json" aria-label="Paste custom OTLP or log JSON" rows="5" placeholder='Paste OTLP JSON {"resourceSpans":[...]} or raw log array [{"traceId":"...","service":"..."}]'></textarea>
-              <button type="button" class="btn btn--primary btn--sm" id="pg-custom-apply">Parse &amp; Render JSON</button>
+              <button type="button" class="btn btn--primary btn--sm" id="pg-custom-apply" title="Parse the pasted OTLP or log-array JSON and render it in the visualizer">Parse &amp; Render JSON</button>
               <div id="pg-custom-msg" style="font-size:0.75rem;color:var(--g-text-muted)"></div>
             </div>
 
@@ -215,7 +215,7 @@
                 <input type="checkbox" id="pg-tf-rules" checked>
                 <span>Apply 8 preset <code>&lt;span-kind-rule&gt;</code>s</span>
               </label>
-              <button type="button" class="btn btn--sm" id="pg-tf-apply">Re-run Transform</button>
+              <button type="button" class="btn btn--sm" id="pg-tf-apply" title="Re-run transformLogs() using the updated field mappings above">Re-run Transform</button>
             </div>
           </div>
         </details>
@@ -365,10 +365,10 @@
           <div class="wb-toolbar wb-toolbar--dense">
             <div class="wb-group">
               <span class="wb-label">Actions:</span>
-              <button type="button" class="btn btn--sm" id="pg-act-expand">expandAll()</button>
-              <button type="button" class="btn btn--sm" id="pg-act-collapse">collapseAll()</button>
+              <button type="button" class="btn btn--sm" id="pg-act-expand" title="Expand all collapsed subtrees in the waterfall view">expandAll()</button>
+              <button type="button" class="btn btn--sm" id="pg-act-collapse" title="Collapse every parent span that has children in the waterfall view">collapseAll()</button>
               <button type="button" class="btn btn--sm" id="pg-act-win50" title="Scope all views to middle 50% of trace duration">Window Middle 50%</button>
-              <button type="button" class="btn btn--sm" id="pg-act-winclear">Full Window</button>
+              <button type="button" class="btn btn--sm" id="pg-act-winclear" title="Clear the time window and show the full trace duration">Full Window</button>
             </div>
             <span class="wb-spacer"></span>
             <span class="wb-readout" id="pg-perf-badge">Ready</span>

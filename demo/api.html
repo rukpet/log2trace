@@ -94,17 +94,17 @@
         <div class="wb-toolbar wb-toolbar--dense">
           <div class="wb-group">
             <span class="wb-label">Load Data:</span>
-            <button type="button" class="btn btn--primary btn--sm" id="api-load-ai" aria-pressed="true">loadTraceData('ai-search-trace.json')</button>
-            <button type="button" class="btn btn--sm" id="api-load-fintech" aria-pressed="false">loadAndTransform('fintech-logs.json')</button>
-            <button type="button" class="btn btn--sm" id="api-load-incident" aria-pressed="false">loadTraceData('incident-cascade.json')</button>
+            <button type="button" class="btn btn--primary btn--sm" id="api-load-ai" aria-pressed="true" title="Fetch and render the 43-span AI Hybrid RAG OTel trace via loadTraceData()">loadTraceData('ai-search-trace.json')</button>
+            <button type="button" class="btn btn--sm" id="api-load-fintech" aria-pressed="false" title="Fetch 61 raw JSON logs and transform them into 21 spans via loadAndTransform()">loadAndTransform('fintech-logs.json')</button>
+            <button type="button" class="btn btn--sm" id="api-load-incident" aria-pressed="false" title="Fetch and render the 19-span Warehouse Retry Storm OTel trace via loadTraceData()">loadTraceData('incident-cascade.json')</button>
           </div>
 
           <span class="wb-spacer"></span>
 
           <div class="wb-group">
             <span class="wb-label">Subtrees:</span>
-            <button type="button" class="btn btn--sm" id="api-collapse-all">collapseAll()</button>
-            <button type="button" class="btn btn--sm" id="api-expand-all">expandAll()</button>
+            <button type="button" class="btn btn--sm" id="api-collapse-all" title="Collapse every parent span that has children in the waterfall tree">collapseAll()</button>
+            <button type="button" class="btn btn--sm" id="api-expand-all" title="Expand all collapsed subtrees in the waterfall tree">expandAll()</button>
           </div>
         </div>
 
@@ -113,13 +113,13 @@
           <div class="wb-group">
             <label class="wb-label" for="api-span-select">selectSpan</label>
             <select class="ctrl-select" id="api-span-select" style="max-width:240px"></select>
-            <label class="ctrl-check"><input type="checkbox" id="api-reveal-cb" checked><span>reveal</span></label>
-            <button type="button" class="btn btn--sm" id="api-btn-select">Select</button>
+            <label class="ctrl-check" title="Scroll and pan the active view to bring the selected span into sight (selectSpan reveal option)"><input type="checkbox" id="api-reveal-cb" checked><span>reveal</span></label>
+            <button type="button" class="btn btn--sm" id="api-btn-select" title="Call selectSpan(id, { reveal }) to expand ancestors and select the chosen span without emitting span-selected">Select</button>
           </div>
 
           <div class="wb-group">
             <label class="wb-label" for="api-view-select">.view</label>
-            <select class="ctrl-select" id="api-view-select">
+            <select class="ctrl-select" id="api-view-select" title="Switch the active view tab programmatically via the .view setter">
               <option value="waterfall">waterfall</option>
               <option value="flame">flame</option>
               <option value="service">service</option>
@@ -131,17 +131,17 @@
 
           <div class="wb-group">
             <span class="wb-label">setTimeWindow</span>
-            <label class="ctrl-range">
+            <label class="ctrl-range" title="Time window start (percentage of total trace duration)">
               <span>t0</span>
               <input type="range" id="api-win-t0" min="0" max="90" step="5" value="0" style="width:72px">
               <output id="api-win-t0-out">0%</output>
             </label>
-            <label class="ctrl-range">
+            <label class="ctrl-range" title="Time window end (percentage of total trace duration)">
               <span>t1</span>
               <input type="range" id="api-win-t1" min="10" max="100" step="5" value="100" style="width:72px">
               <output id="api-win-t1-out">100%</output>
             </label>
-            <button type="button" class="btn btn--sm" id="api-win-reset">Clear (null)</button>
+            <button type="button" class="btn btn--sm" id="api-win-reset" title="Reset the shared time window to the full trace duration via setTimeWindow(null)">Clear (null)</button>
           </div>
         </div>
 
@@ -205,11 +205,11 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
         <div class="wb-toolbar">
           <span class="wb-label">Trigger State:</span>
           <div class="segmented" role="group" aria-label="Trigger visualizer status state">
-            <button type="button" id="st-empty" class="is-active" aria-pressed="true">1. Empty</button>
-            <button type="button" id="st-required" aria-pressed="false">2. Required Gate</button>
-            <button type="button" id="st-loading" aria-pressed="false">3. Loading Spinner</button>
-            <button type="button" id="st-nomatch" aria-pressed="false">4. Zero Filter Matches</button>
-            <button type="button" id="st-error" aria-pressed="false">5. HTTP 404 Error</button>
+            <button type="button" id="st-empty" class="is-active" aria-pressed="true" title="Show the empty status overlay when no data-url or traceData is loaded">1. Empty</button>
+            <button type="button" id="st-required" aria-pressed="false" title="Show the required-filter gate before a required external filter is filled">2. Required Gate</button>
+            <button type="button" id="st-loading" aria-pressed="false" title="Show the accessible loading spinner while an async fetch is in flight">3. Loading Spinner</button>
+            <button type="button" id="st-nomatch" aria-pressed="false" title="Show the zero-match overlay when local filters exclude all spans">4. Zero Filter Matches</button>
+            <button type="button" id="st-error" aria-pressed="false" title="Show the error overlay by fetching a missing 404 URL">5. HTTP 404 Error</button>
           </div>
           <span class="wb-spacer"></span>
           <span class="wb-readout" id="st-caption">Fresh element with zero spans</span>
