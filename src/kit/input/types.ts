@@ -49,8 +49,12 @@ export enum Key {
   F,
   /** r or R: jump between request and return arrow. */
   R,
-  /** e or E: jump to next/previous error step. */
+  /** e or E: jump to next/previous error step, or toggle expand all groups. */
   E,
+  /** g or G: cycle grouping mode. */
+  G,
+  /** m or M: toggle matches-only filter mode. */
+  M,
 }
 
 /** A key press a view may handle, as returned by `normalizeKey`. */

@@ -21,4 +21,6 @@ import './views/flame/view.css.ts';
 import './views/service/view.css.ts';
 import './views/sequence/paint/dom.css.ts';
 import './views/sequence/view.css.ts';
+import './views/stats/paint/dom.css.ts';
+import './views/stats/view.css.ts';
 import './element/element.css.ts';

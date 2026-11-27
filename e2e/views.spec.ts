@@ -227,4 +227,65 @@ test.describe('DOM & SVG views and real input gestures', () => {
     await page.keyboard.press('ArrowDown');
     await expect.poll(() => seq.getAttribute('aria-activedescendant')).not.toBe(firstActiveId);
   });
+
+  test('stats view: column sorting, group selection & expansion, flat Spans mode, filter toggle, and keyboard nav', async ({ page, harness }) => {
+    await harness.openBlank();
+    const viz = await harness.mount({
+      attrs: { height: '520', view: 'stats' },
+      children: [
+        { tag: 'trace-filter', attrs: { field: 'hasError', label: 'Errors Only', type: 'checkbox', source: 'local' } },
+        { tag: 'trace-view', attrs: { type: 'stats', active: '' } },
+        { tag: 'trace-view', attrs: { type: 'waterfall' } },
+      ],
+      traceData: SAMPLE_TRACE,
+    });
+
+    const stats = viz.locator('[role="treegrid"][aria-label="Trace statistics"]');
+    const toolbar = viz.locator('[role="toolbar"][aria-label="Trace view controls"]');
+    await expect(stats).toBeVisible();
+
+    // Default grouped mode: 5 distinct (service, operation) rows, sorted by Self Time descending
+    const rows = stats.locator('[role="row"][data-display-row]');
+    await expect(rows).toHaveCount(5);
+    const selfHeader = stats.locator('[role="columnheader"][data-sort-col="self"]');
+    await expect(selfHeader).toHaveAttribute('aria-sort', 'descending');
+
+    // Click Errors column header -> sorts chargeCard (1 error) to top row
+    const errorsHeader = stats.locator('[role="columnheader"][data-sort-col="errors"]');
+    await errorsHeader.click();
+    await expect(errorsHeader).toHaveAttribute('aria-sort', 'descending');
+    await expect(rows.nth(0)).toContainText('chargeCard');
+
+    // Click row 0 -> selects span and opens DetailPanel
+    await rows.nth(0).click();
+    await expect(rows.nth(0)).toHaveAttribute('aria-selected', 'true');
+    await expect(viz.locator('aside[aria-label="Span details"]')).toContainText('chargeCard');
+
+    // Expand group 0 via chevron -> splices member span row below it (5 -> 6 rows)
+    await rows.nth(0).locator('[data-part="chevron"]').click();
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'true');
+    await expect(rows).toHaveCount(6);
+    await expect(rows.nth(1)).toHaveAttribute('aria-level', '2');
+
+    // Keyboard ArrowDown + ArrowLeft navigates back to parent group and collapses it
+    await stats.focus();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await expect(rows).toHaveCount(5);
+
+    // Filter Errors Only: Matches only ON shows 1 group; toggling Matches only to dim shows all 5
+    await viz.locator('[data-filter-field="hasError"][data-filter-type="checkbox"]').check();
+    await expect(rows).toHaveCount(1);
+    await toolbar.getByRole('button', { name: 'Matches only' }).click();
+    await expect(rows).toHaveCount(5);
+    await viz.locator('[data-filter-field="hasError"][data-filter-type="checkbox"]').uncheck();
+
+    // Cycle Group by to flat Spans mode (service-operation -> service -> operation -> kind -> none)
+    const groupBtn = toolbar.getByRole('button', { name: 'Group by' });
+    for (let i = 0; i < 4; i++) await groupBtn.click();
+    await expect(stats.locator('[role="columnheader"]')).toHaveCount(7);
+    await expect(stats.locator('[role="columnheader"][data-sort-col="start"]')).toBeVisible();
+    await expect(rows).toHaveCount(5);
+  });
 });

@@ -72,7 +72,7 @@
       <!-- One-click Visual & Complexity Setup Presets -->
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;margin-top:0.85rem">
         <span class="wb-label" style="margin-right:0.2rem">Setup Presets:</span>
-        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite" aria-pressed="true" title="43-span AI Hybrid RAG trace with all 4 views and local search/service/error filters">AI RAG 4-View Suite</button>
+        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite" aria-pressed="true" title="43-span AI Hybrid RAG trace with all 5 views and local search/service/error filters">AI RAG 5-View Suite</button>
         <button type="button" class="btn btn--sm" data-pg-preset="fintech-logs" aria-pressed="false" title="61 raw fintech JSON logs transformed with 8 span-kind rules and a log-target cardNetwork filter">Fintech Logs + Rules</button>
         <button type="button" class="btn btn--sm" data-pg-preset="compact-starter" aria-pressed="false" title="14-span auth trace in a compact 360px single-view waterfall with 20px rows">Compact Embedded Card</button>
         <button type="button" class="btn btn--sm" data-pg-preset="noc-incident" aria-pressed="false" title="19-span retry storm in dark obsidian theme with custom kind colors and wheel-zoom">NOC Dark Incident Room</button>
@@ -229,6 +229,7 @@
               <label class="ctrl-check"><input type="checkbox" data-pg-view="flame" checked><span>Flame</span></label>
               <label class="ctrl-check"><input type="checkbox" data-pg-view="service" checked><span>Service</span></label>
               <label class="ctrl-check"><input type="checkbox" data-pg-view="sequence" checked><span>Sequence</span></label>
+              <label class="ctrl-check"><input type="checkbox" data-pg-view="stats" checked><span>Stats</span></label>
             </div>
 
             <div class="pg-grid-2">
@@ -272,6 +273,30 @@
                   <option value="all" selected>all</option>
                   <option value="errors">errors</option>
                   <option value="none">none</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="pg-grid-2">
+              <div class="pg-field">
+                <label for="pg-stats-group">stats group-by</label>
+                <select class="ctrl-select" id="pg-stats-group">
+                  <option value="service-operation" selected>service-operation</option>
+                  <option value="service">service</option>
+                  <option value="operation">operation</option>
+                  <option value="kind">kind</option>
+                  <option value="none">none (spans)</option>
+                </select>
+              </div>
+              <div class="pg-field">
+                <label for="pg-stats-sort">stats sort</label>
+                <select class="ctrl-select" id="pg-stats-sort">
+                  <option value="self" selected>self</option>
+                  <option value="total">total</option>
+                  <option value="count">count</option>
+                  <option value="errors">errors</option>
+                  <option value="p95">p95</option>
+                  <option value="max">max</option>
                 </select>
               </div>
             </div>
@@ -380,6 +405,7 @@
               <trace-view type="flame"></trace-view>
               <trace-view type="service"></trace-view>
               <trace-view type="sequence" fold="3"></trace-view>
+              <trace-view type="stats"></trace-view>
             </trace-visualizer>
           </div>
 
@@ -628,6 +654,9 @@
         v.setAttribute('internal', $('pg-seq-internal').value);
         v.setAttribute('returns', $('pg-seq-returns').value);
         v.setAttribute('fold', $('pg-seq-fold').value);
+      } else if (type === 'stats') {
+        v.setAttribute('group-by', $('pg-stats-group').value);
+        v.setAttribute('sort', $('pg-stats-sort').value);
       }
       viz.appendChild(v);
     }
@@ -710,7 +739,9 @@
       for (const [idx, type] of enabledViews.entries()) {
         const seqExtra = type === 'sequence'
           ? ` internal="${$('pg-seq-internal').value}" returns="${$('pg-seq-returns').value}" fold="${$('pg-seq-fold').value}"`
-          : '';
+          : type === 'stats'
+            ? ` group-by="${$('pg-stats-group').value}" sort="${$('pg-stats-sort').value}"`
+            : '';
         childrenLines.push(`  <trace-view type="${type}"${idx === 0 ? ' active' : ''}${seqExtra}></trace-view>`);
       }
     }
@@ -834,14 +865,14 @@
   // Visual + Data Complexity Presets
   const PRESET_MAP = {
     'ai-suite': {
-      source: 'ai', views: ['waterfall', 'flame', 'service', 'sequence'],
+      source: 'ai', views: ['waterfall', 'flame', 'service', 'sequence', 'stats'],
       theme: '', height: 640, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
       colors: null, css: null,
     },
     'fintech-logs': {
-      source: 'fintech', views: ['waterfall', 'flame', 'service', 'sequence'],
+      source: 'fintech', views: ['waterfall', 'flame', 'service', 'sequence', 'stats'],
       theme: '', height: 640, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: 'payload.cardNetwork' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
@@ -855,7 +886,7 @@
       colors: null, css: null,
     },
     'noc-incident': {
-      source: 'incident', views: ['waterfall', 'service', 'sequence'],
+      source: 'incident', views: ['waterfall', 'service', 'sequence', 'stats'],
       theme: 'dark', height: 620, spanH: 26, pad: 4, gutter: 250, legend: true, wheel: true,
       filters: { wild: true, op: false, svc: false, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'errors', fold: '3' },
@@ -863,7 +894,7 @@
       css: { bg: '#0b0f17', surface: '#131a26', accent: '#38bdf8' },
     },
     'editorial': {
-      source: 'edge', views: ['waterfall', 'flame', 'service'],
+      source: 'edge', views: ['waterfall', 'flame', 'service', 'stats'],
       theme: 'light', height: 640, spanH: 36, pad: 7, gutter: 265, legend: true, wheel: false,
       filters: { wild: false, op: false, svc: true, multi: false, err: false, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
@@ -871,7 +902,7 @@
       css: { bg: '#fcfaf5', surface: '#f3efe6', accent: '#b45309' },
     },
     'scale-50k': {
-      source: 'synthetic', synN: '50000', views: ['waterfall', 'flame', 'service', 'sequence'],
+      source: 'synthetic', synN: '50000', views: ['waterfall', 'flame', 'service', 'sequence', 'stats'],
       theme: '', height: 660, spanH: 26, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
@@ -1004,6 +1035,7 @@
 
   const liveShellIds = [
     'pg-span-h', 'pg-span-pad', 'pg-gutter', 'pg-seq-fold', 'pg-seq-internal', 'pg-seq-returns',
+    'pg-stats-group', 'pg-stats-sort',
     'pg-wheel-zoom', 'pg-f-wild', 'pg-f-op', 'pg-f-svc', 'pg-f-multi', 'pg-f-err', 'pg-f-time',
     'pg-cf-field', 'pg-cf-target', 'pg-theme', 'pg-height', 'pg-detail-w', 'pg-legend',
     'pg-custom-colors', 'pg-kc-server', 'pg-kc-client', 'pg-kc-internal', 'pg-kc-producer', 'pg-kc-consumer',

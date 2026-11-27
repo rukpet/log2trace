@@ -46,6 +46,8 @@ const KEY_NAMES: Readonly<Record<Key, string>> = {
   [Key.F]: 'f',
   [Key.R]: 'r',
   [Key.E]: 'e',
+  [Key.G]: 'g',
+  [Key.M]: 'm',
 };
 
 /** What the view keeps while it is mounted. */

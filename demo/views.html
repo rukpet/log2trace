@@ -61,12 +61,13 @@
       <li><a href="#waterfall-layout">2. Waterfall Sizing &amp; Keys</a></li>
       <li><a href="#flame-service">3. Flame Graph &amp; Service Map</a></li>
       <li><a href="#sequence-view">4. Sequence Diagram Options</a></li>
+      <li><a href="#stats-view">5. Trace Statistics Options</a></li>
     </ul>
     <div class="toc-heading">Appearance &amp; Extensibility</div>
     <ul class="toc-list">
-      <li><a href="#theming-tokens">5. Themes &amp; CSS Tokens</a></li>
+      <li><a href="#theming-tokens">6. Themes &amp; CSS Tokens</a></li>
       <li><a href="#token-reference">Design Token Reference</a></li>
-      <li><a href="#custom-views">6. Custom Views (registerView)</a></li>
+      <li><a href="#custom-views">7. Custom Views (registerView)</a></li>
     </ul>
   </aside>
 
@@ -94,13 +95,13 @@
       <div class="workbench">
         <div class="wb-toolbar wb-toolbar--dense">
           <div class="segmented" role="group" aria-label="Visual setup archetypes">
-            <button type="button" id="arch-suite" class="is-active" aria-pressed="true" title="43-span AI RAG trace with all 4 views, default theme, and sequence loop folding">4-View AI RAG Suite</button>
+            <button type="button" id="arch-suite" class="is-active" aria-pressed="true" title="43-span AI RAG trace with all 5 views, default theme, and sequence loop folding">5-View AI RAG Suite</button>
             <button type="button" id="arch-compact" aria-pressed="false" title="14-span auth trace in a compact 340px single-view card with 20px rows and no tabs">Compact Embedded Card</button>
             <button type="button" id="arch-noc" aria-pressed="false" title="19-span retry storm pinned to dark obsidian tokens, custom kind colors, and wheel-zoom">NOC Dark Incident Room</button>
             <button type="button" id="arch-editorial" aria-pressed="false" title="21-span transformed fintech logs in a spacious 36px-row warm paper light theme">Spacious Editorial</button>
           </div>
           <span class="wb-spacer"></span>
-          <span class="wb-readout" id="arch-meta">43 spans · 9 services · 4 tabs</span>
+          <span class="wb-readout" id="arch-meta">43 spans · 9 services · 5 tabs</span>
         </div>
 
         <div class="wb-stage">
@@ -109,6 +110,7 @@
             <trace-view type="flame" label="Hotspots"></trace-view>
             <trace-view type="service"></trace-view>
             <trace-view type="sequence" fold="3"></trace-view>
+            <trace-view type="stats"></trace-view>
           </trace-visualizer>
         </div>
 
@@ -342,10 +344,86 @@
     </section>
 
     <!-- ====================================================================
-         SECTION 5 — Themes, Kind Colors & CSS Custom Properties
+         SECTION 5 — Trace Statistics & Per-View Options
+         ==================================================================== -->
+    <section class="doc-section" id="stats-view">
+      <h2><span class="sec-num">5</span>Trace Statistics &amp; Per-View Options</h2>
+      <p class="doc-prose">
+        <code>&lt;trace-view type="stats"&gt;</code> aggregates spans by <code>service-operation</code>, <code>service</code>,
+        <code>operation</code>, <code>kind</code>, or switches to flat <code>none</code> (Spans) mode — ranking N+1 hotspots,
+        error rates, exclusive self-time, recursion-safe totals, and latency percentiles (<code>Min</code>, <code>Avg</code>, <code>P50</code>, <code>P95</code>, <code>Max</code>).
+        Click any group chevron (or press <kbd>&rarr;</kbd>) to inspect individual member spans inline.
+      </p>
+
+      <div class="workbench">
+        <div class="wb-toolbar wb-toolbar--dense">
+          <div class="wb-group">
+            <label class="wb-label" for="stats-group-by">group-by</label>
+            <select class="ctrl-select" id="stats-group-by" title="Choose the aggregation grouping dimension for the stats table">
+              <option value="service-operation" selected>service-operation</option>
+              <option value="service">service</option>
+              <option value="operation">operation</option>
+              <option value="kind">kind</option>
+              <option value="none">none (flat spans)</option>
+            </select>
+          </div>
+
+          <div class="wb-group">
+            <label class="wb-label" for="stats-sort">sort</label>
+            <select class="ctrl-select" id="stats-sort" title="Choose the initial sort column for the stats table">
+              <option value="self" selected>self</option>
+              <option value="total">total</option>
+              <option value="count">count</option>
+              <option value="errors">errors</option>
+              <option value="p95">p95</option>
+              <option value="max">max</option>
+              <option value="name">name</option>
+            </select>
+          </div>
+
+          <div class="wb-group">
+            <label class="wb-label" for="stats-sort-dir">sort-dir</label>
+            <select class="ctrl-select" id="stats-sort-dir" title="Choose descending or ascending sort order">
+              <option value="desc" selected>desc</option>
+              <option value="asc">asc</option>
+            </select>
+          </div>
+
+          <label class="ctrl-range" title="Adjust fixed row height in CSS pixels (22–48px)">
+            <span>row-height</span>
+            <input type="range" id="stats-row-h" min="22" max="44" step="2" value="28">
+            <output id="stats-row-h-out">28px</output>
+          </label>
+
+          <label class="ctrl-check" title="Scope aggregations to matching spans when local filters are active (unchecked dims non-matching rows)">
+            <input type="checkbox" id="stats-matches-only" checked>
+            <span>matches-only</span>
+          </label>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-stats" show-legend height="560">
+            <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local"></trace-filter>
+            <trace-view id="stats-carrier" type="stats" active group-by="service-operation" sort="self" sort-dir="desc" row-height="28"></trace-view>
+            <trace-view type="waterfall"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML — Per-View Attributes on &lt;trace-view type="stats"&gt;</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="stats-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 6 — Themes, Kind Colors & CSS Custom Properties
          ==================================================================== -->
     <section class="doc-section" id="theming-tokens">
-      <h2><span class="sec-num">5</span>Themes, Span-Kind Colors &amp; CSS Tokens</h2>
+      <h2><span class="sec-num">6</span>Themes, Span-Kind Colors &amp; CSS Tokens</h2>
       <p class="doc-prose">
         By default, <code>&lt;trace-visualizer&gt;</code> follows <code>prefers-color-scheme</code>. Pin it with
         <code>theme="light"</code> or <code>theme="dark"</code>, override span-kind colors via <code>kind-colors</code>,
@@ -421,10 +499,10 @@
     </section>
 
     <!-- ====================================================================
-         SECTION 6 — Registering Custom Views
+         SECTION 7 — Registering Custom Views
          ==================================================================== -->
     <section class="doc-section" id="custom-views">
-      <h2><span class="sec-num">6</span>Extending with <code>registerView()</code></h2>
+      <h2><span class="sec-num">7</span>Extending with <code>registerView()</code></h2>
       <p class="doc-prose">
         Register custom views implementing <code>TraceView</code> via <code>registerView({ id, label, capabilities, create })</code>
         and declare them alongside built-in views as <code>&lt;trace-view type="your-id"&gt;</code>. Below is a live
@@ -677,6 +755,7 @@ registerView({
           { type: 'flame', label: 'Hotspots' },
           { type: 'service' },
           { type: 'sequence', fold: '3' },
+          { type: 'stats' },
         ].entries()) {
           const v = document.createElement('trace-view');
           v.setAttribute('type', spec.type);
@@ -686,11 +765,11 @@ registerView({
           viz.appendChild(v);
         }
         viz.traceData = await loadAiSearchTrace();
-        metaEl.textContent = '43 spans · 9 services · 4 tabs · default density';
-        codeLabel.textContent = 'HTML — Full 4-View Observability Suite (AI RAG Trace)';
+        metaEl.textContent = '43 spans · 9 services · 5 tabs · default density';
+        codeLabel.textContent = 'HTML — Full 5-View Observability Suite (AI RAG Trace)';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer data-url="./data/ai-search-trace.json" height="600" show-legend>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame" label="Hotspots"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" fold="3"></trace-view>\n</trace-visualizer>`,
+          `<trace-visualizer data-url="./data/ai-search-trace.json" height="600" show-legend>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame" label="Hotspots"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" fold="3"></trace-view>\n  <trace-view type="stats"></trace-view>\n</trace-visualizer>`,
           'html',
         );
       } else if (key === 'compact') {
@@ -900,6 +979,42 @@ registerView({
       el.addEventListener('change', updateSeq);
     }
     updateSeq();
+  }
+
+  // ── Section 5: Trace Statistics Options ───────────────────────────────────
+  {
+    const viz = document.getElementById('viz-stats');
+    const carrier = document.getElementById('stats-carrier');
+    const groupSel = document.getElementById('stats-group-by');
+    const sortSel = document.getElementById('stats-sort');
+    const dirSel = document.getElementById('stats-sort-dir');
+    const rowH = document.getElementById('stats-row-h');
+    const matchesCb = document.getElementById('stats-matches-only');
+    const codeEl = document.getElementById('stats-code');
+
+    loadAiSearchTrace().then((data) => { viz.traceData = data; });
+
+    function updateStats() {
+      document.getElementById('stats-row-h-out').textContent = `${rowH.value}px`;
+      carrier.setAttribute('group-by', groupSel.value);
+      carrier.setAttribute('sort', sortSel.value);
+      carrier.setAttribute('sort-dir', dirSel.value);
+      carrier.setAttribute('row-height', rowH.value);
+      carrier.setAttribute('matches-only', String(matchesCb.checked));
+
+      const mo = matchesCb.checked ? '' : '\n    matches-only="false"';
+      setCodeBlock(
+        codeEl,
+        `<trace-visualizer data-url="./data/ai-search-trace.json" show-legend>\n  <trace-view\n    type="stats"\n    active\n    group-by="${groupSel.value}"\n    sort="${sortSel.value}"\n    sort-dir="${dirSel.value}"\n    row-height="${rowH.value}"${mo}\n  ></trace-view>\n  <trace-view type="waterfall"></trace-view>\n</trace-visualizer>`,
+        'html',
+      );
+    }
+
+    for (const el of [groupSel, sortSel, dirSel, rowH, matchesCb]) {
+      el.addEventListener('input', updateStats);
+      el.addEventListener('change', updateStats);
+    }
+    updateStats();
   }
 
   // ── Section 5: Themes, Kind Colors & CSS Custom Properties ────────────────

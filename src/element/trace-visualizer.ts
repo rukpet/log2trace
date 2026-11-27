@@ -5,7 +5,7 @@
  * selection, hover, collapse, filter result, time window), the filter bar and its controller, the
  * toolbar with the legend, the view tabs, the tooltip, the detail panel, the status message, the
  * live region, the configuration and the data loading. The view is whatever `view` names
- * (`waterfall`, `flame`, `service` or `sequence` out of the box, anything registered with
+ * (`waterfall`, `flame`, `service`, `sequence` or `stats` out of the box, anything registered with
  * `registerView`): it is mounted into one surface, reads and writes the store, and reports hovers
  * through its context. Only the active view is mounted; switching saves its state (`getState`) and
  * restores it when the tab is shown again.
@@ -67,6 +67,7 @@ import { createViewTabs, type ViewTabs } from '../shell/view-tabs.ts';
 import { flameDefinition } from '../views/flame/view.ts';
 import { sequenceDefinition } from '../views/sequence/view.ts';
 import { serviceDefinition } from '../views/service/view.ts';
+import { statsDefinition } from '../views/stats/view.ts';
 import type { WaterfallController } from '../views/waterfall/controller.ts';
 import type { PainterStats, WaterfallPainter } from '../views/waterfall/paint/dom.ts';
 import { WaterfallView, waterfallDefinition } from '../views/waterfall/view.ts';
@@ -79,6 +80,7 @@ registerView(waterfallDefinition);
 registerView(flameDefinition);
 registerView(serviceDefinition);
 registerView(sequenceDefinition);
+registerView(statsDefinition);
 
 const styleSheet = new CSSStyleSheet();
 styleSheet.replaceSync(componentCss);

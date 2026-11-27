@@ -21,6 +21,7 @@ import {
   type TimeWindow,
 } from '../../core/index.ts';
 import { inferredPeerOf } from '../../core/peers.ts';
+import { computeSpanTimings } from '../../core/self-time.ts';
 
 /** Kind of node in the service graph. */
 export const enum NodeKind {
@@ -689,49 +690,10 @@ export function buildServiceGraph(topology: ServiceTopology, window: TimeWindow 
   const n = t.length;
 
   // 1. Exact O(N) interval-union self time clipped to window
-  const weightOfRow = new Float64Array(n);
-  const coveredByChildren = new Float64Array(n);
-  const curStart = new Float64Array(n).fill(-1);
-  const curEnd = new Float64Array(n).fill(-1);
-
-  for (let r = 0; r < n; r++) {
-    const from = window === null ? t.start[r] : Math.max(t.start[r], window.t0);
-    const to = window === null ? t.end[r] : Math.min(t.end[r], window.t1);
-    weightOfRow[r] = Math.max(0, to - from);
-
-    const p = t.parent[r];
-    if (p >= 0 && weightOfRow[r] > 0) {
-      const pFrom = window === null ? t.start[p] : Math.max(t.start[p], window.t0);
-      const pTo = window === null ? t.end[p] : Math.min(t.end[p], window.t1);
-      const cStart = Math.max(from, pFrom);
-      const cEnd = Math.min(to, pTo);
-
-      if (cEnd > cStart) {
-        if (curEnd[p] < 0) {
-          curStart[p] = cStart;
-          curEnd[p] = cEnd;
-        } else if (cStart > curEnd[p]) {
-          coveredByChildren[p] += curEnd[p] - curStart[p];
-          curStart[p] = cStart;
-          curEnd[p] = cEnd;
-        } else {
-          curEnd[p] = Math.max(curEnd[p], cEnd);
-        }
-      }
-    }
-  }
-
-  // Flush remaining child intervals and compute self time
-  const selfOfRow = new Float64Array(n);
-  let totalSelfMs = 0;
-  for (let r = 0; r < n; r++) {
-    if (curEnd[r] >= 0) {
-      coveredByChildren[r] += curEnd[r] - curStart[r];
-    }
-    const self = Math.max(0, weightOfRow[r] - coveredByChildren[r]);
-    selfOfRow[r] = self;
-    totalSelfMs += self;
-  }
+  const timings = computeSpanTimings(index, window);
+  const weightOfRow = timings.duration;
+  const selfOfRow = timings.selfTime;
+  const totalSelfMs = timings.totalSelfMs;
 
   // 2. Aggregate per-node metrics
   const spanCount = new Int32Array(nodeCount);
