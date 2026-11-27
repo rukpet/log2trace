@@ -47,6 +47,8 @@ const KEY_NAMES: Readonly<Record<Key, string>> = {
   [Key.F]: 'f',
   [Key.R]: 'r',
   [Key.E]: 'e',
+  [Key.G]: 'g',
+  [Key.M]: 'm',
 };
 
 interface MountedSequenceView {

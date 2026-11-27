@@ -55,6 +55,10 @@ const KEYS: ReadonlyMap<string, Key> = new Map([
   ['R', Key.R],
   ['e', Key.E],
   ['E', Key.E],
+  ['g', Key.G],
+  ['G', Key.G],
+  ['m', Key.M],
+  ['M', Key.M],
 ]);
 
 /** The element tags whose own key handling a view must not take over. */

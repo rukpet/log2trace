@@ -78,7 +78,7 @@
       <h1>Getting Started &amp; Data Transformation</h1>
       <p class="doc-lead">
         <code>log2trace-ui</code> is a zero-dependency Web Component that renders OpenTelemetry traces and transforms
-        arbitrary structured JSON logs into interactive waterfalls, flame graphs, service maps, and sequence diagrams — entirely client-side.
+        arbitrary structured JSON logs into interactive waterfalls, flame graphs, service maps, sequence diagrams, and trace statistics — entirely client-side.
       </p>
 
       <div class="code-panel" style="margin-top:1.35rem;margin-bottom:1rem">
@@ -136,9 +136,9 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
             </select>
           </div>
 
-          <label class="ctrl-check" title="Toggle between all 4 view tabs (Waterfall, Flame, Service, Sequence) and a single Waterfall view">
+          <label class="ctrl-check" title="Toggle between all 5 view tabs (Waterfall, Flame, Service, Sequence, Stats) and a single Waterfall view">
             <input type="checkbox" id="otel-all-views" checked>
-            <span>All 4 views</span>
+            <span>All 5 views</span>
           </label>
 
           <label class="ctrl-check" title="Toggle the span-kind color legend in the visualizer toolbar">
@@ -156,6 +156,7 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
             <trace-view type="flame"></trace-view>
             <trace-view type="service"></trace-view>
             <trace-view type="sequence"></trace-view>
+            <trace-view type="stats"></trace-view>
           </trace-visualizer>
         </div>
 
@@ -217,6 +218,7 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
             <trace-view type="flame"></trace-view>
             <trace-view type="service"></trace-view>
             <trace-view type="sequence"></trace-view>
+            <trace-view type="stats"></trace-view>
           </trace-visualizer>
         </div>
 
@@ -364,6 +366,7 @@ import { transformLogs, buildSpanIndex } from 'log2trace-ui/core';</code></pre>
             <trace-view type="waterfall" active></trace-view>
             <trace-view type="service"></trace-view>
             <trace-view type="sequence"></trace-view>
+            <trace-view type="stats"></trace-view>
           </trace-visualizer>
         </div>
 
@@ -505,10 +508,10 @@ console.log({ spans: index.size, roots: index.roots.length, services: index.tabl
 
       const existingViews = [...viz.querySelectorAll('trace-view')];
       const wantAllViews = allViewsCb.checked;
-      if ((wantAllViews && existingViews.length !== 4) || (!wantAllViews && existingViews.length !== 0)) {
+      if ((wantAllViews && existingViews.length !== 5) || (!wantAllViews && existingViews.length !== 0)) {
         for (const child of existingViews) child.remove();
         if (wantAllViews) {
-          for (const [idx, type] of ['waterfall', 'flame', 'service', 'sequence'].entries()) {
+          for (const [idx, type] of ['waterfall', 'flame', 'service', 'sequence', 'stats'].entries()) {
             const v = document.createElement('trace-view');
             v.setAttribute('type', type);
             if (idx === 0) v.setAttribute('active', '');
@@ -534,7 +537,7 @@ console.log({ spans: index.size, roots: index.roots.length, services: index.tabl
       }
 
       const viewsMarkup = allViewsCb.checked
-        ? `\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence"></trace-view>\n`
+        ? `\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence"></trace-view>\n  <trace-view type="stats"></trace-view>\n`
         : '';
       const legendAttr = legendCb.checked ? ' show-legend' : '';
 
@@ -646,7 +649,7 @@ console.log({ spans: index.size, roots: index.roots.length, services: index.tabl
         }).join('\n');
         setCodeBlock(
           codeSetup,
-          `<trace-visualizer\n${attrs.join('\n')}\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence"></trace-view>\n${ruleLines}\n</trace-visualizer>`,
+          `<trace-visualizer\n${attrs.join('\n')}\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence"></trace-view>\n  <trace-view type="stats"></trace-view>\n${ruleLines}\n</trace-visualizer>`,
           'html',
         );
       } else {

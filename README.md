@@ -79,6 +79,7 @@ Each original log line is preserved as an OpenTelemetry event on its correspondi
   <trace-view type="flame"></trace-view>
   <trace-view type="service"></trace-view>
   <trace-view type="sequence"></trace-view>
+  <trace-view type="stats"></trace-view>
 </trace-visualizer>
 ```
 
@@ -86,6 +87,7 @@ Each original log line is preserved as an OpenTelemetry event on its correspondi
 * **`flame`**: Flame graph aggregating cumulative execution time across identical call paths. Identifies bottlenecks answering *"where did the time go"*.
 * **`service`**: Directed topology graph displaying services, external peers (databases, queues, HTTP endpoints), request counts, latencies, and error rates.
 * **`sequence`**: Causal sequence diagram with participant lifelines, synchronous request/response pairs, asynchronous message flows, and loop folding.
+* **`stats`**: Sortable, virtualized trace statistics treegrid aggregating counts, error rates, self-time, recursion-safe totals, and latency percentiles (`Min`, `Avg`, `P50`, `P95`, `Max`) with inline member expansion and a flat `Spans` mode.
 
 Custom views can also be registered at runtime with `registerView()`.
 
