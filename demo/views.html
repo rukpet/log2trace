@@ -668,6 +668,7 @@ registerView({
         viz.setAttribute('show-legend', '');
         viz.removeAttribute('wheel-zoom');
         syncVisualizerThemes();
+        viz.refreshTheme();
         for (const [idx, spec] of [
           { type: 'waterfall', active: true },
           { type: 'flame', label: 'Hotspots' },
@@ -697,6 +698,7 @@ registerView({
         viz.removeAttribute('show-legend');
         viz.removeAttribute('wheel-zoom');
         syncVisualizerThemes();
+        viz.refreshTheme();
         viz.traceData = await loadEdgeAuthTrace();
         metaEl.textContent = '14 spans · 20px rows · 340px tall · single view (no tabs)';
         codeLabel.textContent = 'HTML — Compact Embedded Widget (PR Check / Sidebar Card)';
@@ -916,11 +918,29 @@ registerView({
 
     loadIncidentCascade().then((data) => { viz.traceData = data; });
 
+    let currentSurface = '';
+    let useCustomBg = true;
+
+    function isDarkHex(hex) {
+      const m = /^#([0-9a-f]{6})$/i.exec(hex);
+      if (!m) return false;
+      const n = parseInt(m[1], 16);
+      const r = (n >> 16) & 255;
+      const g = (n >> 8) & 255;
+      const b = n & 255;
+      return (0.299 * r + 0.587 * g + 0.114 * b) < 128;
+    }
+
     function applyThemeControls() {
       if (modeSel.value) viz.setAttribute('theme', modeSel.value);
       else viz.removeAttribute('theme');
 
-      viz.style.setProperty('--l2t-color-background', cBg.value);
+      if (useCustomBg) viz.style.setProperty('--l2t-color-background', cBg.value);
+      else viz.style.removeProperty('--l2t-color-background');
+
+      if (currentSurface) viz.style.setProperty('--l2t-color-surface', currentSurface);
+      else viz.style.removeProperty('--l2t-color-surface');
+
       viz.style.setProperty('--l2t-color-accent', cAccent.value);
 
       const kindColors = {
@@ -932,9 +952,14 @@ registerView({
       viz.refreshTheme();
 
       const themeAttr = modeSel.value ? ` theme="${modeSel.value}"` : '';
+      const cssLines = [];
+      if (useCustomBg) cssLines.push(`    --l2t-color-background: ${cBg.value};`);
+      if (currentSurface) cssLines.push(`    --l2t-color-surface: ${currentSurface};`);
+      cssLines.push(`    --l2t-color-accent: ${cAccent.value};`);
+
       setCodeBlock(
         codeEl,
-        `<style>\n  #my-trace {\n    --l2t-color-background: ${cBg.value};\n    --l2t-color-accent: ${cAccent.value};\n  }\n</style>\n\n<trace-visualizer\n  id="my-trace"${themeAttr}\n  data-url="./data/incident-cascade.json"\n  show-legend\n  kind-colors='${JSON.stringify(kindColors)}'\n></trace-visualizer>`,
+        `<style>\n  #my-trace {\n${cssLines.join('\n')}\n  }\n</style>\n\n<trace-visualizer\n  id="my-trace"${themeAttr}\n  data-url="./data/incident-cascade.json"\n  show-legend\n  kind-colors='${JSON.stringify(kindColors)}'\n></trace-visualizer>`,
         'html',
       );
     }
@@ -947,17 +972,38 @@ registerView({
       kServer.value = p.server;
       kClient.value = p.client;
       kInternal.value = p.internal;
-      viz.style.setProperty('--l2t-color-surface', p.surface);
+      useCustomBg = true;
+      currentSurface = p.surface;
       applyThemeControls();
     }
 
     presetSel.addEventListener('change', () => selectPreset(presetSel.value));
     resetBtn.addEventListener('click', () => {
       presetSel.value = 'default';
-      viz.style.removeProperty('--l2t-color-surface');
       selectPreset('default');
     });
-    for (const el of [modeSel, cBg, cAccent, kServer, kClient, kInternal]) {
+    modeSel.addEventListener('change', () => {
+      if (modeSel.value === '') {
+        useCustomBg = false;
+        currentSurface = '';
+      } else if (modeSel.value === 'light') {
+        if (!useCustomBg || isDarkHex(cBg.value)) {
+          cBg.value = PRESETS.default.bg;
+          currentSurface = PRESETS.default.surface;
+        }
+        useCustomBg = true;
+      } else if (modeSel.value === 'dark') {
+        if (!useCustomBg || !isDarkHex(cBg.value)) {
+          cBg.value = PRESETS.midnight.bg;
+          currentSurface = PRESETS.midnight.surface;
+        }
+        useCustomBg = true;
+      }
+      applyThemeControls();
+    });
+    cBg.addEventListener('input', () => { useCustomBg = true; applyThemeControls(); });
+    cBg.addEventListener('change', () => { useCustomBg = true; applyThemeControls(); });
+    for (const el of [cAccent, kServer, kClient, kInternal]) {
       el.addEventListener('input', applyThemeControls);
       el.addEventListener('change', applyThemeControls);
     }

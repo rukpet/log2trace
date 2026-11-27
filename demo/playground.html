@@ -719,9 +719,10 @@
       childrenLines.push(`  <trace-filter ${pairs}></trace-filter>`);
     }
     if (cfg?.spanKindRules) {
-      childrenLines.push(`  <span-kind-rule kind="Server" match-field="component" match-value="http-server"></span-kind-rule>`);
-      childrenLines.push(`  <span-kind-rule kind="Client" match-field="component" match-value="http-client"></span-kind-rule>`);
-      childrenLines.push(`  <span-kind-rule kind="Producer" match-field="component" match-value="kafka-producer"></span-kind-rule>`);
+      for (const rule of cfg.spanKindRules) {
+        const [[field, value]] = Object.entries(rule.match);
+        childrenLines.push(`  <span-kind-rule kind="${rule.kind}" match-field="${field}" match-value="${value}"></span-kind-rule>`);
+      }
     }
 
     const inner = childrenLines.length ? `\n${childrenLines.join('\n')}\n` : '';
@@ -738,11 +739,10 @@
         jsOut = `import 'log2trace-ui';\nimport { generateTrace } from './perf-gen.js';\n\nconst viz = document.querySelector('#trace-viz');\nconst { traceData } = generateTrace({ n: ${n}, seed: ${seed}, ev: ${$('pg-syn-ev').value}, ns: ${$('pg-syn-ns').checked ? 1 : 0} });\nviz.traceData = traceData;`;
       }
     } else if (cfg) {
-      const cleanCfg = { ...cfg };
-      if (cleanCfg.spanKindRules) cleanCfg.spanKindRules = cleanCfg.spanKindRules.slice(0, 3);
-      jsOut = `import 'log2trace-ui';\n\nconst viz = document.querySelector('trace-visualizer');\nconst logs = await (await fetch('./data/fintech-logs.json')).json();\nviz.logData = {\n  logs,\n  config: ${JSON.stringify(cleanCfg, null, 2).replace(/\n/g, '\n  ')},\n};`;
+      const logUrl = source === 'custom' ? './my-logs.json' : './data/fintech-logs.json';
+      jsOut = `import 'log2trace-ui';\n\nconst viz = document.querySelector('trace-visualizer');\nconst logs = await (await fetch('${logUrl}')).json();\nviz.logData = {\n  logs,\n  config: ${JSON.stringify(cfg, null, 2).replace(/\n/g, '\n  ')},\n};`;
     } else {
-      const url = URL_MAP[source] ?? './data/ai-search-trace.json';
+      const url = source === 'custom' ? './my-trace.json' : (URL_MAP[source] ?? './data/ai-search-trace.json');
       jsOut = `import 'log2trace-ui';\n\nconst viz = document.querySelector('trace-visualizer');\nviz.traceData = await (await fetch('${url}')).json();`;
     }
     setCodeBlock($('pg-code-js'), jsOut, 'javascript');
