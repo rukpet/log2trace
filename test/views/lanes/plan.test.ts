@@ -129,14 +129,28 @@ test('items farther apart than the gap stay separate', () => {
 });
 
 test('the dominant kind of a merged run is the one with the most pixels, not the most items', () => {
-  const spans = [span('big', undefined, 0, 300, { kind: SpanKind.Server })];
-  for (let i = 0; i < 10; i++) spans.push(span(`i${i}`, undefined, 301 + i * 21, 321 + i * 21, { kind: SpanKind.Internal }));
-  spans.push(span('last', undefined, 511, 600, { kind: SpanKind.Consumer }));
-  const plan = planOf(scene(trace(['svc', spans])));
+  // 0.756 px/ms: the server span is 9 px wide, the three internal spans 2.3 px each, the consumer 2.3 px
+  const spans = [span('big', undefined, 0, 12, { kind: SpanKind.Server })];
+  for (let i = 0; i < 3; i++) spans.push(span(`i${i}`, undefined, 13 + i * 4, 16 + i * 4, { kind: SpanKind.Internal }));
+  spans.push(span('last', undefined, 25, 28, { kind: SpanKind.Consumer }));
+  const plan = planOf(scene(trace(['svc', spans], ['far', [span('far', undefined, 0, 1000)]])));
 
-  assert.equal(plan.runCount, 1);
-  assert.equal(plan.runItems[0], 12);
-  assert.equal(plan.runKind[0], SpanKind.Server, 'server 300 ms beats internal 200 ms and consumer 89 ms');
+  const run = Array.from({ length: plan.runCount }, (_, r) => r).find((r) => plan.runItems[r] > 1);
+  assert.ok(run !== undefined);
+  assert.equal(plan.runItems[run], 5);
+  assert.equal(plan.runKind[run], SpanKind.Server, 'server 9 px beats internal 7 px and consumer 2 px');
+});
+
+test('wide bars are never merged while the frame fits, narrow ones next to them are', () => {
+  // 100 spans of 10 ms back to back: 7.6 px each, narrow, merged
+  const narrow = planOf(scene(sequence(100, 10, 10)));
+  assert.equal(narrow.runCount, 1);
+  // 10 spans of 100 ms back to back: 76 px each, bars of their own, with labels
+  const wide = planOf(scene(sequence(10, 100, 100)));
+  assert.equal(wide.runCount, 10);
+  for (let r = 0; r < wide.runCount; r++) assert.equal(wide.runItems[r], 1);
+  assert.equal(wide.mergeGap, MERGE_GAP_PX);
+  assert.ok(wide.labelCount > 0);
 });
 
 test('the budget holds on a 50,000 span trace zoomed fully out, even with every lane open', () => {

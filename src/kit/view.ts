@@ -1,8 +1,8 @@
 /**
  * Kit: the contract of a view
  *
- * A view is one way of drawing the loaded trace: the waterfall, a flame graph, a service graph,
- * a sequence diagram or a stats table. The element hosts exactly one at a time in a surface it hands over, and
+ * A view is one way of drawing the loaded trace: the waterfall, service lanes, a flame graph,
+ * a service graph, a sequence diagram or a stats table. The element hosts exactly one at a time in a surface it hands over, and
  * everything it needs of a view is in {@link TraceView}; the shell (toolbar, tooltip, detail panel,
  * tabs) needs even less and never imports a view.
  *

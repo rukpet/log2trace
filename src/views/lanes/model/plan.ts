@@ -12,7 +12,9 @@
  * - items of a track are sorted and disjoint, so the first one that can be on screen is found by
  *   binary search on the item ends, and the walk stops at the first item that starts after the window;
  * - an item whose pixel gap to the run being built is under `mergeGap` joins that run; a run of one
- *   item is a normal bar, a longer one a merged bar;
+ *   item is a normal bar, a longer one a merged bar; a bar at least {@link WIDE_BAR_PX} wide is never
+ *   merged while the frame fits the budget with the starting gap, so that back-to-back tasks of a
+ *   busy lane stay bars with a name and an identity instead of one hatched block;
  * - a run keeps its first item, item count, dominant kind (by pixel width) and OR-ed flags;
  * - if the frame has more than {@link MAX_BARS} runs, `mergeGap` doubles and the frame is planned
  *   again, so the element count of a frame is bounded however many spans there are.
@@ -53,6 +55,8 @@ import { sampleColumns, stepsOfRows, type Steps } from './summary.ts';
 export const MAX_BARS = 2500;
 /** Pixel gap under which two items of a track are merged into one run, before the budget doubles it. */
 export const MERGE_GAP_PX = 2;
+/** Width from which a bar stays a bar of its own (not merged into a run) as long as the frame fits the budget with the starting gap, px. */
+export const WIDE_BAR_PX = 10;
 /** Narrowest single bar that gets a label, px. */
 export const LABEL_MIN_WIDTH = 40;
 /** Space between a bar's edge and its label text, px. */
@@ -528,10 +532,11 @@ function writeRun(
 /**
  * Plan the runs of every planned row with one merge gap.
  *
+ * @param keepWide - Never merge a bar of {@link WIDE_BAR_PX} or more: the first try, before the budget made the gap grow.
  * @param hard - Drop runs beyond the budget instead of giving up (the last resort when even a gap wider than the plot does not fit).
  * @returns Whether everything fit in {@link MAX_BARS} runs.
  */
-function planRuns(plan: LanesFramePlan, input: PlanInput, gap: number, hard: boolean): boolean {
+function planRuns(plan: LanesFramePlan, input: PlanInput, gap: number, keepWide: boolean, hard: boolean): boolean {
   const { model, camera } = input;
   const { itemStart, itemEnd, itemRow, trackItemOff, laneTrackOff } = model;
   const { kind: kinds, status } = model.index.table;
@@ -556,11 +561,13 @@ function planRuns(plan: LanesFramePlan, input: PlanInput, gap: number, hard: boo
     let agg = 0;
     let clipped = 0;
     let firstKind = 0;
+    let wideRun = false;
     for (let i = lowerBound(itemEnd, trackItemOff[track], to, t0); i < to; i++) {
       if (itemStart[i] > t1) break;
       barExtent(camera, itemStart[i], itemEnd[i], extent);
+      const wide = keepWide && extent.x1 - extent.x0 >= WIDE_BAR_PX;
 
-      if (open && extent.x0 - x1 >= gap) {
+      if (open && (extent.x0 - x1 >= gap || wide || wideRun)) {
         if (n >= MAX_BARS && !hard) return false;
         if (n < MAX_BARS) writeRun(plan, n++, input, y, track, first, items, x0, x1, agg, clipped, firstKind);
         open = false;
@@ -575,6 +582,7 @@ function planRuns(plan: LanesFramePlan, input: PlanInput, gap: number, hard: boo
         x0 = extent.x0;
         x1 = extent.x1;
         agg = 0;
+        wideRun = wide;
         clipped = extent.clippedLeft ? RunFlag.ClippedLeft : 0;
         firstKind = k;
         kindWidth.fill(0);
@@ -724,7 +732,11 @@ export function buildLanesPlan(plan: LanesFramePlan, input: PlanInput): void {
   if (camera.widthPx > 0) {
     let gap = plan.mergeGap;
     const widest = camera.widthPx + 4;
-    while (!planRuns(plan, input, gap, gap > widest)) gap *= 2;
+    let keepWide = true;
+    while (!planRuns(plan, input, gap, keepWide, gap > widest)) {
+      gap *= 2;
+      keepWide = false;
+    }
     plan.mergeGap = gap;
     planLabels(plan, input);
   } else {

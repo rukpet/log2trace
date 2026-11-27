@@ -107,7 +107,7 @@ export interface TraceState {
   readonly hover: Target | null;
   /**
    * Spans whose children are hidden. Advisory: the waterfall and the sequence
-   * view honour it, a flame graph keeps its own focus, a service graph ignores it.
+   * view honour it, a flame graph keeps its own focus, the lanes and a service graph ignore it.
    */
   readonly collapsed: SpanMask;
   /** Spans that passed the filter; `null` when no filter is active. */
