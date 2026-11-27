@@ -470,12 +470,16 @@ export class LanesController {
           }],
         };
       }
-      case HitPart.IdleGap:
+      case HitPart.IdleGap: {
+        // the stretches before the first and after the last span of the lane are bounded by the trace
+        const { from, to } = model.busy[lane];
+        const where = from.length === 0 ? '' : hit.gapTo === from[0] && hit.gapFrom === 0 ? ' before first span' : hit.gapFrom === to[to.length - 1] ? ' after last span' : '';
         return {
-          title: `Idle ${formatDuration(hit.gapTo - hit.gapFrom)}`,
+          title: `Idle ${formatDuration(hit.gapTo - hit.gapFrom)}${where}`,
           subtitle: name,
           sections: [{ title: 'Overview', rows: [['From', formatOffset(hit.gapFrom)], ['To', formatOffset(hit.gapTo)]] }],
         };
+      }
       case HitPart.Header: {
         const rows: InfoRow[] = [
           ['Spans', String(model.spanCount[lane])],

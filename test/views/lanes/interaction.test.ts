@@ -349,6 +349,16 @@ test('double-click on an idle gap zooms to the gap, on nothing resets, on a head
   rig.send({ type: 'doubleClick', x: PLOT_LEFT + 5, y: 10 });
   assert.equal(rig.state.camera.t1, 1000, 'whole trace again');
 
+  // the stretch before the first span of a lane is a gap to zoom to as well
+  const whole = rig.state.camera;
+  rig.send({ type: 'doubleClick', x: PLOT_LEFT + 800 * SCALE, y: 424 + 9 });
+  const leading = windowForSpan(0, 900);
+  const expected = withWindow(whole, leading.t0, leading.t1);
+  assert.ok(Math.abs(rig.state.camera.t0 - expected.t0) < 1e-6);
+  assert.ok(Math.abs(rig.state.camera.t1 - expected.t1) < 1e-6);
+  assert.ok(rig.state.camera.t1 >= 900, 'the whole stretch is in view');
+  rig.send({ type: 'doubleClick', x: PLOT_LEFT + 5, y: 10 });
+
   const zoomed = withWindow(rig.state.camera, 100, 200);
   rig.state = { ...rig.state, camera: zoomed };
   const header = rig.send({ type: 'doubleClick', x: 50, y: 60 });

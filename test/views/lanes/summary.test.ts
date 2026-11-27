@@ -118,21 +118,41 @@ test('busy stretches are the union of the intervals and idle gaps lie between th
   assert.equal(busy.totalMs, 12 + 5 + 10);
 
   const gap: IdleGap = { from: 0, to: 0 };
-  assert.equal(idleGapAt(busy, 20, gap), true);
+  assert.equal(idleGapAt(busy, 20, 100, gap), true);
   assert.deepEqual(gap, { from: 12, to: 30 });
-  assert.equal(idleGapAt(busy, 40, gap), true);
+  assert.equal(idleGapAt(busy, 40, 100, gap), true);
   assert.deepEqual(gap, { from: 35, to: 50 });
-  assert.equal(idleGapAt(busy, 12, gap), true, 'the end of a stretch is idle');
-  assert.equal(idleGapAt(busy, 30, gap), false, 'the start of a stretch is busy');
-  assert.equal(idleGapAt(busy, 8, gap), false, 'inside a stretch');
-  assert.equal(idleGapAt(busy, -5, gap), false, 'before the first stretch');
-  assert.equal(idleGapAt(busy, 70, gap), false, 'after the last stretch');
+  assert.equal(idleGapAt(busy, 12, 100, gap), true, 'the end of a stretch is idle');
+  assert.equal(idleGapAt(busy, 30, 100, gap), false, 'the start of a stretch is busy');
+  assert.equal(idleGapAt(busy, 8, 100, gap), false, 'inside a stretch');
+  assert.equal(idleGapAt(busy, 59.9, 100, gap), false, 'inside the last stretch');
+  assert.equal(idleGapAt(busy, -5, 100, gap), false, 'before the trace');
+  assert.equal(idleGapAt(busy, 0, 100, gap), false, 'a lane that is busy from the start has no leading gap');
+});
+
+test('the stretches before the first and after the last busy stretch are gaps bounded by the trace', () => {
+  const busy = busyOf(steps([30, 50], [35, 60]));
+  const gap: IdleGap = { from: -1, to: -1 };
+  assert.equal(idleGapAt(busy, 0, 100, gap), true, 'the start of the trace');
+  assert.deepEqual(gap, { from: 0, to: 30 });
+  assert.equal(idleGapAt(busy, 29.9, 100, gap), true);
+  assert.deepEqual(gap, { from: 0, to: 30 });
+  assert.equal(idleGapAt(busy, 60, 100, gap), true, 'the end of the last stretch is idle');
+  assert.deepEqual(gap, { from: 60, to: 100 });
+  assert.equal(idleGapAt(busy, 99.9, 100, gap), true);
+  assert.equal(idleGapAt(busy, 100, 100, gap), false, 'the trace is over');
+  assert.equal(idleGapAt(busy, 150, 100, gap), false, 'beyond the trace');
+
+  const flush = busyOf(steps([10], [100]));
+  assert.equal(idleGapAt(flush, 100, 100, gap), false, 'a lane busy to the end has no trailing gap');
+  assert.equal(idleGapAt(flush, 5, 100, gap), true);
+  assert.deepEqual(gap, { from: 0, to: 10 });
 });
 
 test('an empty lane has no busy time and no gaps', () => {
   const busy = busyOf(steps([], []));
   assert.equal(busy.totalMs, 0);
-  assert.equal(idleGapAt(busy, 1, { from: 0, to: 0 }), false);
+  assert.equal(idleGapAt(busy, 1, 100, { from: 0, to: 0 }), false);
 });
 
 test('intervals of rows give instants and inverted spans a tiny width', () => {

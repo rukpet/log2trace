@@ -69,9 +69,9 @@ export interface HitResult {
   ghost: boolean;
   /** Time under the pointer, ms; for the plot parts only (0 otherwise). */
   t: number;
-  /** For an {@link HitPart.IdleGap}: when the previous busy stretch ended, ms. */
+  /** For an {@link HitPart.IdleGap}: when the previous busy stretch ended, ms; 0 before the first one. */
   gapFrom: number;
-  /** For an {@link HitPart.IdleGap}: when the next busy stretch starts, ms. */
+  /** For an {@link HitPart.IdleGap}: when the next busy stretch starts, ms; the end of the trace after the last one. */
   gapTo: number;
   /** For an {@link HitPart.Overflow}: whether the pointer is over the button rather than the chart. */
   button: boolean;
@@ -225,7 +225,7 @@ export function hitTest(plan: LanesFramePlan, x: number, y: number, out: HitResu
       return out;
     }
   }
-  if (idleGapAt(model.busy[lane], out.t, scratchGap)) {
+  if (idleGapAt(model.busy[lane], out.t, model.index.table.extentMs, scratchGap)) {
     out.part = HitPart.IdleGap;
     out.gapFrom = scratchGap.from;
     out.gapTo = scratchGap.to;

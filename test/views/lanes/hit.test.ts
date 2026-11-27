@@ -167,18 +167,33 @@ test('empty room between two bars of a busy lane is an idle gap, with the gap bo
   assert.equal(h.lane, 0);
 });
 
-test('an idle gap bounded only on one side is not a gap, and neither is the room beside the first or last bar', () => {
+test('the room before the first and after the last span of a lane is an idle gap bounded by the trace', () => {
   const s = scene(wideTrace());
   const plan = planOf(s);
   const bgTop = 424 + 9;
-  assert.equal(hit(plan, PLOT_LEFT + 800 * SCALE, bgTop).part, HitPart.None, 'before the first span of bg');
+  const before = hit(plan, PLOT_LEFT + 800 * SCALE, bgTop);
+  assert.equal(before.part, HitPart.IdleGap, 'before the first span of bg');
+  assert.equal(before.gapFrom, 0);
+  assert.equal(before.gapTo, 900);
+  assert.ok(Math.abs(before.x - PLOT_LEFT) < 1e-3, 'the box starts at the plot edge');
+  assert.ok(Math.abs(before.w - 900 * SCALE) < 1e-3);
+
   const gap = hit(plan, PLOT_LEFT + 930 * SCALE, bgTop);
   assert.equal(gap.part, HitPart.IdleGap);
   assert.equal(gap.gapFrom, 910);
   assert.equal(gap.gapTo, 950);
-  assert.equal(hit(plan, PLOT_LEFT + 980 * SCALE, bgTop).part, HitPart.None, 'after the last');
-  // empty room of a busy lane is not idle: the lane is working
+
+  const after = hit(plan, PLOT_LEFT + 980 * SCALE, bgTop);
+  assert.equal(after.part, HitPart.IdleGap, 'after the last span');
+  assert.equal(after.gapFrom, 960);
+  assert.equal(after.gapTo, 1000, 'to the end of the trace');
+  assert.ok(Math.abs(after.x + after.w - (PLOT_LEFT + 756)) < 1e-3, 'the box ends at the plot edge');
+
+  // the room of a lane that is working is not idle
   assert.equal(hit(plan, PLOT_LEFT + 500 * SCALE, 76 + 14 * 18 + 9).part, HitPart.None);
+  // web is busy from 0 to the end of the trace: no gap at either end
+  assert.equal(hit(plan, PLOT_LEFT + 2, 40 + 27).part, HitPart.None);
+  assert.equal(hit(plan, PLOT_LEFT + 754, 40 + 27).part, HitPart.None);
 });
 
 test('a collapsed lane is a summary row', () => {

@@ -494,6 +494,14 @@ test('describeHit: a run, a summary, an overflow row, an idle gap, a header and 
   assert.equal(idle?.subtitle, 'bg');
   assert.deepEqual(idle?.sections[0].rows, [['From', '+910.00ms'], ['To', '+950.00ms']]);
 
+  const bgY = 40 + 24 + 312 + 36 + 9;
+  const leading = h.view.describeHit(h.view.hit(PLOT_LEFT + 450 * SCALE, bgY));
+  assert.equal(leading?.title, 'Idle 900.00ms before first span');
+  assert.deepEqual(leading?.sections[0].rows, [['From', '+0µs'], ['To', '+900.00ms']]);
+  const trailing = h.view.describeHit(h.view.hit(PLOT_LEFT + 980 * SCALE, bgY));
+  assert.equal(trailing?.title, 'Idle 40.00ms after last span');
+  assert.deepEqual(trailing?.sections[0].rows, [['From', '+960.00ms'], ['To', '+1.00s']]);
+
   const header = h.view.describeHit(h.view.hit(50, 40 + 24 + 100));
   assert.equal(header?.title, 'api');
   assert.equal(header?.subtitle, 'Service lane');

@@ -188,30 +188,41 @@ export function busyOf(steps: Steps): Busy {
   return { from: Float64Array.from(from), to: Float64Array.from(to), totalMs: total };
 }
 
-/** An idle stretch between two busy ones. */
+/** An idle stretch of a lane: between two busy ones, or before the first and after the last. */
 export interface IdleGap {
-  /** When the previous busy stretch ended, ms. */
+  /** When the previous busy stretch ended, ms; 0 for the stretch before the first one. */
   from: number;
-  /** When the next busy stretch starts, ms. */
+  /** When the next busy stretch starts, ms; the extent of the trace for the stretch after the last one. */
   to: number;
 }
 
 /**
  * Find the idle stretch around time `t`: the gap between the busy stretches before and after it.
  *
- * Before the first and after the last busy stretch is not a gap (nothing bounds it), and neither is a
- * moment inside a busy stretch.
+ * The stretch from the start of the trace to the first busy stretch, and the one from the last busy
+ * stretch to the end of the trace, are gaps too: the lane is idle there for as long as the trace goes
+ * on. A moment inside a busy stretch is not in a gap, nor is one outside the trace, and a lane that
+ * is never busy has no gap.
  *
+ * @param busy - The busy stretches of the lane.
+ * @param t - The time, ms.
+ * @param extentMs - End of the trace, ms.
  * @param out - Receives the gap.
  * @returns Whether `t` is in a gap.
  */
-export function idleGapAt(busy: Busy, t: number, out: IdleGap): boolean {
+export function idleGapAt(busy: Busy, t: number, extentMs: number, out: IdleGap): boolean {
+  const n = busy.from.length;
+  if (n === 0 || !(t >= 0 && t < extentMs)) return false;
   const k = upperBound(busy.from, t) - 1;
-  if (k < 0 || k >= busy.from.length - 1) return false;
+  if (k < 0) {
+    out.from = 0;
+    out.to = busy.from[0];
+    return out.to > 0;
+  }
   if (t < busy.to[k]) return false;
   out.from = busy.to[k];
-  out.to = busy.from[k + 1];
-  return true;
+  out.to = k < n - 1 ? busy.from[k + 1] : extentMs;
+  return out.to > out.from;
 }
 
 /** First index whose value is above `value` in an ascending array (`length` when none). */
