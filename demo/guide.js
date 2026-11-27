@@ -422,6 +422,9 @@ export const loadAiSearchTrace = () => loadJson('./data/ai-search-trace.json');
 /** Tier 4 (Incident Cascade): Retry Storm & Circuit Breaker — 19 spans, 3 exponential-backoff retries, DLQ fallback. */
 export const loadIncidentCascade = () => loadJson('./data/incident-cascade.json');
 
+/** Tier 5 (Worker Pool): batch fan-out onto an 8-slot worker pool — 138 spans, saturation, an idle gap, ghost peers (s3, postgresql), 3 failures. */
+export const loadWorkerPoolTrace = () => loadJson('./data/worker-pool-trace.json');
+
 export const FINTECH_LOG_RULES = [
   { match: { component: 'http-server' }, kind: 'Server' },
   { match: { component: 'grpc-server' }, kind: 'Server' },

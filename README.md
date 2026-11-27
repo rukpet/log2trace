@@ -80,6 +80,7 @@ Each original log line is preserved as an OpenTelemetry event on its correspondi
   <trace-view type="service"></trace-view>
   <trace-view type="sequence"></trace-view>
   <trace-view type="stats"></trace-view>
+  <trace-view type="lanes"></trace-view>
 </trace-visualizer>
 ```
 
@@ -88,6 +89,7 @@ Each original log line is preserved as an OpenTelemetry event on its correspondi
 * **`service`**: Directed topology graph displaying services, external peers (databases, queues, HTTP endpoints), request counts, latencies, and error rates.
 * **`sequence`**: Causal sequence diagram with participant lifelines, synchronous request/response pairs, asynchronous message flows, and loop folding.
 * **`stats`**: Sortable, virtualized trace statistics treegrid aggregating counts, error rates, self-time, recursion-safe totals, and latency percentiles (`Min`, `Avg`, `P50`, `P95`, `Max`) with inline member expansion and a flat `Spans` mode.
+* **`lanes`**: Per-service swimlane timeline answering *"who was busy when, and how much ran in parallel"*. Concurrent spans are packed into levels within each service lane; uninstrumented databases, caches, brokers, and hosts get ghost peer lanes; dense regions merge into hatched bars; and collapsed lanes show an in-flight concurrency chart. Per-view attributes: `max-rows` (level rows before a `+N rows` overflow row, default `16`), `row-height` (px, `12`-`48`, default `18`), `order` (`start` \| `name` \| `busy`) and `peers` (ghost peer lanes, on unless set to `false`). On `<trace-visualizer>` they take a `lane-` prefix (`lane-max-rows`).
 
 Custom views can also be registered at runtime with `registerView()`.
 
