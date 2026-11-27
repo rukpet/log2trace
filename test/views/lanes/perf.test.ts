@@ -2,46 +2,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
 import { SpanKind, buildSpanIndex } from '../../../src/core/index.ts';
+import { createCamera } from '../../../src/kit/geometry/camera1d.ts';
 import { buildLaneModel } from '../../../src/views/lanes/model/lanes.ts';
-import { random } from '../../support/trace-builder.ts';
-import type { Span, TraceData } from '../../../src/core/otel/trace.ts';
-
-/** `n` spans over six services with heavy concurrency, nesting and database calls, deterministic. */
-function buildLargeTrace(n: number): TraceData {
-  const services = ['api-gateway', 'order-svc', 'payment-svc', 'inventory-svc', 'worker-pool', 'cache-svc'];
-  const bySvc = services.map(() => [] as Span[]);
-  const baseNs = 1_700_000_000_000_000_000n;
-  const rnd = random(7);
-
-  for (let i = 0; i < n; i++) {
-    const svcIdx = i % services.length;
-    const parentIdx = i === 0 ? -1 : Math.floor(rnd() * i);
-    const startNs = baseNs + BigInt(Math.floor(rnd() * 60_000_000_000));
-    const durNs = BigInt(Math.floor(rnd() * 200_000_000));
-    const call = i % 9 === 0;
-    bySvc[svcIdx].push({
-      traceId: 'perf-trace',
-      spanId: `s-${i}`,
-      parentSpanId: parentIdx >= 0 ? `s-${parentIdx}` : undefined,
-      name: `op-${i % 20}`,
-      kind: call ? SpanKind.Client : SpanKind.Internal,
-      startTimeUnixNano: String(startNs),
-      endTimeUnixNano: String(startNs + durNs),
-      attributes: call ? [{ key: 'db.system', value: { stringValue: i % 2 === 0 ? 'postgresql' : 'redis' } }] : [],
-      status: { code: i % 97 === 0 ? 2 : 1 },
-    });
-  }
-
-  return {
-    resourceSpans: services.map((name, idx) => ({
-      resource: { attributes: [{ key: 'service.name', value: { stringValue: name } }] },
-      scopeSpans: [{ scope: { name: 'perf' }, spans: bySvc[idx] }],
-    })),
-  };
-}
+import { DEFAULT_METRICS, LaneMode, computeLayout, stackLanes } from '../../../src/views/lanes/model/layout.ts';
+import { LanesFramePlan, MAX_BARS, SummarySource, buildLanesPlan } from '../../../src/views/lanes/model/plan.ts';
+import { HitPart, createHitResult, hitTest } from '../../../src/views/lanes/model/hit.ts';
+import { fitText, largeTrace } from '../../support/lanes-scene.ts';
+import type { Span } from '../../../src/core/otel/trace.ts';
 
 test('builds the lane model of 50,000 spans well within interactive budget', () => {
-  const index = buildSpanIndex(buildLargeTrace(50_000));
+  const index = buildSpanIndex(largeTrace(50_000));
   buildLaneModel(index); // warm up the JIT once
 
   const t0 = performance.now();
@@ -82,4 +52,52 @@ test('packs 50,000 spans that are all in flight at once without quadratic cost',
   assert.equal(model.levelCount[0], 50_000);
   assert.equal(model.peak[0], 50_000);
   assert.ok(elapsed < 300, `fully concurrent 50k lane took ${elapsed.toFixed(1)}ms (expected < 300ms)`);
+});
+
+test('plans the full-extent frame of 50,000 spans fast and within the bar budget', () => {
+  const index = buildSpanIndex(largeTrace(50_000));
+  const model = buildLaneModel(index);
+  const layout = computeLayout(DEFAULT_METRICS, 1400, 900);
+  const camera = createCamera(index.table.extentMs, layout.plotWidth);
+  const stack = stackLanes(model, layout, model.order, true, new Uint8Array(model.laneCount).fill(LaneMode.Capped));
+  const summaries = new SummarySource(model);
+  const plan = new LanesFramePlan();
+  const frame = (): void =>
+    buildLanesPlan(plan, { model, layout, stack, camera, scrollTop: 0, overscan: 4, matched: null, selection: null, hovered: null, summaries, fitText });
+
+  frame(); // warm up the JIT and the summary caches
+  const runs = 20;
+  const t0 = performance.now();
+  for (let i = 0; i < runs; i++) frame();
+  const elapsed = (performance.now() - t0) / runs;
+
+  assert.ok(plan.runCount > 100 && plan.runCount <= MAX_BARS, `${plan.runCount} runs`);
+  assert.ok(elapsed < 40, `a full-extent plan took ${elapsed.toFixed(2)}ms (expected < 40ms, target 8ms)`);
+
+  const hit = createHitResult();
+  const h0 = performance.now();
+  for (let i = 0; i < 1000; i++) hitTest(plan, 300 + (i % 800), 60 + (i % 600), hit);
+  const perHit = (performance.now() - h0) / 1000;
+  assert.ok(perHit < 0.5, `a hit test took ${perHit.toFixed(3)}ms`);
+  assert.ok(hit.part >= HitPart.None);
+});
+
+test('plans a deep zoom of 50,000 spans with every lane open just as fast', () => {
+  const index = buildSpanIndex(largeTrace(50_000));
+  const model = buildLaneModel(index);
+  const layout = computeLayout(DEFAULT_METRICS, 1400, 900);
+  const full = createCamera(index.table.extentMs, layout.plotWidth);
+  const camera = { ...full, t0: 20_000, t1: 20_500 };
+  const stack = stackLanes(model, layout, model.order, true, new Uint8Array(model.laneCount).fill(LaneMode.Full));
+  const plan = new LanesFramePlan();
+  const summaries = new SummarySource(model);
+  const frame = (): void =>
+    buildLanesPlan(plan, { model, layout, stack, camera, scrollTop: 400, overscan: 4, matched: null, selection: null, hovered: null, summaries, fitText });
+
+  frame();
+  const t0 = performance.now();
+  for (let i = 0; i < 20; i++) frame();
+  const elapsed = (performance.now() - t0) / 20;
+  assert.ok(plan.runCount > 0 && plan.runCount <= MAX_BARS);
+  assert.ok(elapsed < 40, `a deep-zoom plan took ${elapsed.toFixed(2)}ms (expected < 40ms)`);
 });
