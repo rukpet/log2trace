@@ -425,6 +425,51 @@ test('the hover box outlines an idle stretch and nothing else on the plot; a hea
   assert.equal(header?.findAll('gutter')[0].classList.contains('headerHover'), false);
 });
 
+test('a new trace does not leave a reused lane header highlighted', () => {
+  const r = rig();
+  const stack = r.controller.state.stack;
+  // lane 0 is lane 0 in any trace, so its slot is reused for the new trace's first lane under the resting pointer
+  const k = stack.positionOfLane[0];
+  r.controller.input({ type: 'hover', x: 60, y: 40 + stack.top[k] + 9 });
+  r.draw(LanesDirty.Hover);
+  assert.equal(r.controller.state.hover?.part, HitPart.Header);
+  assert.equal(r.controller.state.hover.lane, 0);
+  const header = r.headers().find((h) => h.getAttribute('data-lane') === r.controller.model.names[0]);
+  assert.equal(header?.findAll('gutter')[0].classList.contains('headerHover'), true);
+
+  r.store.setData(buildSpanIndex(trace(['bg', [span('only', undefined, 0, 100)]])));
+  r.sync();
+  assert.equal(r.controller.state.hover, null);
+  assert.deepEqual(r.headers().map(nameOf), ['bg']);
+  for (const gutter of r.layer().findAll('gutter')) {
+    assert.equal(gutter.classList.contains('headerHover'), false, 'no header is highlighted');
+  }
+});
+
+test('the stats of a collapsed lane follow the row height, though the lane keeps its height', () => {
+  const r = rig();
+  const web = laneId(r, 'web');
+  r.draw(r.controller.input({ type: 'laneMode', lane: web, mode: LaneMode.Collapsed }).dirty);
+  const header = (): FakeElement => {
+    const found = r.headers().find((h) => nameOf(h) === 'web');
+    assert.ok(found);
+    return found;
+  };
+  const stats = (): FakeElement => header().findAll('stats')[0];
+  const { rowHeight, summaryHeight } = r.controller.layout;
+  assert.ok(summaryHeight < 2 * rowHeight);
+  assert.equal(stats().classList.contains('statsHidden'), true, 'a collapsed lane is too short for stats');
+
+  // rows get so low that the (unchanged) summary row is two rows tall
+  r.draw(r.controller.setMetrics({ rowHeight: summaryHeight / 2 }).dirty);
+  assert.equal(r.controller.layout.rowHeight, summaryHeight / 2);
+  assert.equal(header().style.height, `${summaryHeight}px`, 'the lane did not change height');
+  assert.equal(stats().classList.contains('statsHidden'), false);
+
+  r.draw(r.controller.setMetrics({ rowHeight }).dirty);
+  assert.equal(stats().classList.contains('statsHidden'), true);
+});
+
 test('nothing is drawn before the host has a size', () => {
   const store = createTraceStore({ schedule: () => undefined });
   store.setData(buildSpanIndex(wideTrace()));

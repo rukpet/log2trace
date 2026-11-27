@@ -550,11 +550,12 @@ class LanesDomPainter implements LanesPainter {
       if (height !== slot.height) {
         slot.root.style.height = `${height}px`;
         slot.height = height;
-        const tall = height >= 2 * layout.rowHeight;
-        if (tall !== slot.tall) {
-          slot.stats.classList.toggle(styles.statsHidden, !tall);
-          slot.tall = tall;
-        }
+      }
+      // not only when the height changes: the row height may have changed under a collapsed lane
+      const tall = height >= 2 * layout.rowHeight;
+      if (tall !== slot.tall) {
+        slot.stats.classList.toggle(styles.statsHidden, !tall);
+        slot.tall = tall;
       }
 
       if (slot.lane !== lane) {
@@ -565,6 +566,8 @@ class LanesDomPainter implements LanesPainter {
         slot.stamp = -1;
         slot.mode = -1;
         slot.statsText = '';
+        // a header of the old trace may have been hovered: the class goes with the flag
+        if (slot.hovered) slot.gutter.classList.remove(styles.headerHover);
         slot.hovered = false;
       }
       if (slot.stamp !== this.stamp) {
