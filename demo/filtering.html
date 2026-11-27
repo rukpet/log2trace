@@ -89,7 +89,8 @@
       <p class="doc-prose">
         Local filters compile into a single client-side predicate with AND semantics and write a <code>SpanMask</code> into the shared store —
         Waterfall highlights matching rows, Flame Graph, Service Map, and Sequence Diagram dim elements with zero matching spans,
-        and Stats scopes its aggregations to matching spans by default (toggleable to <code>dim</code>).
+        Stats scopes its aggregations to matching spans by default (toggleable to <code>dim</code>),
+        and Lanes dims non-matching spans in place without repacking levels, while collapsed-lane concurrency summaries count only matching spans.
         Press <kbd>Ctrl</kbd>/<kbd>&#8984;</kbd>+<kbd>F</kbd> inside the visualizer to focus the search input, and <kbd>Escape</kbd> to return to the timeline.
       </p>
 
@@ -122,6 +123,7 @@
             <trace-view type="service"></trace-view>
             <trace-view type="sequence"></trace-view>
             <trace-view type="stats"></trace-view>
+            <trace-view type="lanes"></trace-view>
           </trace-visualizer>
         </div>
 

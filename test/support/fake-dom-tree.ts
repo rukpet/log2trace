@@ -177,7 +177,10 @@ export class FakeResizeObserver {
 export function installFakeDom(): () => void {
   const globals = globalThis as unknown as Record<string, unknown>;
   const saved = { document: globals.document, ResizeObserver: globals.ResizeObserver };
-  globals.document = { createElement: (tag: string) => new FakeElement(tag) };
+  globals.document = {
+    createElement: (tag: string) => new FakeElement(tag),
+    createElementNS: (_namespace: string, tag: string) => new FakeElement(tag),
+  };
   globals.ResizeObserver = FakeResizeObserver;
   FakeResizeObserver.instances = [];
   return () => {

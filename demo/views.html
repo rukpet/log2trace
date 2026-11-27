@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>log2trace-ui — Interactive Guide: Visual Setups, Views &amp; Theming</title>
-  <meta name="description" content="Compare distinct visual setups (Compact Widget, NOC Dark Incident Room, Spacious Editorial, Full 4-View Suite), explore Waterfall, Flame, Service Map, Sequence options, CSS tokens, and custom views.">
+  <meta name="description" content="Compare distinct visual setups (Compact Widget, NOC Dark Incident Room, Spacious Editorial, Full 6-View Suite), explore Waterfall, Flame, Service Map, Sequence, Stats and Lanes options, CSS tokens, and custom views.">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,12 +62,13 @@
       <li><a href="#flame-service">3. Flame Graph &amp; Service Map</a></li>
       <li><a href="#sequence-view">4. Sequence Diagram Options</a></li>
       <li><a href="#stats-view">5. Trace Statistics Options</a></li>
+      <li><a href="#lanes-view">6. Service Lanes &amp; Concurrency</a></li>
     </ul>
     <div class="toc-heading">Appearance &amp; Extensibility</div>
     <ul class="toc-list">
-      <li><a href="#theming-tokens">6. Themes &amp; CSS Tokens</a></li>
+      <li><a href="#theming-tokens">7. Themes &amp; CSS Tokens</a></li>
       <li><a href="#token-reference">Design Token Reference</a></li>
-      <li><a href="#custom-views">7. Custom Views (registerView)</a></li>
+      <li><a href="#custom-views">8. Custom Views (registerView)</a></li>
     </ul>
   </aside>
 
@@ -95,13 +96,13 @@
       <div class="workbench">
         <div class="wb-toolbar wb-toolbar--dense">
           <div class="segmented" role="group" aria-label="Visual setup archetypes">
-            <button type="button" id="arch-suite" class="is-active" aria-pressed="true" title="43-span AI RAG trace with all 5 views, default theme, and sequence loop folding">5-View AI RAG Suite</button>
+            <button type="button" id="arch-suite" class="is-active" aria-pressed="true" title="43-span AI RAG trace with all 6 views, default theme, and sequence loop folding">6-View AI RAG Suite</button>
             <button type="button" id="arch-compact" aria-pressed="false" title="14-span auth trace in a compact 340px single-view card with 20px rows and no tabs">Compact Embedded Card</button>
             <button type="button" id="arch-noc" aria-pressed="false" title="19-span retry storm pinned to dark obsidian tokens, custom kind colors, and wheel-zoom">NOC Dark Incident Room</button>
             <button type="button" id="arch-editorial" aria-pressed="false" title="21-span transformed fintech logs in a spacious 36px-row warm paper light theme">Spacious Editorial</button>
           </div>
           <span class="wb-spacer"></span>
-          <span class="wb-readout" id="arch-meta">43 spans · 9 services · 5 tabs</span>
+          <span class="wb-readout" id="arch-meta">43 spans · 9 services · 6 tabs</span>
         </div>
 
         <div class="wb-stage">
@@ -111,12 +112,13 @@
             <trace-view type="service"></trace-view>
             <trace-view type="sequence" fold="3"></trace-view>
             <trace-view type="stats"></trace-view>
+            <trace-view type="lanes"></trace-view>
           </trace-visualizer>
         </div>
 
         <div class="code-panel">
           <div class="code-bar">
-            <span id="arch-code-label">HTML — Full 4-View Observability Suite</span>
+            <span id="arch-code-label">HTML — Full 6-View Observability Suite</span>
             <button type="button" class="copy-btn">Copy</button>
           </div>
           <pre class="code-pre"><code id="arch-code" data-lang="html"></code></pre>
@@ -420,10 +422,123 @@
     </section>
 
     <!-- ====================================================================
-         SECTION 6 — Themes, Kind Colors & CSS Custom Properties
+         SECTION 6 — Service Lanes & Concurrency
+         ==================================================================== -->
+    <section class="doc-section" id="lanes-view">
+      <h2><span class="sec-num">6</span>Service Lanes &amp; Concurrency</h2>
+      <p class="doc-prose">
+        <code>&lt;trace-view type="lanes"&gt;</code> draws one swimlane per service on a shared time axis, so you can see
+        <em>who was busy when</em> and how much ran in parallel. Each lane is split into <strong>levels</strong>: concurrent spans are packed
+        into as few rows as possible, and a child always sits below its same-service parent. Services' external dependencies
+        appear as <strong>ghost peer lanes</strong> (italic name, hatched or outlined bars): calls seen from the caller to an
+        uninstrumented database, cache, broker, or host. When thousands of spans fall inside a few pixels, they collapse into
+        <strong>merged hatched bars</strong> whose tooltip shows the count; zoom in to split them again.
+      </p>
+      <p class="doc-prose">
+        A lane taller than <code>max-rows</code> is capped with a <strong>+N rows</strong> overflow row (click it to show every level).
+        A <strong>collapsed lane</strong> becomes a one-row in-flight concurrency area chart with error ticks; with a filter active it counts
+        only matching requests. The gutter reports each lane's <em>spans &middot; busy % &middot; peak concurrency &middot; errors</em>, and
+        hovering an empty stretch of a lane (between spans, or before its first and after its last) shows its idle time. Selecting a span fades everything outside its request's causal tree.
+      </p>
+
+      <div class="callout">
+        <strong>Try it on the worker pool:</strong> 40 image tasks run on an 8-slot <code>image-worker</code> pool, so that lane stays pinned at 8
+        concurrent spans (saturation), preceded by a ~140&nbsp;ms idle gap while <code>job-scheduler</code> waits on an uninstrumented feature-flag call.
+        Hover the empty space at the start of the <code>image-worker</code> lane to read the idle time, double-click it to zoom to it, collapse <code>image-worker</code> to see its concurrency curve, then switch on
+        <em>Errors Only</em> to count only the 3 failing tasks.
+      </div>
+
+      <div class="workbench">
+        <div class="wb-toolbar wb-toolbar--dense">
+          <div class="wb-group">
+            <span class="wb-label">Dataset</span>
+            <div class="segmented" role="group" aria-label="Lanes demo dataset">
+              <button type="button" id="lanes-ds-worker" class="is-active" aria-pressed="true" title="138-span batch job: 40 tasks on an 8-slot worker pool, an idle gap, ghost peers (s3, postgresql), 3 failures">Worker pool</button>
+              <button type="button" id="lanes-ds-ai" aria-pressed="false" title="43-span AI Hybrid RAG trace: 9 services with mostly sequential calls and a 5x shard fan-out">AI RAG</button>
+              <button type="button" id="lanes-ds-incident" aria-pressed="false" title="19-span warehouse retry storm: three exponential-backoff retries and a DLQ fallback">Retry storm</button>
+            </div>
+          </div>
+
+          <label class="ctrl-range" title="Level rows a lane shows before its +N rows overflow row (4–32, default 16)">
+            <span>max-rows</span>
+            <input type="range" id="lanes-max-rows" min="4" max="32" step="1" value="16">
+            <output id="lanes-max-rows-out">16</output>
+          </label>
+
+          <div class="wb-group">
+            <label class="wb-label" for="lanes-order">order</label>
+            <select class="ctrl-select" id="lanes-order" title="Lane order: by first start time, by service name, or by total busy time">
+              <option value="start" selected>start</option>
+              <option value="name">name</option>
+              <option value="busy">busy</option>
+            </select>
+          </div>
+
+          <label class="ctrl-check" title="Show ghost peer lanes for uninstrumented databases, caches, brokers, and hosts (peers=&quot;false&quot; hides them)">
+            <input type="checkbox" id="lanes-peers" checked>
+            <span>peers</span>
+          </label>
+        </div>
+
+        <div class="wb-stage">
+          <trace-visualizer id="viz-lanes" show-legend height="720">
+            <trace-filter field="hasError" label="Errors Only" type="checkbox" source="local"></trace-filter>
+            <trace-view id="lanes-carrier" type="lanes" active max-rows="16" order="start" peers="true"></trace-view>
+            <trace-view type="waterfall"></trace-view>
+          </trace-visualizer>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-bar">
+            <span>HTML — Per-View Attributes on &lt;trace-view type="lanes"&gt;</span>
+            <button type="button" class="copy-btn">Copy</button>
+          </div>
+          <pre class="code-pre"><code id="lanes-code" data-lang="html"></code></pre>
+        </div>
+      </div>
+
+      <h3>Lanes Keyboard &amp; Pointer Controls</h3>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Input</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>&larr;</kbd> / <kbd>&rarr;</kbd></td><td>Select the previous or next span on the same track (level row)</td></tr>
+            <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Select the parent span, or the first child</td></tr>
+            <tr><td><kbd>Enter</kbd> / <kbd>Space</kbd></td><td>Collapse or expand the lane of the selected span</td></tr>
+            <tr><td><kbd>E</kbd> / <kbd>G</kbd></td><td>Expand all lanes / collapse all lanes (also the <em>Expand all</em> and <em>Collapse all</em> toolbar buttons)</td></tr>
+            <tr><td><kbd>+</kbd> / <kbd>-</kbd> / <kbd>0</kbd> (<kbd>Home</kbd>)</td><td>Zoom in, zoom out, or reset zoom to 100%</td></tr>
+            <tr><td><kbd>F</kbd></td><td>Zoom to the selected span</td></tr>
+            <tr><td><kbd>PageUp</kbd> / <kbd>PageDown</kbd></td><td>Scroll the lanes vertically by one viewport page</td></tr>
+            <tr><td><kbd>Escape</kbd></td><td>Clear the selection and close the detail panel</td></tr>
+            <tr><td>Click</td><td>Select a span or merged run (<kbd>Ctrl</kbd>/<kbd>&#8984;</kbd>/<kbd>Shift</kbd>+click adds to the selection); click a lane header to collapse or expand the lane; click <em>+N rows</em> to show all levels</td></tr>
+            <tr><td>Double-click</td><td>Zoom to a span, a merged run, or an idle gap</td></tr>
+            <tr><td><kbd>Ctrl</kbd>/<kbd>&#8984;</kbd>+Wheel / Drag</td><td>Ctrl/&#8984;+wheel (or pinch) zooms at the cursor; drag pans the timeline; hover an empty gap in a lane to see its idle time</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Lanes vs. Waterfall vs. Flame Graph</h3>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>View</th><th>Best for</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Lanes</strong></td><td>Concurrency and saturation per service: worker pools, fan-out, idle gaps, retry storms, and who was busy at a given moment. Handles tens of thousands of spans through merging.</td></tr>
+            <tr><td><strong>Waterfall</strong></td><td>One request's causal tree in call order: exact parent/child nesting, per-span timing, and log events.</td></tr>
+            <tr><td><strong>Flame Graph</strong></td><td>Where the cumulative time went: identical call paths folded into hotspot boxes, with no time axis.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 7 — Themes, Kind Colors & CSS Custom Properties
          ==================================================================== -->
     <section class="doc-section" id="theming-tokens">
-      <h2><span class="sec-num">6</span>Themes, Span-Kind Colors &amp; CSS Tokens</h2>
+      <h2><span class="sec-num">7</span>Themes, Span-Kind Colors &amp; CSS Tokens</h2>
       <p class="doc-prose">
         By default, <code>&lt;trace-visualizer&gt;</code> follows <code>prefers-color-scheme</code>. Pin it with
         <code>theme="light"</code> or <code>theme="dark"</code>, override span-kind colors via <code>kind-colors</code>,
@@ -499,10 +614,10 @@
     </section>
 
     <!-- ====================================================================
-         SECTION 7 — Registering Custom Views
+         SECTION 8 — Registering Custom Views
          ==================================================================== -->
     <section class="doc-section" id="custom-views">
-      <h2><span class="sec-num">7</span>Extending with <code>registerView()</code></h2>
+      <h2><span class="sec-num">8</span>Extending with <code>registerView()</code></h2>
       <p class="doc-prose">
         Register custom views implementing <code>TraceView</code> via <code>registerView({ id, label, capabilities, create })</code>
         and declare them alongside built-in views as <code>&lt;trace-view type="your-id"&gt;</code>. Below is a live
@@ -596,6 +711,7 @@ registerView({
     loadEdgeAuthTrace,
     loadAiSearchTrace,
     loadIncidentCascade,
+    loadWorkerPoolTrace,
     loadFintechLogs,
     FINTECH_LOG_CONFIG,
     FINTECH_LOG_RULES,
@@ -739,6 +855,8 @@ registerView({
       }
 
       clearInlineTheme();
+      // a click on a tab set `view`, which wins over the new carriers' `active`
+      viz.removeAttribute('view');
       for (const c of [...viz.querySelectorAll('trace-view')]) c.remove();
 
       if (key === 'suite') {
@@ -756,6 +874,7 @@ registerView({
           { type: 'service' },
           { type: 'sequence', fold: '3' },
           { type: 'stats' },
+          { type: 'lanes' },
         ].entries()) {
           const v = document.createElement('trace-view');
           v.setAttribute('type', spec.type);
@@ -765,11 +884,11 @@ registerView({
           viz.appendChild(v);
         }
         viz.traceData = await loadAiSearchTrace();
-        metaEl.textContent = '43 spans · 9 services · 5 tabs · default density';
-        codeLabel.textContent = 'HTML — Full 5-View Observability Suite (AI RAG Trace)';
+        metaEl.textContent = '43 spans · 9 services · 6 tabs · default density';
+        codeLabel.textContent = 'HTML — Full 6-View Observability Suite (AI RAG Trace)';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer data-url="./data/ai-search-trace.json" height="600" show-legend>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame" label="Hotspots"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" fold="3"></trace-view>\n  <trace-view type="stats"></trace-view>\n</trace-visualizer>`,
+          `<trace-visualizer data-url="./data/ai-search-trace.json" height="600" show-legend>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="flame" label="Hotspots"></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" fold="3"></trace-view>\n  <trace-view type="stats"></trace-view>\n  <trace-view type="lanes"></trace-view>\n</trace-visualizer>`,
           'html',
         );
       } else if (key === 'compact') {
@@ -804,7 +923,7 @@ registerView({
         viz.style.setProperty('--l2t-color-surface', '#131a26');
         viz.style.setProperty('--l2t-color-accent', '#38bdf8');
         viz.refreshTheme();
-        for (const [idx, type] of ['waterfall', 'service', 'sequence'].entries()) {
+        for (const [idx, type] of ['waterfall', 'service', 'sequence', 'lanes'].entries()) {
           const v = document.createElement('trace-view');
           v.setAttribute('type', type);
           if (type === 'sequence') v.setAttribute('returns', 'errors');
@@ -812,11 +931,11 @@ registerView({
           viz.appendChild(v);
         }
         viz.traceData = await loadIncidentCascade();
-        metaEl.textContent = '19 spans · pinned dark obsidian · wheel-zoom · error cascade';
+        metaEl.textContent = '19 spans · pinned dark obsidian · wheel-zoom · error cascade · retry fan-out lanes';
         codeLabel.textContent = 'HTML — NOC Dark Incident Room Setup';
         setCodeBlock(
           codeEl,
-          `<trace-visualizer\n  data-url="./data/incident-cascade.json"\n  theme="dark"\n  height="580"\n  show-legend\n  wheel-zoom\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#0b0f17; --l2t-color-surface:#131a26; --l2t-color-accent:#38bdf8"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" returns="errors"></trace-view>\n</trace-visualizer>`,
+          `<trace-visualizer\n  data-url="./data/incident-cascade.json"\n  theme="dark"\n  height="580"\n  show-legend\n  wheel-zoom\n  kind-colors='${JSON.stringify(kc)}'\n  style="--l2t-color-background:#0b0f17; --l2t-color-surface:#131a26; --l2t-color-accent:#38bdf8"\n>\n  <trace-view type="waterfall" active></trace-view>\n  <trace-view type="service"></trace-view>\n  <trace-view type="sequence" returns="errors"></trace-view>\n  <trace-view type="lanes"></trace-view>\n</trace-visualizer>`,
           'html',
         );
       } else if (key === 'editorial') {
@@ -1017,7 +1136,62 @@ registerView({
     updateStats();
   }
 
-  // ── Section 5: Themes, Kind Colors & CSS Custom Properties ────────────────
+  // ── Section 6: Service Lanes ──────────────────────────────────────────────
+  {
+    const viz = document.getElementById('viz-lanes');
+    const carrier = document.getElementById('lanes-carrier');
+    const maxRowsInput = document.getElementById('lanes-max-rows');
+    const orderSel = document.getElementById('lanes-order');
+    const peersCb = document.getElementById('lanes-peers');
+    const codeEl = document.getElementById('lanes-code');
+    const dsBtns = {
+      worker: document.getElementById('lanes-ds-worker'),
+      ai: document.getElementById('lanes-ds-ai'),
+      incident: document.getElementById('lanes-ds-incident'),
+    };
+    const DATASETS = {
+      worker: { url: './data/worker-pool-trace.json', load: loadWorkerPoolTrace },
+      ai: { url: './data/ai-search-trace.json', load: loadAiSearchTrace },
+      incident: { url: './data/incident-cascade.json', load: loadIncidentCascade },
+    };
+    let dataset = 'worker';
+
+    function updateLanes() {
+      document.getElementById('lanes-max-rows-out').textContent = maxRowsInput.value;
+      carrier.setAttribute('max-rows', maxRowsInput.value);
+      carrier.setAttribute('order', orderSel.value);
+      carrier.setAttribute('peers', String(peersCb.checked));
+
+      const peers = peersCb.checked ? '' : '\n    peers="false"';
+      setCodeBlock(
+        codeEl,
+        `<trace-visualizer data-url="${DATASETS[dataset].url}" show-legend>\n  <trace-view\n    type="lanes"\n    active\n    max-rows="${maxRowsInput.value}"\n    order="${orderSel.value}"${peers}\n  ></trace-view>\n  <trace-view type="waterfall"></trace-view>\n</trace-visualizer>`,
+        'html',
+      );
+    }
+
+    async function loadLanesData(key) {
+      dataset = key;
+      for (const [k, btn] of Object.entries(dsBtns)) {
+        btn.classList.toggle('is-active', k === key);
+        btn.setAttribute('aria-pressed', String(k === key));
+      }
+      updateLanes();
+      const data = await DATASETS[key].load();
+      if (dataset === key) viz.traceData = data;
+    }
+
+    for (const [k, btn] of Object.entries(dsBtns)) {
+      btn.addEventListener('click', () => void loadLanesData(k));
+    }
+    for (const el of [maxRowsInput, orderSel, peersCb]) {
+      el.addEventListener('input', updateLanes);
+      el.addEventListener('change', updateLanes);
+    }
+    void loadLanesData('worker');
+  }
+
+  // ── Section 7: Themes, Kind Colors & CSS Custom Properties ────────────────
   {
     const viz = document.getElementById('viz-theme');
     const presetSel = document.getElementById('th-preset');
@@ -1136,7 +1310,7 @@ registerView({
     selectPreset('midnight');
   }
 
-  // ── Section 6: Custom View Data ───────────────────────────────────────────
+  // ── Section 8: Custom View Data ───────────────────────────────────────────
   {
     const vizCustom = document.getElementById('viz-custom');
     const hotCarrier = vizCustom.querySelector('trace-view[type="hot-spans"]');

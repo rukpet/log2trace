@@ -72,7 +72,8 @@
       <!-- One-click Visual & Complexity Setup Presets -->
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;margin-top:0.85rem">
         <span class="wb-label" style="margin-right:0.2rem">Setup Presets:</span>
-        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite" aria-pressed="true" title="43-span AI Hybrid RAG trace with all 5 views and local search/service/error filters">AI RAG 5-View Suite</button>
+        <button type="button" class="btn btn--sm is-active" data-pg-preset="ai-suite" aria-pressed="true" title="43-span AI Hybrid RAG trace with all 6 views and local search/service/error filters">AI RAG 6-View Suite</button>
+        <button type="button" class="btn btn--sm" data-pg-preset="worker-pool" aria-pressed="false" title="138-span batch job: 40 tasks on an 8-slot worker pool, an idle gap, ghost peer lanes, and 3 failures, opened on the Lanes view">Worker Pool Saturation</button>
         <button type="button" class="btn btn--sm" data-pg-preset="fintech-logs" aria-pressed="false" title="61 raw fintech JSON logs transformed with 8 span-kind rules and a log-target cardNetwork filter">Fintech Logs + Rules</button>
         <button type="button" class="btn btn--sm" data-pg-preset="compact-starter" aria-pressed="false" title="14-span auth trace in a compact 360px single-view waterfall with 20px rows">Compact Embedded Card</button>
         <button type="button" class="btn btn--sm" data-pg-preset="noc-incident" aria-pressed="false" title="19-span retry storm in dark obsidian theme with custom kind colors and wheel-zoom">NOC Dark Incident Room</button>
@@ -98,7 +99,8 @@
                 <option value="fintech">Tier 2: Fintech Logs (61 raw logs &rarr; 21 spans)</option>
                 <option value="edge">Tier 1: Edge Session Auth (14 spans, 4 services)</option>
                 <option value="incident">Tier 4: Warehouse Retry Storm (19 spans, errors)</option>
-                <option value="synthetic">Tier 5: Synthetic Scale (250 – 50,000 spans)</option>
+                <option value="worker-pool">Tier 5: Worker Pool (138 spans, 8 slots)</option>
+                <option value="synthetic">Tier 6: Synthetic Scale (250 – 50,000 spans)</option>
                 <option value="custom">Custom JSON (Upload File or Paste)</option>
               </select>
             </div>
@@ -230,6 +232,7 @@
               <label class="ctrl-check"><input type="checkbox" data-pg-view="service" checked><span>Service</span></label>
               <label class="ctrl-check"><input type="checkbox" data-pg-view="sequence" checked><span>Sequence</span></label>
               <label class="ctrl-check"><input type="checkbox" data-pg-view="stats" checked><span>Stats</span></label>
+              <label class="ctrl-check" title="Show the per-service swimlane timeline tab (concurrency, saturation, idle gaps, ghost peer lanes)"><input type="checkbox" data-pg-view="lanes" checked><span>Lanes</span></label>
             </div>
 
             <div class="pg-grid-2">
@@ -300,6 +303,26 @@
                 </select>
               </div>
             </div>
+
+            <div class="pg-grid-2">
+              <div class="pg-field">
+                <label for="pg-lanes-max-rows" title="Level rows a lane shows before its +N rows overflow row (lanes max-rows, default 16)">lanes max-rows</label>
+                <input type="number" class="ctrl-input" id="pg-lanes-max-rows" value="16" min="1" max="100" title="Level rows a lane shows before its +N rows overflow row (lanes max-rows, default 16)">
+              </div>
+              <div class="pg-field">
+                <label for="pg-lanes-order" title="Lane order: by first start time, by service name, or by total busy time (lanes order)">lanes order</label>
+                <select class="ctrl-select" id="pg-lanes-order" title="Lane order: by first start time, by service name, or by total busy time (lanes order)">
+                  <option value="start" selected>start</option>
+                  <option value="name">name</option>
+                  <option value="busy">busy</option>
+                </select>
+              </div>
+            </div>
+
+            <label class="ctrl-check" title="Show ghost peer lanes for uninstrumented databases, caches, brokers, and hosts (lanes peers; only &quot;false&quot; hides them)">
+              <input type="checkbox" id="pg-lanes-peers" checked title="Show ghost peer lanes for uninstrumented databases, caches, brokers, and hosts (lanes peers; only &quot;false&quot; hides them)">
+              <span>lanes <code>peers</code> (ghost lanes for DB / cache / broker / host)</span>
+            </label>
 
             <label class="ctrl-check">
               <input type="checkbox" id="pg-wheel-zoom">
@@ -406,6 +429,7 @@
               <trace-view type="service"></trace-view>
               <trace-view type="sequence" fold="3"></trace-view>
               <trace-view type="stats"></trace-view>
+              <trace-view type="lanes"></trace-view>
             </trace-visualizer>
           </div>
 
@@ -467,6 +491,7 @@
     loadEdgeAuthTrace,
     loadAiSearchTrace,
     loadIncidentCascade,
+    loadWorkerPoolTrace,
     loadFintechLogs,
     FINTECH_LOG_CONFIG,
     FINTECH_LOG_RULES,
@@ -478,6 +503,8 @@
   const $ = (id) => document.getElementById(id);
   const viz = $('viz-playground');
   const evConsole = createEventConsole($('pg-events-wrap'), viz, { maxEntries: 120 });
+  /** View a preset wants active the next time the tabs are rebuilt (null: keep the current one). */
+  let pendingActiveView = null;
 
   // Inspector tabs
   {
@@ -642,14 +669,15 @@
       viewCbs[0].checked = true;
       enabledViews = ['waterfall'];
     }
-    const currentActive = viz.view;
+    const currentActive = pendingActiveView ?? viz.view;
+    pendingActiveView = null;
+    // the `view` attribute (set by a click on a tab) wins over `active`, so it is set to the same view below
+    const activeType = enabledViews.includes(currentActive) ? currentActive : enabledViews[0];
     for (const c of [...viz.querySelectorAll('trace-view')]) c.remove();
-    for (const [idx, type] of enabledViews.entries()) {
+    for (const type of enabledViews) {
       const v = document.createElement('trace-view');
       v.setAttribute('type', type);
-      if ((enabledViews.includes(currentActive) && type === currentActive) || (!enabledViews.includes(currentActive) && idx === 0)) {
-        v.setAttribute('active', '');
-      }
+      if (type === activeType) v.setAttribute('active', '');
       if (type === 'sequence') {
         v.setAttribute('internal', $('pg-seq-internal').value);
         v.setAttribute('returns', $('pg-seq-returns').value);
@@ -657,9 +685,14 @@
       } else if (type === 'stats') {
         v.setAttribute('group-by', $('pg-stats-group').value);
         v.setAttribute('sort', $('pg-stats-sort').value);
+      } else if (type === 'lanes') {
+        v.setAttribute('max-rows', $('pg-lanes-max-rows').value);
+        v.setAttribute('order', $('pg-lanes-order').value);
+        v.setAttribute('peers', String($('pg-lanes-peers').checked));
       }
       viz.appendChild(v);
     }
+    viz.view = activeType;
 
     // Filters
     for (const f of [...viz.querySelectorAll('trace-filter')]) f.remove();
@@ -702,6 +735,7 @@
       edge: './data/edge-auth-trace.json',
       ai: './data/ai-search-trace.json',
       incident: './data/incident-cascade.json',
+      'worker-pool': './data/worker-pool-trace.json',
       fintech: './data/fintech-logs.json',
     };
 
@@ -741,7 +775,9 @@
           ? ` internal="${$('pg-seq-internal').value}" returns="${$('pg-seq-returns').value}" fold="${$('pg-seq-fold').value}"`
           : type === 'stats'
             ? ` group-by="${$('pg-stats-group').value}" sort="${$('pg-stats-sort').value}"`
-            : '';
+            : type === 'lanes'
+              ? ` max-rows="${$('pg-lanes-max-rows').value}" order="${$('pg-lanes-order').value}"${$('pg-lanes-peers').checked ? '' : ' peers="false"'}`
+              : '';
         childrenLines.push(`  <trace-view type="${type}"${idx === 0 ? ' active' : ''}${seqExtra}></trace-view>`);
       }
     }
@@ -830,6 +866,11 @@
       const t0 = performance.now();
       viz.traceData = data;
       updateMetricsStrip(performance.now() - t0);
+    } else if (source === 'worker-pool') {
+      const data = await loadWorkerPoolTrace();
+      const t0 = performance.now();
+      viz.traceData = data;
+      updateMetricsStrip(performance.now() - t0);
     } else if (source === 'synthetic') {
       const n = Number($('pg-syn-n').value) || 10000;
       const seed = Number($('pg-syn-seed').value) || 1;
@@ -865,17 +906,25 @@
   // Visual + Data Complexity Presets
   const PRESET_MAP = {
     'ai-suite': {
-      source: 'ai', views: ['waterfall', 'flame', 'service', 'sequence', 'stats'],
+      source: 'ai', views: ['waterfall', 'flame', 'service', 'sequence', 'stats', 'lanes'],
       theme: '', height: 640, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
       colors: null, css: null,
     },
     'fintech-logs': {
-      source: 'fintech', views: ['waterfall', 'flame', 'service', 'sequence', 'stats'],
+      source: 'fintech', views: ['waterfall', 'flame', 'service', 'sequence', 'stats', 'lanes'],
       theme: '', height: 640, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: 'payload.cardNetwork' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
+      colors: null, css: null,
+    },
+    'worker-pool': {
+      source: 'worker-pool', views: ['waterfall', 'flame', 'service', 'sequence', 'stats', 'lanes'], active: 'lanes',
+      theme: '', height: 660, spanH: 28, pad: 4, gutter: 230, legend: true, wheel: false,
+      filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
+      seq: { internal: 'auto', returns: 'all', fold: '3' },
+      lanes: { maxRows: '16', order: 'start', peers: true },
       colors: null, css: null,
     },
     'compact-starter': {
@@ -886,7 +935,7 @@
       colors: null, css: null,
     },
     'noc-incident': {
-      source: 'incident', views: ['waterfall', 'service', 'sequence', 'stats'],
+      source: 'incident', views: ['waterfall', 'service', 'sequence', 'stats', 'lanes'],
       theme: 'dark', height: 620, spanH: 26, pad: 4, gutter: 250, legend: true, wheel: true,
       filters: { wild: true, op: false, svc: false, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'errors', fold: '3' },
@@ -902,7 +951,7 @@
       css: { bg: '#fcfaf5', surface: '#f3efe6', accent: '#b45309' },
     },
     'scale-50k': {
-      source: 'synthetic', synN: '50000', views: ['waterfall', 'flame', 'service', 'sequence', 'stats'],
+      source: 'synthetic', synN: '50000', views: ['waterfall', 'flame', 'service', 'sequence', 'stats', 'lanes'],
       theme: '', height: 660, spanH: 26, pad: 4, gutter: 230, legend: true, wheel: false,
       filters: { wild: true, op: false, svc: true, multi: false, err: true, time: false, cf: '' },
       seq: { internal: 'auto', returns: 'all', fold: '3' },
@@ -949,6 +998,10 @@
     $('pg-seq-fold').value = p.seq.fold;
     $('pg-stats-group').value = p.stats?.groupBy ?? 'service-operation';
     $('pg-stats-sort').value = p.stats?.sort ?? 'self';
+    $('pg-lanes-max-rows').value = p.lanes?.maxRows ?? '16';
+    $('pg-lanes-order').value = p.lanes?.order ?? 'start';
+    $('pg-lanes-peers').checked = p.lanes?.peers ?? true;
+    pendingActiveView = p.active ?? 'waterfall';
     $('pg-f-wild').checked = p.filters.wild;
     $('pg-f-op').checked = p.filters.op;
     $('pg-f-svc').checked = p.filters.svc;
@@ -1037,7 +1090,7 @@
 
   const liveShellIds = [
     'pg-span-h', 'pg-span-pad', 'pg-gutter', 'pg-seq-fold', 'pg-seq-internal', 'pg-seq-returns',
-    'pg-stats-group', 'pg-stats-sort',
+    'pg-stats-group', 'pg-stats-sort', 'pg-lanes-max-rows', 'pg-lanes-order', 'pg-lanes-peers',
     'pg-wheel-zoom', 'pg-f-wild', 'pg-f-op', 'pg-f-svc', 'pg-f-multi', 'pg-f-err', 'pg-f-time',
     'pg-cf-field', 'pg-cf-target', 'pg-theme', 'pg-height', 'pg-detail-w', 'pg-legend',
     'pg-custom-colors', 'pg-kc-server', 'pg-kc-client', 'pg-kc-internal', 'pg-kc-producer', 'pg-kc-consumer',
@@ -1145,7 +1198,7 @@
         if (hash.get('mode') === 'flat' || hash.get('mode') === 'tree') $('pg-syn-mode').value = hash.get('mode');
       } else if (hash.has('source')) {
         const s = hash.get('source');
-        if (['ai', 'fintech', 'edge', 'incident', 'synthetic', 'custom'].includes(s)) $('pg-source').value = s;
+        if (['ai', 'fintech', 'edge', 'incident', 'worker-pool', 'synthetic', 'custom'].includes(s)) $('pg-source').value = s;
       }
       if (hash.has('views')) {
         const wanted = new Set(hash.get('views').split(',').map((s) => s.trim()).filter(Boolean));

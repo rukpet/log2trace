@@ -125,6 +125,7 @@
               <option value="service">service</option>
               <option value="sequence">sequence</option>
               <option value="stats">stats</option>
+              <option value="lanes">lanes</option>
             </select>
           </div>
 
@@ -155,6 +156,7 @@
             <trace-view type="service"></trace-view>
             <trace-view type="sequence"></trace-view>
             <trace-view type="stats"></trace-view>
+            <trace-view type="lanes"></trace-view>
           </trace-visualizer>
         </div>
 
@@ -265,7 +267,7 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
             <tr>
               <td><code>view</code></td>
               <td><code>get / set view: string</code></td>
-              <td>Reads or switches the active view tab ID (<code>waterfall</code>, <code>flame</code>, <code>service</code>, <code>sequence</code>, <code>stats</code>, or custom ID).</td>
+              <td>Reads or switches the active view tab ID (<code>waterfall</code>, <code>flame</code>, <code>service</code>, <code>sequence</code>, <code>stats</code>, <code>lanes</code>, or custom ID).</td>
             </tr>
             <tr>
               <td><code>selection</code></td>
@@ -326,7 +328,7 @@ viz.addEventListener('view-changed', (e) => console.log(e.detail)); // { view, p
             <tr>
               <td><code>span-selected</code></td>
               <td><code>{ span: Span; spanId: string; spanIds: string[]; view: string }</code></td>
-              <td>When the user selects a span, flame box, service node/edge, sequence arrow, or stats row (not emitted by programmatic <code>selectSpan()</code>).</td>
+              <td>When the user selects a span, flame box, service node/edge, sequence arrow, lanes bar or merged run, or stats row (not emitted by programmatic <code>selectSpan()</code>).</td>
             </tr>
             <tr>
               <td><code>filter-changed</code></td>

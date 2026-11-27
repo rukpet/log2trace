@@ -1,5 +1,23 @@
-import { clickCenter, expect, test, waterfallRows } from './support/harness.ts';
+import fs from 'node:fs';
+import { afterPaint, clickCenter, expect, test, waterfallRows } from './support/harness.ts';
 import { SAMPLE_TRACE } from './support/fixtures.ts';
+
+/** The guide's worker-pool dataset: 138 spans, an 8-slot `image-worker` pool, ghost peers `s3.eu-west-1.amazonaws.com` and `postgresql:jobs`. */
+const WORKER_POOL_TRACE: unknown = JSON.parse(
+  fs.readFileSync(new URL('../demo/data/worker-pool-trace.json', import.meta.url), 'utf8'),
+);
+
+/** Id of the earliest `process image` span, the first bar of the top level of `image-worker`. */
+function firstTaskSpanId(): string {
+  const data = WORKER_POOL_TRACE as {
+    resourceSpans: { scopeSpans: { spans: { name: string; spanId: string; startTimeUnixNano: string }[] }[] }[];
+  };
+  const tasks = data.resourceSpans
+    .flatMap((rs) => rs.scopeSpans.flatMap((ss) => ss.spans))
+    .filter((span) => span.name === 'process image')
+    .sort((a, b) => Number(BigInt(a.startTimeUnixNano) - BigInt(b.startTimeUnixNano)));
+  return tasks[0].spanId;
+}
 
 test.describe('DOM & SVG views and real input gestures', () => {
   test('waterfall (DOM): tree hierarchy, collapse/expand, time window, wheel zoom, and drag pan', async ({ page, harness }) => {
@@ -292,5 +310,134 @@ test.describe('DOM & SVG views and real input gestures', () => {
     // Flat span rows must hide chevrons and excess metric cells (only 7 visible gridcells per row)
     await expect(rows.nth(0).locator('[data-part="chevron"]')).toBeHidden();
     await expect(rows.nth(0).locator('[role="gridcell"]:visible')).toHaveCount(7);
+  });
+
+  test('lanes view: lane per service plus ghost peer lane, select, zoom, collapse, pan, track navigation, and tab switch', async ({ page, harness }) => {
+    await harness.openBlank();
+    const viz = await harness.mount({
+      attrs: { height: '620', view: 'lanes' },
+      children: [
+        { tag: 'trace-view', attrs: { type: 'lanes', active: '' } },
+        { tag: 'trace-view', attrs: { type: 'waterfall' } },
+      ],
+      traceData: WORKER_POOL_TRACE,
+    });
+
+    const toolbar = viz.locator('[role="toolbar"][aria-label="Trace view controls"]');
+    const zoomReadout = toolbar.locator('span[aria-live="off"]');
+    const plot = viz.locator('[part="plot"][aria-label="Trace lanes"]');
+    const lane = (name: string) => viz.locator(`[data-part="lane"][data-lane="${name}"]`);
+    const selection = () => viz.evaluate((el) => (el as HTMLElement & { selection: string[] }).selection);
+    const details = viz.locator('aside[aria-label="Span details"]');
+    // The bars are pooled elements that a frame repaints, so the x of every painted bar says whether the last camera change has landed
+    // (a bar clipped at the plot edge does not move, hence all of them, sorted: slots are reused in any order). Pooled slots that are
+    // out of view stay in the DOM, hidden, with the span id they last showed, so only :visible ones count.
+    const barXs = () => viz.locator('[data-part="bar"]:visible').evaluateAll(
+      (bars) => bars.map((bar) => Math.round(bar.getBoundingClientRect().x)).sort((p, q) => p - q).join(','),
+    );
+
+    // One lane per instrumented service, plus italic ghost peer lanes for uninstrumented callees
+    for (const service of ['ingest-api', 'job-scheduler', 'image-worker', 'notifier']) {
+      await expect(lane(service)).toBeVisible();
+      await expect(lane(service).getByText(service, { exact: true })).not.toHaveCSS('font-style', 'italic');
+    }
+    const peer = 's3.eu-west-1.amazonaws.com';
+    await expect(lane(peer)).toBeVisible();
+    await expect(lane(peer).getByText(peer, { exact: true })).toHaveCSS('font-style', 'italic');
+    await expect(lane('image-worker')).toContainText('peak 8');
+    await expect(lane('image-worker')).toHaveAttribute('aria-expanded', 'true');
+    await expect(zoomReadout).toHaveText('100%');
+
+    // Visit the waterfall once, so that the shell reveals a span selected while it is away when it is shown again
+    await viz.locator('[part="tabs"] [role="tab"]', { hasText: 'Waterfall' }).click();
+    await expect(waterfallRows(viz).first()).toBeVisible();
+    await viz.locator('[part="tabs"] [role="tab"]', { hasText: 'Lanes' }).click();
+    await expect(lane('image-worker')).toBeVisible();
+    await afterPaint(page);
+
+    // Click a bar: selects it and opens the detail panel
+    const scheduleBar = viz.locator('[data-part="bar"]', { hasText: 'schedule batch' });
+    await clickCenter(page, scheduleBar);
+    await expect(details).toContainText('schedule batch');
+    await expect.poll(selection).toHaveLength(1);
+    // The panel narrows the plot, and the bars follow a frame later: measure them only once they have
+    await afterPaint(page);
+    const barsAtFullView = await barXs();
+
+    // Double-click a bar zooms to it; Home/0 resets
+    const taskId = firstTaskSpanId();
+    const taskBar = viz.locator(`[data-part="bar"][data-span-id="${taskId}"]`);
+    const taskBox = await taskBar.boundingBox();
+    expect(taskBox).not.toBeNull();
+    if (taskBox) await page.mouse.dblclick(taskBox.x + taskBox.width / 2, taskBox.y + taskBox.height / 2);
+    await expect(zoomReadout).not.toHaveText('100%');
+    await plot.focus();
+    await page.keyboard.press('0');
+    await expect(zoomReadout).toHaveText('100%');
+    await expect.poll(barXs).toBe(barsAtFullView);
+
+    // Header click collapses a lane into a concurrency summary (an svg path); a second click expands it again
+    await clickCenter(page, lane('image-worker').getByText('image-worker', { exact: true }));
+    await expect(lane('image-worker')).toHaveAttribute('aria-expanded', 'false');
+    // pooled summary slots stay in the DOM when hidden, so only count the visible ones
+    const summaryPath = viz.locator('[data-part="summary"][data-summary="collapsed"]:visible svg path');
+    await expect(summaryPath.first()).toHaveAttribute('d', /\S/);
+    await clickCenter(page, lane('image-worker').getByText('image-worker', { exact: true }));
+    await expect(lane('image-worker')).toHaveAttribute('aria-expanded', 'true');
+    await expect(summaryPath).toHaveCount(0);
+
+    // Ctrl+wheel zooms at the cursor, a real drag pans the zoomed camera
+    const plotBox = await plot.boundingBox();
+    expect(plotBox).not.toBeNull();
+    if (plotBox) {
+      const x = plotBox.x + plotBox.width * 0.4;
+      const y = plotBox.y + 40;
+      await page.mouse.move(x, y);
+      await page.keyboard.down('Control');
+      await page.mouse.wheel(0, -300);
+      await page.keyboard.up('Control');
+      await expect(zoomReadout).not.toHaveText('100%');
+
+      // the readout changes with the camera, the bars a frame later: take the zoomed bars as the baseline of the drag
+      await expect.poll(barXs).not.toBe(barsAtFullView);
+      await afterPaint(page);
+      const barsBeforeDrag = await barXs();
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x - 120, y, { steps: 6 });
+      await page.mouse.up();
+      await expect.poll(barXs).not.toBe(barsBeforeDrag);
+    }
+    await plot.focus();
+    await page.keyboard.press('0');
+    await expect(zoomReadout).toHaveText('100%');
+    // click the bar where the reset has put it, not where the zoomed camera had it
+    await expect.poll(barXs).toBe(barsAtFullView);
+
+    // ArrowRight selects the next span on the same track (same row, further right)
+    await clickCenter(page, taskBar);
+    await expect.poll(selection).toEqual([taskId]);
+    const before = await taskBar.boundingBox();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(async () => (await selection())[0]).not.toBe(taskId);
+    const nextId = (await selection())[0];
+    // a bar that left the view stays in the DOM, hidden, with its span id: look at the painted one
+    const nextBar = viz.locator(`[data-part="bar"][data-span-id="${nextId}"]:visible`);
+    await expect(nextBar).toBeVisible();
+    const after = await nextBar.boundingBox();
+    expect(before && after).toBeTruthy();
+    if (before && after) {
+      expect(after.y).toBeCloseTo(before.y, 0);
+      expect(after.x).toBeGreaterThan(before.x + before.width - 1);
+    }
+
+    // Switching tabs keeps the selection, in the waterfall and back in lanes
+    await viz.locator('[part="tabs"] [role="tab"]', { hasText: 'Waterfall' }).click();
+    await expect(waterfallRows(viz).and(viz.locator(`[data-span-id="${nextId}"]`))).toHaveAttribute('aria-selected', 'true');
+    await expect.poll(selection).toEqual([nextId]);
+    await viz.locator('[part="tabs"] [role="tab"]', { hasText: 'Lanes' }).click();
+    await expect(plot).toBeVisible();
+    await expect.poll(selection).toEqual([nextId]);
+    await expect(details).toContainText('process image');
   });
 });

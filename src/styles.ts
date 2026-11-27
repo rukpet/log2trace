@@ -23,4 +23,6 @@ import './views/sequence/paint/dom.css.ts';
 import './views/sequence/view.css.ts';
 import './views/stats/paint/dom.css.ts';
 import './views/stats/view.css.ts';
+import './views/lanes/paint/dom.css.ts';
+import './views/lanes/view.css.ts';
 import './element/element.css.ts';
