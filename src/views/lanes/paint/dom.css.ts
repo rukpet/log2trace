@@ -162,17 +162,19 @@ export const headerContent = style({
   alignItems: 'flex-start',
 });
 
+/** As tall as the name's line, so the triangle centred in it is centred on the text at any row height. */
 export const chevron = style({
   flex: 'none',
   width: 16,
-  height: rowHeightVar,
+  height: `calc(${rowHeightVar} - 1px)`,
   position: 'relative',
 });
 
 const chevronBase = {
   position: 'absolute',
   left: 4,
-  top: 6,
+  top: '50%',
+  transform: 'translateY(-50%)',
   width: 0,
   height: 0,
   content: '""',
@@ -181,12 +183,12 @@ const chevronBase = {
 export const chevronState = styleVariants({
   expanded: {
     selectors: {
-      '&::after': { ...chevronBase, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: `5px solid ${vars.color.textMuted}`, top: 7 },
+      '&::after': { ...chevronBase, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: `5px solid ${vars.color.textMuted}` },
     },
   },
   collapsed: {
     selectors: {
-      '&::after': { ...chevronBase, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: `5px solid ${vars.color.textMuted}`, left: 5, top: 5 },
+      '&::after': { ...chevronBase, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: `5px solid ${vars.color.textMuted}`, left: 5 },
     },
   },
 });
@@ -258,13 +260,26 @@ export const barMerged = style({
   backgroundImage: 'repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0, rgba(255, 255, 255, 0.4) 1px, transparent 1px, transparent 3px)',
 });
 
-/** A call seen from the caller on a peer lane: outlined and hatched in the colour, not filled. */
+const ghostColor = `color-mix(in srgb, ${barColorVar} 60%, transparent)`;
+const ghostHatch = (angle: number): string => `repeating-linear-gradient(${angle}deg, ${ghostColor} 0, ${ghostColor} 1px, transparent 1px, transparent 4px)`;
+
+/**
+ * A call seen from the caller on a peer lane: outlined and hatched in the colour, not filled. The
+ * hatch is softened so the label reads over it, and the label gets a halo in the background colour.
+ */
 export const barGhost = style({
   background: 'transparent',
-  backgroundImage: `repeating-linear-gradient(135deg, ${barColorVar} 0, ${barColorVar} 1px, transparent 1px, transparent 4px)`,
+  backgroundImage: ghostHatch(135),
   boxShadow: `inset 0 0 0 1px ${barColorVar}`,
   color: vars.color.text,
-  textShadow: 'none',
+  textShadow: `0 0 3px ${vars.color.background}, 0 0 2px ${vars.color.background}, 0 0 1px ${vars.color.background}`,
+  selectors: {
+    // several ghost calls in one run: crossed hatch on a tinted fill, so it differs from a single call
+    [`${barMerged}&`]: {
+      backgroundColor: `color-mix(in srgb, ${barColorVar} 22%, transparent)`,
+      backgroundImage: `${ghostHatch(135)}, ${ghostHatch(45)}`,
+    },
+  },
 });
 
 /** A span of the run failed: a red edge on the left. */
